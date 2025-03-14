@@ -301,4 +301,3 @@ dependencies:
       - werkzeug==3.1.1
       - xformer==1.0.1
       - xformers==0.0.28.post3
-prefix: /cis/home/zshao14/miniconda3/envs/mast3r
