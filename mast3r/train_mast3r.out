@@ -1,0 +1,1892 @@
+nohup: ignoring input
+W0309 18:24:07.276000 2372716 site-packages/torch/distributed/run.py:793] 
+W0309 18:24:07.276000 2372716 site-packages/torch/distributed/run.py:793] *****************************************
+W0309 18:24:07.276000 2372716 site-packages/torch/distributed/run.py:793] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+W0309 18:24:07.276000 2372716 site-packages/torch/distributed/run.py:793] *****************************************
+| distributed init (rank 0): env://, gpu 0
+| distributed init (rank 6): env://, gpu 6
+[rank6]:[W309 18:24:14.137943270 ProcessGroupNCCL.cpp:4115] [PG ID 0 PG GUID 0 Rank 6]  using GPU 6 to perform barrier as devices used by this process are currently unknown. This can potentially cause a hang if this rank to GPU mapping is incorrect.Specify device_ids in barrier() to force use of a particular device,or call init_process_group() with a device_id.
+| distributed init (rank 3): env://, gpu 3
+[rank3]:[W309 18:24:14.544807728 ProcessGroupNCCL.cpp:4115] [PG ID 0 PG GUID 0 Rank 3]  using GPU 3 to perform barrier as devices used by this process are currently unknown. This can potentially cause a hang if this rank to GPU mapping is incorrect.Specify device_ids in barrier() to force use of a particular device,or call init_process_group() with a device_id.
+| distributed init (rank 1): env://, gpu 1
+[rank0]:[W309 18:24:15.921502885 ProcessGroupNCCL.cpp:4115] [PG ID 0 PG GUID 0 Rank 0]  using GPU 0 to perform barrier as devices used by this process are currently unknown. This can potentially cause a hang if this rank to GPU mapping is incorrect.Specify device_ids in barrier() to force use of a particular device,or call init_process_group() with a device_id.
+[rank1]:[W309 18:24:15.923159045 ProcessGroupNCCL.cpp:4115] [PG ID 0 PG GUID 0 Rank 1]  using GPU 1 to perform barrier as devices used by this process are currently unknown. This can potentially cause a hang if this rank to GPU mapping is incorrect.Specify device_ids in barrier() to force use of a particular device,or call init_process_group() with a device_id.
+| distributed init (rank 2): env://, gpu 2
+| distributed init (rank 5): env://, gpu 5
+[rank2]:[W309 18:24:15.935567368 ProcessGroupNCCL.cpp:4115] [PG ID 0 PG GUID 0 Rank 2]  using GPU 2 to perform barrier as devices used by this process are currently unknown. This can potentially cause a hang if this rank to GPU mapping is incorrect.Specify device_ids in barrier() to force use of a particular device,or call init_process_group() with a device_id.
+[rank5]:[W309 18:24:15.940956070 ProcessGroupNCCL.cpp:4115] [PG ID 0 PG GUID 0 Rank 5]  using GPU 5 to perform barrier as devices used by this process are currently unknown. This can potentially cause a hang if this rank to GPU mapping is incorrect.Specify device_ids in barrier() to force use of a particular device,or call init_process_group() with a device_id.
+| distributed init (rank 4): env://, gpu 4
+[rank4]:[W309 18:24:15.956082285 ProcessGroupNCCL.cpp:4115] [PG ID 0 PG GUID 0 Rank 4]  using GPU 4 to perform barrier as devices used by this process are currently unknown. This can potentially cause a hang if this rank to GPU mapping is incorrect.Specify device_ids in barrier() to force use of a particular device,or call init_process_group() with a device_id.
+| distributed init (rank 7): env://, gpu 7
+[rank7]:[W309 18:24:15.971956639 ProcessGroupNCCL.cpp:4115] [PG ID 0 PG GUID 0 Rank 7]  using GPU 7 to perform barrier as devices used by this process are currently unknown. This can potentially cause a hang if this rank to GPU mapping is incorrect.Specify device_ids in barrier() to force use of a particular device,or call init_process_group() with a device_id.
+[18:24:17.058667] output_dir: checkpoints/MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric
+[18:24:17.060620] job dir: /cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/dust3r
+[18:24:17.060766] Namespace(model="AsymmetricMASt3R(pos_embed='RoPE100',
+patch_embed_cls='ManyAR_PatchEmbed',
+img_size=(512,
+512),
+head_type='catmlp+dpt',
+output_mode='pts3d+desc24',
+depth_mode=('exp',
+-inf,
+inf),
+conf_mode=('exp',
+1,
+inf),
+enc_embed_dim=1024,
+enc_depth=24,
+enc_num_heads=16,
+dec_embed_dim=768,
+dec_depth=12,
+dec_num_heads=12,
+two_confs=True,
+desc_conf_mode=('exp',
+0,
+inf))",
+pretrained='checkpoints/DUSt3R_ViTLarge_BaseDecoder_512_dpt.pth',
+train_criterion="ConfLoss(Regr3D(L21,
+norm_mode='?avg_dis'),
+alpha=0.2) + 0.075*ConfMatchingLoss(MatchingLoss(InfoNCE(mode='proper',
+temperature=0.05),
+negatives_padding=0,
+blocksize=8192),
+alpha=10.0,
+confmode='mean')",
+test_criterion="Regr3D(L21,
+norm_mode='?avg_dis',
+gt_scale=True,
+sky_loss_value=0) + -1.*MatchingLoss(APLoss(nq='torch',
+fp=torch.float16),
+negatives_padding=12288)",
+train_dataset="57_000 @ Habitat(800_000,
+split='train',ROOT='/cis/net/io99/data/zshao/dust3r/data/habitat_processed',
+resolution=[(512,
+384),
+(512,
+336),
+(512,
+288),
+(512,
+256),
+(512,
+160)],
+aug_crop=16,
+aug_monocular=0.005,
+n_corres=8192,
+nneg=0.5,
+transform=ColorJitter) + 68_400 @ BlendedMVS(split='train',
+ROOT='/cis/net/io99/data/zshao/dust3r/data/blendedmvs_processed',
+resolution=[(512,
+384),
+(512,
+336),
+(512,
+288),
+(512,
+256),
+(512,
+160)],
+aug_crop = 16,
+aug_monocular=0.005,
+n_corres=8192,
+nneg=0.5,
+transform=ColorJitter) + 68_400 @ MegaDepth(split='train',
+ROOT='/cis/net/io99/data/zshao/dust3r/data/megadepth_dataset_processed',
+resolution=[(512,
+384),
+(512,
+336),
+(512,
+288),
+(512,
+256),
+(512,
+160)],
+aug_crop=16,
+aug_monocular=0.005,
+n_corres=8192,
+nneg=0.5,
+transform=ColorJitter) + 45_600 @ ARKitScenes(split='train',ROOT='/cis/net/io99/data/zshao/dust3r/data/arkitscenes_processed',
+resolution=[(512,
+384),
+(512,
+336),
+(512,
+288),
+(512,
+256),
+(512,
+160)],
+aug_crop=16,
+aug_monocular=0.005,
+n_corres=8192,
+nneg=0.5,
+transform=ColorJitter) + 22_800 @ Co3d(split='train',
+ROOT='/cis/net/io99/data/zshao/dust3r/data/co3d_processed',
+mask_bg='rand',
+resolution=[(512,
+384),
+(512,
+336),
+(512,
+288),
+(512,
+256),
+(512,
+160)],
+aug_crop=16,
+aug_monocular=0.005,
+n_corres=8192,
+nneg=0.5,
+transform=ColorJitter) + 22_800 @ StaticThings3D(ROOT='/cis/net/io99/data/zshao/dust3r/data/static_3d_dataset_processed',
+mask_bg='rand',
+resolution=[(512,
+384),
+(512,
+336),
+(512,
+288),
+(512,
+256),
+(512,
+160)],
+aug_crop=16,
+aug_monocular=0.005,
+n_corres=8192,
+nneg=0.5,
+transform=ColorJitter) + 45_600 @ ScanNetpp(split='train',
+ROOT='/cis/net/io99/data/zshao/dust3r/data/scannetpp_processed',
+resolution=[(512,
+384),
+(512,
+336),
+(512,
+288),
+(512,
+256),
+(512,
+160)],
+aug_crop=16,
+aug_monocular=0.005,
+n_corres=8192,
+nneg=0.5,
+transform=ColorJitter) + 22_800 @ WildRGBD(split='train',
+ROOT='/cis/net/io99/data/zshao/dust3r/data/wildrgb_processed',
+mask_bg='rand',
+resolution=[(512,
+384),
+(512,
+336),
+(512,
+288),
+(512,
+256),
+(512,
+160)],
+aug_crop=16,
+aug_monocular=0.005,
+n_corres=8192,
+nneg=0.5,
+transform=ColorJitter)",
+test_dataset="Habitat(80_000,
+split='val',
+ROOT='/cis/net/io99/data/zshao/dust3r/data/habitat_processed',
+resolution=(512,384),
+seed=777,
+n_corres=1024) + 1_000 @ BlendedMVS(split='val',
+ROOT='/cis/net/io99/data/zshao/dust3r/data/blendedmvs_processed',
+resolution=(512,384),
+seed=777,
+n_corres=1024) + 1_000 @ MegaDepth(split='val',
+ROOT='/cis/net/io99/data/zshao/dust3r/data/megadepth_dataset_processed',
+resolution=(512,336),
+seed=777,
+n_corres=1024) + 1_000 @ Co3d(split='test',
+ROOT='/cis/net/io99/data/zshao/dust3r/data/co3d_processed',
+resolution=(512,384),
+mask_bg='rand',
+seed=777,
+n_corres=1024)",
+seed=100,
+batch_size=2,
+accum_iter=2,
+epochs=50,
+weight_decay=0.05,
+lr=0.0001,
+blr=0.00015,
+min_lr=1e-06,
+warmup_epochs=8,
+amp=0,
+disable_cudnn_benchmark=True,
+num_workers=8,
+world_size=8,
+local_rank=-1,
+dist_url='env://',
+eval_freq=1,
+save_freq=1,
+keep_freq=5,
+print_freq=10,
+output_dir='checkpoints/MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric',
+rank=0,
+gpu=0,
+distributed=True,
+dist_backend='nccl',
+resume=None)
+[18:24:17.063754] Building train dataset 57_000 @ Habitat(800_000, split='train',ROOT='/cis/net/io99/data/zshao/dust3r/data/habitat_processed', resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], aug_crop=16, aug_monocular=0.005, n_corres=8192, nneg=0.5, transform=ColorJitter) + 68_400 @ BlendedMVS(split='train', ROOT='/cis/net/io99/data/zshao/dust3r/data/blendedmvs_processed', resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], aug_crop = 16, aug_monocular=0.005, n_corres=8192, nneg=0.5, transform=ColorJitter) + 68_400 @ MegaDepth(split='train', ROOT='/cis/net/io99/data/zshao/dust3r/data/megadepth_dataset_processed', resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], aug_crop=16, aug_monocular=0.005, n_corres=8192, nneg=0.5, transform=ColorJitter) + 45_600 @ ARKitScenes(split='train',ROOT='/cis/net/io99/data/zshao/dust3r/data/arkitscenes_processed', resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], aug_crop=16, aug_monocular=0.005, n_corres=8192, nneg=0.5, transform=ColorJitter) + 22_800 @ Co3d(split='train', ROOT='/cis/net/io99/data/zshao/dust3r/data/co3d_processed', mask_bg='rand', resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], aug_crop=16, aug_monocular=0.005, n_corres=8192, nneg=0.5, transform=ColorJitter) + 22_800 @ StaticThings3D(ROOT='/cis/net/io99/data/zshao/dust3r/data/static_3d_dataset_processed', mask_bg='rand', resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], aug_crop=16, aug_monocular=0.005, n_corres=8192, nneg=0.5, transform=ColorJitter) + 45_600 @ ScanNetpp(split='train', ROOT='/cis/net/io99/data/zshao/dust3r/data/scannetpp_processed', resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], aug_crop=16, aug_monocular=0.005, n_corres=8192, nneg=0.5, transform=ColorJitter) + 22_800 @ WildRGBD(split='train', ROOT='/cis/net/io99/data/zshao/dust3r/data/wildrgb_processed', mask_bg='rand', resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], aug_crop=16, aug_monocular=0.005, n_corres=8192, nneg=0.5, transform=ColorJitter)
+[18:24:17.063818] Building Train Data loader for dataset:  57_000 @ Habitat(800_000, split='train',ROOT='/cis/net/io99/data/zshao/dust3r/data/habitat_processed', resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], aug_crop=16, aug_monocular=0.005, n_corres=8192, nneg=0.5, transform=ColorJitter) + 68_400 @ BlendedMVS(split='train', ROOT='/cis/net/io99/data/zshao/dust3r/data/blendedmvs_processed', resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], aug_crop = 16, aug_monocular=0.005, n_corres=8192, nneg=0.5, transform=ColorJitter) + 68_400 @ MegaDepth(split='train', ROOT='/cis/net/io99/data/zshao/dust3r/data/megadepth_dataset_processed', resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], aug_crop=16, aug_monocular=0.005, n_corres=8192, nneg=0.5, transform=ColorJitter) + 45_600 @ ARKitScenes(split='train',ROOT='/cis/net/io99/data/zshao/dust3r/data/arkitscenes_processed', resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], aug_crop=16, aug_monocular=0.005, n_corres=8192, nneg=0.5, transform=ColorJitter) + 22_800 @ Co3d(split='train', ROOT='/cis/net/io99/data/zshao/dust3r/data/co3d_processed', mask_bg='rand', resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], aug_crop=16, aug_monocular=0.005, n_corres=8192, nneg=0.5, transform=ColorJitter) + 22_800 @ StaticThings3D(ROOT='/cis/net/io99/data/zshao/dust3r/data/static_3d_dataset_processed', mask_bg='rand', resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], aug_crop=16, aug_monocular=0.005, n_corres=8192, nneg=0.5, transform=ColorJitter) + 45_600 @ ScanNetpp(split='train', ROOT='/cis/net/io99/data/zshao/dust3r/data/scannetpp_processed', resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], aug_crop=16, aug_monocular=0.005, n_corres=8192, nneg=0.5, transform=ColorJitter) + 22_800 @ WildRGBD(split='train', ROOT='/cis/net/io99/data/zshao/dust3r/data/wildrgb_processed', mask_bg='rand', resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], aug_crop=16, aug_monocular=0.005, n_corres=8192, nneg=0.5, transform=ColorJitter)
+[18:24:49.832743] Train dataset length:  22087
+[18:24:49.832800] Building test dataset Habitat(80_000, split='val', ROOT='/cis/net/io99/data/zshao/dust3r/data/habitat_processed', resolution=(512,384), seed=777, n_corres=1024) + 1_000 @ BlendedMVS(split='val', ROOT='/cis/net/io99/data/zshao/dust3r/data/blendedmvs_processed', resolution=(512,384), seed=777, n_corres=1024) + 1_000 @ MegaDepth(split='val', ROOT='/cis/net/io99/data/zshao/dust3r/data/megadepth_dataset_processed', resolution=(512,336), seed=777, n_corres=1024) + 1_000 @ Co3d(split='test', ROOT='/cis/net/io99/data/zshao/dust3r/data/co3d_processed', resolution=(512,384), mask_bg='rand', seed=777, n_corres=1024)
+[18:24:49.832821] Building Test Data loader for dataset:  Habitat(80_000, split='val', ROOT='/cis/net/io99/data/zshao/dust3r/data/habitat_processed', resolution=(512,384), seed=777, n_corres=1024) 
+[18:24:49.933606] Test dataset length:  5000
+[18:24:49.933683] Building Test Data loader for dataset:   1_000 @ BlendedMVS(split='val', ROOT='/cis/net/io99/data/zshao/dust3r/data/blendedmvs_processed', resolution=(512,384), seed=777, n_corres=1024) 
+[18:24:50.661615] Test dataset length:  63
+[18:24:50.661702] Building Test Data loader for dataset:   1_000 @ MegaDepth(split='val', ROOT='/cis/net/io99/data/zshao/dust3r/data/megadepth_dataset_processed', resolution=(512,336), seed=777, n_corres=1024) 
+[18:24:51.499207] Test dataset length:  63
+[18:24:51.499287] Building Test Data loader for dataset:   1_000 @ Co3d(split='test', ROOT='/cis/net/io99/data/zshao/dust3r/data/co3d_processed', resolution=(512,384), mask_bg='rand', seed=777, n_corres=1024)
+[18:24:51.576275] Test dataset length:  63
+[18:24:51.576332] Loading model: AsymmetricMASt3R(pos_embed='RoPE100', patch_embed_cls='ManyAR_PatchEmbed', img_size=(512, 512), head_type='catmlp+dpt', output_mode='pts3d+desc24', depth_mode=('exp', -inf, inf), conf_mode=('exp', 1, inf), enc_embed_dim=1024, enc_depth=24, enc_num_heads=16, dec_embed_dim=768, dec_depth=12, dec_num_heads=12, two_confs=True, desc_conf_mode=('exp', 0, inf))
+[18:24:56.429305] >> Creating train criterion = ConfLoss(Regr3D(L21, norm_mode='?avg_dis'), alpha=0.2) + 0.075*ConfMatchingLoss(MatchingLoss(InfoNCE(mode='proper', temperature=0.05), negatives_padding=0, blocksize=8192), alpha=10.0, confmode='mean')
+[18:24:56.430233] >> Creating test criterion = Regr3D(L21, norm_mode='?avg_dis', gt_scale=True, sky_loss_value=0) + -1.*MatchingLoss(APLoss(nq='torch', fp=torch.float16), negatives_padding=12288)
+/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/dust3r/training.py:140: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  ckpt = torch.load(args.pretrained, map_location=device)
+/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/dust3r/training.py:140: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  ckpt = torch.load(args.pretrained, map_location=device)
+/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/dust3r/training.py:140: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  ckpt = torch.load(args.pretrained, map_location=device)
+/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/dust3r/training.py:140: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  ckpt = torch.load(args.pretrained, map_location=device)
+/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/dust3r/training.py:140: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  ckpt = torch.load(args.pretrained, map_location=device)
+/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/dust3r/training.py:140: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  ckpt = torch.load(args.pretrained, map_location=device)
+/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/dust3r/training.py:140: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  ckpt = torch.load(args.pretrained, map_location=device)
+[18:24:57.293519] Model = AsymmetricMASt3R(
+  (patch_embed): ManyAR_PatchEmbed(
+    (proj): Conv2d(3, 1024, kernel_size=(16, 16), stride=(16, 16))
+    (norm): Identity()
+  )
+  (mask_generator): RandomMask()
+  (rope): cuRoPE2D()
+  (enc_blocks): ModuleList(
+    (0-23): 24 x Block(
+      (norm1): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+      (attn): Attention(
+        (qkv): Linear(in_features=1024, out_features=3072, bias=True)
+        (attn_drop): Dropout(p=0.0, inplace=False)
+        (proj): Linear(in_features=1024, out_features=1024, bias=True)
+        (proj_drop): Dropout(p=0.0, inplace=False)
+        (rope): cuRoPE2D()
+      )
+      (drop_path): Identity()
+      (norm2): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+      (mlp): Mlp(
+        (fc1): Linear(in_features=1024, out_features=4096, bias=True)
+        (act): GELU(approximate='none')
+        (drop1): Dropout(p=0.0, inplace=False)
+        (fc2): Linear(in_features=4096, out_features=1024, bias=True)
+        (drop2): Dropout(p=0.0, inplace=False)
+      )
+    )
+  )
+  (enc_norm): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+  (decoder_embed): Linear(in_features=1024, out_features=768, bias=True)
+  (dec_blocks): ModuleList(
+    (0-11): 12 x DecoderBlock(
+      (norm1): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+      (attn): Attention(
+        (qkv): Linear(in_features=768, out_features=2304, bias=True)
+        (attn_drop): Dropout(p=0.0, inplace=False)
+        (proj): Linear(in_features=768, out_features=768, bias=True)
+        (proj_drop): Dropout(p=0.0, inplace=False)
+        (rope): cuRoPE2D()
+      )
+      (cross_attn): CrossAttention(
+        (projq): Linear(in_features=768, out_features=768, bias=True)
+        (projk): Linear(in_features=768, out_features=768, bias=True)
+        (projv): Linear(in_features=768, out_features=768, bias=True)
+        (attn_drop): Dropout(p=0.0, inplace=False)
+        (proj): Linear(in_features=768, out_features=768, bias=True)
+        (proj_drop): Dropout(p=0.0, inplace=False)
+        (rope): cuRoPE2D()
+      )
+      (drop_path): Identity()
+      (norm2): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+      (norm3): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+      (mlp): Mlp(
+        (fc1): Linear(in_features=768, out_features=3072, bias=True)
+        (act): GELU(approximate='none')
+        (drop1): Dropout(p=0.0, inplace=False)
+        (fc2): Linear(in_features=3072, out_features=768, bias=True)
+        (drop2): Dropout(p=0.0, inplace=False)
+      )
+      (norm_y): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+    )
+  )
+  (dec_norm): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+  (dec_blocks2): ModuleList(
+    (0-11): 12 x DecoderBlock(
+      (norm1): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+      (attn): Attention(
+        (qkv): Linear(in_features=768, out_features=2304, bias=True)
+        (attn_drop): Dropout(p=0.0, inplace=False)
+        (proj): Linear(in_features=768, out_features=768, bias=True)
+        (proj_drop): Dropout(p=0.0, inplace=False)
+        (rope): cuRoPE2D()
+      )
+      (cross_attn): CrossAttention(
+        (projq): Linear(in_features=768, out_features=768, bias=True)
+        (projk): Linear(in_features=768, out_features=768, bias=True)
+        (projv): Linear(in_features=768, out_features=768, bias=True)
+        (attn_drop): Dropout(p=0.0, inplace=False)
+        (proj): Linear(in_features=768, out_features=768, bias=True)
+        (proj_drop): Dropout(p=0.0, inplace=False)
+        (rope): cuRoPE2D()
+      )
+      (drop_path): Identity()
+      (norm2): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+      (norm3): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+      (mlp): Mlp(
+        (fc1): Linear(in_features=768, out_features=3072, bias=True)
+        (act): GELU(approximate='none')
+        (drop1): Dropout(p=0.0, inplace=False)
+        (fc2): Linear(in_features=3072, out_features=768, bias=True)
+        (drop2): Dropout(p=0.0, inplace=False)
+      )
+      (norm_y): LayerNorm((768,), eps=1e-06, elementwise_affine=True)
+    )
+  )
+  (downstream_head1): Cat_MLP_LocalFeatures_DPT_Pts3d(
+    (dpt): DPTOutputAdapter_fix(
+      (scratch): Module(
+        (layer1_rn): Conv2d(96, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (layer2_rn): Conv2d(192, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (layer3_rn): Conv2d(384, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (layer4_rn): Conv2d(768, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (layer_rn): ModuleList(
+          (0): Conv2d(96, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+          (1): Conv2d(192, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+          (2): Conv2d(384, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+          (3): Conv2d(768, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        )
+        (refinenet1): FeatureFusionBlock_custom(
+          (out_conv): Conv2d(256, 256, kernel_size=(1, 1), stride=(1, 1))
+          (resConfUnit1): ResidualConvUnit_custom(
+            (conv1): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            (activation): ReLU()
+            (skip_add): FloatFunctional(
+              (activation_post_process): Identity()
+            )
+          )
+          (resConfUnit2): ResidualConvUnit_custom(
+            (conv1): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            (activation): ReLU()
+            (skip_add): FloatFunctional(
+              (activation_post_process): Identity()
+            )
+          )
+          (skip_add): FloatFunctional(
+            (activation_post_process): Identity()
+          )
+        )
+        (refinenet2): FeatureFusionBlock_custom(
+          (out_conv): Conv2d(256, 256, kernel_size=(1, 1), stride=(1, 1))
+          (resConfUnit1): ResidualConvUnit_custom(
+            (conv1): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            (activation): ReLU()
+            (skip_add): FloatFunctional(
+              (activation_post_process): Identity()
+            )
+          )
+          (resConfUnit2): ResidualConvUnit_custom(
+            (conv1): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            (activation): ReLU()
+            (skip_add): FloatFunctional(
+              (activation_post_process): Identity()
+            )
+          )
+          (skip_add): FloatFunctional(
+            (activation_post_process): Identity()
+          )
+        )
+        (refinenet3): FeatureFusionBlock_custom(
+          (out_conv): Conv2d(256, 256, kernel_size=(1, 1), stride=(1, 1))
+          (resConfUnit1): ResidualConvUnit_custom(
+            (conv1): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            (activation): ReLU()
+            (skip_add): FloatFunctional(
+              (activation_post_process): Identity()
+            )
+          )
+          (resConfUnit2): ResidualConvUnit_custom(
+            (conv1): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            (activation): ReLU()
+            (skip_add): FloatFunctional(
+              (activation_post_process): Identity()
+            )
+          )
+          (skip_add): FloatFunctional(
+            (activation_post_process): Identity()
+          )
+        )
+        (refinenet4): FeatureFusionBlock_custom(
+          (out_conv): Conv2d(256, 256, kernel_size=(1, 1), stride=(1, 1))
+          (resConfUnit1): ResidualConvUnit_custom(
+            (conv1): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            (activation): ReLU()
+            (skip_add): FloatFunctional(
+              (activation_post_process): Identity()
+            )
+          )
+          (resConfUnit2): ResidualConvUnit_custom(
+            (conv1): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            (activation): ReLU()
+            (skip_add): FloatFunctional(
+              (activation_post_process): Identity()
+            )
+          )
+          (skip_add): FloatFunctional(
+            (activation_post_process): Identity()
+          )
+        )
+      )
+      (head): Sequential(
+        (0): Conv2d(256, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        (1): Interpolate()
+        (2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        (3): ReLU(inplace=True)
+        (4): Conv2d(128, 4, kernel_size=(1, 1), stride=(1, 1))
+      )
+      (act_postprocess): ModuleList(
+        (0): Sequential(
+          (0): Conv2d(1024, 96, kernel_size=(1, 1), stride=(1, 1))
+          (1): ConvTranspose2d(96, 96, kernel_size=(4, 4), stride=(4, 4))
+        )
+        (1): Sequential(
+          (0): Conv2d(768, 192, kernel_size=(1, 1), stride=(1, 1))
+          (1): ConvTranspose2d(192, 192, kernel_size=(2, 2), stride=(2, 2))
+        )
+        (2): Sequential(
+          (0): Conv2d(768, 384, kernel_size=(1, 1), stride=(1, 1))
+        )
+        (3): Sequential(
+          (0): Conv2d(768, 768, kernel_size=(1, 1), stride=(1, 1))
+          (1): Conv2d(768, 768, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1))
+        )
+      )
+    )
+    (head_local_features): Mlp(
+      (fc1): Linear(in_features=1792, out_features=7168, bias=True)
+      (act): GELU(approximate='none')
+      (drop1): Dropout(p=0.0, inplace=False)
+      (fc2): Linear(in_features=7168, out_features=6400, bias=True)
+      (drop2): Dropout(p=0.0, inplace=False)
+    )
+  )
+  (downstream_head2): Cat_MLP_LocalFeatures_DPT_Pts3d(
+    (dpt): DPTOutputAdapter_fix(
+      (scratch): Module(
+        (layer1_rn): Conv2d(96, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (layer2_rn): Conv2d(192, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (layer3_rn): Conv2d(384, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (layer4_rn): Conv2d(768, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (layer_rn): ModuleList(
+          (0): Conv2d(96, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+          (1): Conv2d(192, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+          (2): Conv2d(384, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+          (3): Conv2d(768, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        )
+        (refinenet1): FeatureFusionBlock_custom(
+          (out_conv): Conv2d(256, 256, kernel_size=(1, 1), stride=(1, 1))
+          (resConfUnit1): ResidualConvUnit_custom(
+            (conv1): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            (activation): ReLU()
+            (skip_add): FloatFunctional(
+              (activation_post_process): Identity()
+            )
+          )
+          (resConfUnit2): ResidualConvUnit_custom(
+            (conv1): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            (activation): ReLU()
+            (skip_add): FloatFunctional(
+              (activation_post_process): Identity()
+            )
+          )
+          (skip_add): FloatFunctional(
+            (activation_post_process): Identity()
+          )
+        )
+        (refinenet2): FeatureFusionBlock_custom(
+          (out_conv): Conv2d(256, 256, kernel_size=(1, 1), stride=(1, 1))
+          (resConfUnit1): ResidualConvUnit_custom(
+            (conv1): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            (activation): ReLU()
+            (skip_add): FloatFunctional(
+              (activation_post_process): Identity()
+            )
+          )
+          (resConfUnit2): ResidualConvUnit_custom(
+            (conv1): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            (activation): ReLU()
+            (skip_add): FloatFunctional(
+              (activation_post_process): Identity()
+            )
+          )
+          (skip_add): FloatFunctional(
+            (activation_post_process): Identity()
+          )
+        )
+        (refinenet3): FeatureFusionBlock_custom(
+          (out_conv): Conv2d(256, 256, kernel_size=(1, 1), stride=(1, 1))
+          (resConfUnit1): ResidualConvUnit_custom(
+            (conv1): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            (activation): ReLU()
+            (skip_add): FloatFunctional(
+              (activation_post_process): Identity()
+            )
+          )
+          (resConfUnit2): ResidualConvUnit_custom(
+            (conv1): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            (activation): ReLU()
+            (skip_add): FloatFunctional(
+              (activation_post_process): Identity()
+            )
+          )
+          (skip_add): FloatFunctional(
+            (activation_post_process): Identity()
+          )
+        )
+        (refinenet4): FeatureFusionBlock_custom(
+          (out_conv): Conv2d(256, 256, kernel_size=(1, 1), stride=(1, 1))
+          (resConfUnit1): ResidualConvUnit_custom(
+            (conv1): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            (activation): ReLU()
+            (skip_add): FloatFunctional(
+              (activation_post_process): Identity()
+            )
+          )
+          (resConfUnit2): ResidualConvUnit_custom(
+            (conv1): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            (activation): ReLU()
+            (skip_add): FloatFunctional(
+              (activation_post_process): Identity()
+            )
+          )
+          (skip_add): FloatFunctional(
+            (activation_post_process): Identity()
+          )
+        )
+      )
+      (head): Sequential(
+        (0): Conv2d(256, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        (1): Interpolate()
+        (2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        (3): ReLU(inplace=True)
+        (4): Conv2d(128, 4, kernel_size=(1, 1), stride=(1, 1))
+      )
+      (act_postprocess): ModuleList(
+        (0): Sequential(
+          (0): Conv2d(1024, 96, kernel_size=(1, 1), stride=(1, 1))
+          (1): ConvTranspose2d(96, 96, kernel_size=(4, 4), stride=(4, 4))
+        )
+        (1): Sequential(
+          (0): Conv2d(768, 192, kernel_size=(1, 1), stride=(1, 1))
+          (1): ConvTranspose2d(192, 192, kernel_size=(2, 2), stride=(2, 2))
+        )
+        (2): Sequential(
+          (0): Conv2d(768, 384, kernel_size=(1, 1), stride=(1, 1))
+        )
+        (3): Sequential(
+          (0): Conv2d(768, 768, kernel_size=(1, 1), stride=(1, 1))
+          (1): Conv2d(768, 768, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1))
+        )
+      )
+    )
+    (head_local_features): Mlp(
+      (fc1): Linear(in_features=1792, out_features=7168, bias=True)
+      (act): GELU(approximate='none')
+      (drop1): Dropout(p=0.0, inplace=False)
+      (fc2): Linear(in_features=7168, out_features=6400, bias=True)
+      (drop2): Dropout(p=0.0, inplace=False)
+    )
+  )
+)
+[18:24:57.293584] Loading pretrained:  checkpoints/DUSt3R_ViTLarge_BaseDecoder_512_dpt.pth
+/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/dust3r/training.py:140: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  ckpt = torch.load(args.pretrained, map_location=device)
+[18:24:57.871802] _IncompatibleKeys(missing_keys=['downstream_head1.head_local_features.fc1.weight', 'downstream_head1.head_local_features.fc1.bias', 'downstream_head1.head_local_features.fc2.weight', 'downstream_head1.head_local_features.fc2.bias', 'downstream_head2.head_local_features.fc1.weight', 'downstream_head2.head_local_features.fc1.bias', 'downstream_head2.head_local_features.fc2.weight', 'downstream_head2.head_local_features.fc2.bias'], unexpected_keys=[])
+[18:24:57.872633] base lr: 8.00e-04
+[18:24:57.872645] actual lr: 1.00e-04
+[18:24:57.872655] accumulate grad iterations: 2
+[18:24:57.872664] effective batch size: 32
+/cis/home/zshao14/miniconda3/envs/mast3r/lib/python3.11/site-packages/torch/nn/parallel/distributed.py:2351: UserWarning: You passed find_unused_parameters=true to DistributedDataParallel, `_set_static_graph` will detect unused parameters automatically, so you do not need to set find_unused_parameters=true, just be sure these unused parameters will not change during training loop while calling `_set_static_graph`.
+  warnings.warn(
+/cis/home/zshao14/miniconda3/envs/mast3r/lib/python3.11/site-packages/torch/nn/parallel/distributed.py:2351: UserWarning: You passed find_unused_parameters=true to DistributedDataParallel, `_set_static_graph` will detect unused parameters automatically, so you do not need to set find_unused_parameters=true, just be sure these unused parameters will not change during training loop while calling `_set_static_graph`.
+  warnings.warn(
+/cis/home/zshao14/miniconda3/envs/mast3r/lib/python3.11/site-packages/torch/nn/parallel/distributed.py:2351: UserWarning: You passed find_unused_parameters=true to DistributedDataParallel, `_set_static_graph` will detect unused parameters automatically, so you do not need to set find_unused_parameters=true, just be sure these unused parameters will not change during training loop while calling `_set_static_graph`.
+  warnings.warn(
+/cis/home/zshao14/miniconda3/envs/mast3r/lib/python3.11/site-packages/torch/nn/parallel/distributed.py:2351: UserWarning: You passed find_unused_parameters=true to DistributedDataParallel, `_set_static_graph` will detect unused parameters automatically, so you do not need to set find_unused_parameters=true, just be sure these unused parameters will not change during training loop while calling `_set_static_graph`.
+  warnings.warn(
+[18:24:57.905362] /cis/home/zshao14/miniconda3/envs/mast3r/lib/python3.11/site-packages/torch/nn/parallel/distributed.py:2351: UserWarning: You passed find_unused_parameters=true to DistributedDataParallel, `_set_static_graph` will detect unused parameters automatically, so you do not need to set find_unused_parameters=true, just be sure these unused parameters will not change during training loop while calling `_set_static_graph`.
+  warnings.warn(
+/cis/home/zshao14/miniconda3/envs/mast3r/lib/python3.11/site-packages/torch/nn/parallel/distributed.py:2351: UserWarning: You passed find_unused_parameters=true to DistributedDataParallel, `_set_static_graph` will detect unused parameters automatically, so you do not need to set find_unused_parameters=true, just be sure these unused parameters will not change during training loop while calling `_set_static_graph`.
+  warnings.warn(
+Param groups = {
+  "decay": {
+    "weight_decay": 0.05,
+    "params": [
+      "mask_token",
+      "patch_embed.proj.weight",
+      "enc_blocks.0.attn.qkv.weight",
+      "enc_blocks.0.attn.proj.weight",
+      "enc_blocks.0.mlp.fc1.weight",
+      "enc_blocks.0.mlp.fc2.weight",
+      "enc_blocks.1.attn.qkv.weight",
+      "enc_blocks.1.attn.proj.weight",
+      "enc_blocks.1.mlp.fc1.weight",
+      "enc_blocks.1.mlp.fc2.weight",
+      "enc_blocks.2.attn.qkv.weight",
+      "enc_blocks.2.attn.proj.weight",
+      "enc_blocks.2.mlp.fc1.weight",
+      "enc_blocks.2.mlp.fc2.weight",
+      "enc_blocks.3.attn.qkv.weight",
+      "enc_blocks.3.attn.proj.weight",
+      "enc_blocks.3.mlp.fc1.weight",
+      "enc_blocks.3.mlp.fc2.weight",
+      "enc_blocks.4.attn.qkv.weight",
+      "enc_blocks.4.attn.proj.weight",
+      "enc_blocks.4.mlp.fc1.weight",
+      "enc_blocks.4.mlp.fc2.weight",
+      "enc_blocks.5.attn.qkv.weight",
+      "enc_blocks.5.attn.proj.weight",
+      "enc_blocks.5.mlp.fc1.weight",
+      "enc_blocks.5.mlp.fc2.weight",
+      "enc_blocks.6.attn.qkv.weight",
+      "enc_blocks.6.attn.proj.weight",
+      "enc_blocks.6.mlp.fc1.weight",
+      "enc_blocks.6.mlp.fc2.weight",
+      "enc_blocks.7.attn.qkv.weight",
+      "enc_blocks.7.attn.proj.weight",
+      "enc_blocks.7.mlp.fc1.weight",
+      "enc_blocks.7.mlp.fc2.weight",
+      "enc_blocks.8.attn.qkv.weight",
+      "enc_blocks.8.attn.proj.weight",
+      "enc_blocks.8.mlp.fc1.weight",
+      "enc_blocks.8.mlp.fc2.weight",
+      "enc_blocks.9.attn.qkv.weight",
+      "enc_blocks.9.attn.proj.weight",
+      "enc_blocks.9.mlp.fc1.weight",
+      "enc_blocks.9.mlp.fc2.weight",
+      "enc_blocks.10.attn.qkv.weight",
+      "enc_blocks.10.attn.proj.weight",
+      "enc_blocks.10.mlp.fc1.weight",
+      "enc_blocks.10.mlp.fc2.weight",
+      "enc_blocks.11.attn.qkv.weight",
+      "enc_blocks.11.attn.proj.weight",
+      "enc_blocks.11.mlp.fc1.weight",
+      "enc_blocks.11.mlp.fc2.weight",
+      "enc_blocks.12.attn.qkv.weight",
+      "enc_blocks.12.attn.proj.weight",
+      "enc_blocks.12.mlp.fc1.weight",
+      "enc_blocks.12.mlp.fc2.weight",
+      "enc_blocks.13.attn.qkv.weight",
+      "enc_blocks.13.attn.proj.weight",
+      "enc_blocks.13.mlp.fc1.weight",
+      "enc_blocks.13.mlp.fc2.weight",
+      "enc_blocks.14.attn.qkv.weight",
+      "enc_blocks.14.attn.proj.weight",
+      "enc_blocks.14.mlp.fc1.weight",
+      "enc_blocks.14.mlp.fc2.weight",
+      "enc_blocks.15.attn.qkv.weight",
+      "enc_blocks.15.attn.proj.weight",
+      "enc_blocks.15.mlp.fc1.weight",
+      "enc_blocks.15.mlp.fc2.weight",
+      "enc_blocks.16.attn.qkv.weight",
+      "enc_blocks.16.attn.proj.weight",
+      "enc_blocks.16.mlp.fc1.weight",
+      "enc_blocks.16.mlp.fc2.weight",
+      "enc_blocks.17.attn.qkv.weight",
+      "enc_blocks.17.attn.proj.weight",
+      "enc_blocks.17.mlp.fc1.weight",
+      "enc_blocks.17.mlp.fc2.weight",
+      "enc_blocks.18.attn.qkv.weight",
+      "enc_blocks.18.attn.proj.weight",
+      "enc_blocks.18.mlp.fc1.weight",
+      "enc_blocks.18.mlp.fc2.weight",
+      "enc_blocks.19.attn.qkv.weight",
+      "enc_blocks.19.attn.proj.weight",
+      "enc_blocks.19.mlp.fc1.weight",
+      "enc_blocks.19.mlp.fc2.weight",
+      "enc_blocks.20.attn.qkv.weight",
+      "enc_blocks.20.attn.proj.weight",
+      "enc_blocks.20.mlp.fc1.weight",
+      "enc_blocks.20.mlp.fc2.weight",
+      "enc_blocks.21.attn.qkv.weight",
+      "enc_blocks.21.attn.proj.weight",
+      "enc_blocks.21.mlp.fc1.weight",
+      "enc_blocks.21.mlp.fc2.weight",
+      "enc_blocks.22.attn.qkv.weight",
+      "enc_blocks.22.attn.proj.weight",
+      "enc_blocks.22.mlp.fc1.weight",
+      "enc_blocks.22.mlp.fc2.weight",
+      "enc_blocks.23.attn.qkv.weight",
+      "enc_blocks.23.attn.proj.weight",
+      "enc_blocks.23.mlp.fc1.weight",
+      "enc_blocks.23.mlp.fc2.weight",
+      "decoder_embed.weight",
+      "dec_blocks.0.attn.qkv.weight",
+      "dec_blocks.0.attn.proj.weight",
+      "dec_blocks.0.cross_attn.projq.weight",
+      "dec_blocks.0.cross_attn.projk.weight",
+      "dec_blocks.0.cross_attn.projv.weight",
+      "dec_blocks.0.cross_attn.proj.weight",
+      "dec_blocks.0.mlp.fc1.weight",
+      "dec_blocks.0.mlp.fc2.weight",
+      "dec_blocks.1.attn.qkv.weight",
+      "dec_blocks.1.attn.proj.weight",
+      "dec_blocks.1.cross_attn.projq.weight",
+      "dec_blocks.1.cross_attn.projk.weight",
+      "dec_blocks.1.cross_attn.projv.weight",
+      "dec_blocks.1.cross_attn.proj.weight",
+      "dec_blocks.1.mlp.fc1.weight",
+      "dec_blocks.1.mlp.fc2.weight",
+      "dec_blocks.2.attn.qkv.weight",
+      "dec_blocks.2.attn.proj.weight",
+      "dec_blocks.2.cross_attn.projq.weight",
+      "dec_blocks.2.cross_attn.projk.weight",
+      "dec_blocks.2.cross_attn.projv.weight",
+      "dec_blocks.2.cross_attn.proj.weight",
+      "dec_blocks.2.mlp.fc1.weight",
+      "dec_blocks.2.mlp.fc2.weight",
+      "dec_blocks.3.attn.qkv.weight",
+      "dec_blocks.3.attn.proj.weight",
+      "dec_blocks.3.cross_attn.projq.weight",
+      "dec_blocks.3.cross_attn.projk.weight",
+      "dec_blocks.3.cross_attn.projv.weight",
+      "dec_blocks.3.cross_attn.proj.weight",
+      "dec_blocks.3.mlp.fc1.weight",
+      "dec_blocks.3.mlp.fc2.weight",
+      "dec_blocks.4.attn.qkv.weight",
+      "dec_blocks.4.attn.proj.weight",
+      "dec_blocks.4.cross_attn.projq.weight",
+      "dec_blocks.4.cross_attn.projk.weight",
+      "dec_blocks.4.cross_attn.projv.weight",
+      "dec_blocks.4.cross_attn.proj.weight",
+      "dec_blocks.4.mlp.fc1.weight",
+      "dec_blocks.4.mlp.fc2.weight",
+      "dec_blocks.5.attn.qkv.weight",
+      "dec_blocks.5.attn.proj.weight",
+      "dec_blocks.5.cross_attn.projq.weight",
+      "dec_blocks.5.cross_attn.projk.weight",
+      "dec_blocks.5.cross_attn.projv.weight",
+      "dec_blocks.5.cross_attn.proj.weight",
+      "dec_blocks.5.mlp.fc1.weight",
+      "dec_blocks.5.mlp.fc2.weight",
+      "dec_blocks.6.attn.qkv.weight",
+      "dec_blocks.6.attn.proj.weight",
+      "dec_blocks.6.cross_attn.projq.weight",
+      "dec_blocks.6.cross_attn.projk.weight",
+      "dec_blocks.6.cross_attn.projv.weight",
+      "dec_blocks.6.cross_attn.proj.weight",
+      "dec_blocks.6.mlp.fc1.weight",
+      "dec_blocks.6.mlp.fc2.weight",
+      "dec_blocks.7.attn.qkv.weight",
+      "dec_blocks.7.attn.proj.weight",
+      "dec_blocks.7.cross_attn.projq.weight",
+      "dec_blocks.7.cross_attn.projk.weight",
+      "dec_blocks.7.cross_attn.projv.weight",
+      "dec_blocks.7.cross_attn.proj.weight",
+      "dec_blocks.7.mlp.fc1.weight",
+      "dec_blocks.7.mlp.fc2.weight",
+      "dec_blocks.8.attn.qkv.weight",
+      "dec_blocks.8.attn.proj.weight",
+      "dec_blocks.8.cross_attn.projq.weight",
+      "dec_blocks.8.cross_attn.projk.weight",
+      "dec_blocks.8.cross_attn.projv.weight",
+      "dec_blocks.8.cross_attn.proj.weight",
+      "dec_blocks.8.mlp.fc1.weight",
+      "dec_blocks.8.mlp.fc2.weight",
+      "dec_blocks.9.attn.qkv.weight",
+      "dec_blocks.9.attn.proj.weight",
+      "dec_blocks.9.cross_attn.projq.weight",
+      "dec_blocks.9.cross_attn.projk.weight",
+      "dec_blocks.9.cross_attn.projv.weight",
+      "dec_blocks.9.cross_attn.proj.weight",
+      "dec_blocks.9.mlp.fc1.weight",
+      "dec_blocks.9.mlp.fc2.weight",
+      "dec_blocks.10.attn.qkv.weight",
+      "dec_blocks.10.attn.proj.weight",
+      "dec_blocks.10.cross_attn.projq.weight",
+      "dec_blocks.10.cross_attn.projk.weight",
+      "dec_blocks.10.cross_attn.projv.weight",
+      "dec_blocks.10.cross_attn.proj.weight",
+      "dec_blocks.10.mlp.fc1.weight",
+      "dec_blocks.10.mlp.fc2.weight",
+      "dec_blocks.11.attn.qkv.weight",
+      "dec_blocks.11.attn.proj.weight",
+      "dec_blocks.11.cross_attn.projq.weight",
+      "dec_blocks.11.cross_attn.projk.weight",
+      "dec_blocks.11.cross_attn.projv.weight",
+      "dec_blocks.11.cross_attn.proj.weight",
+      "dec_blocks.11.mlp.fc1.weight",
+      "dec_blocks.11.mlp.fc2.weight",
+      "dec_blocks2.0.attn.qkv.weight",
+      "dec_blocks2.0.attn.proj.weight",
+      "dec_blocks2.0.cross_attn.projq.weight",
+      "dec_blocks2.0.cross_attn.projk.weight",
+      "dec_blocks2.0.cross_attn.projv.weight",
+      "dec_blocks2.0.cross_attn.proj.weight",
+      "dec_blocks2.0.mlp.fc1.weight",
+      "dec_blocks2.0.mlp.fc2.weight",
+      "dec_blocks2.1.attn.qkv.weight",
+      "dec_blocks2.1.attn.proj.weight",
+      "dec_blocks2.1.cross_attn.projq.weight",
+      "dec_blocks2.1.cross_attn.projk.weight",
+      "dec_blocks2.1.cross_attn.projv.weight",
+      "dec_blocks2.1.cross_attn.proj.weight",
+      "dec_blocks2.1.mlp.fc1.weight",
+      "dec_blocks2.1.mlp.fc2.weight",
+      "dec_blocks2.2.attn.qkv.weight",
+      "dec_blocks2.2.attn.proj.weight",
+      "dec_blocks2.2.cross_attn.projq.weight",
+      "dec_blocks2.2.cross_attn.projk.weight",
+      "dec_blocks2.2.cross_attn.projv.weight",
+      "dec_blocks2.2.cross_attn.proj.weight",
+      "dec_blocks2.2.mlp.fc1.weight",
+      "dec_blocks2.2.mlp.fc2.weight",
+      "dec_blocks2.3.attn.qkv.weight",
+      "dec_blocks2.3.attn.proj.weight",
+      "dec_blocks2.3.cross_attn.projq.weight",
+      "dec_blocks2.3.cross_attn.projk.weight",
+      "dec_blocks2.3.cross_attn.projv.weight",
+      "dec_blocks2.3.cross_attn.proj.weight",
+      "dec_blocks2.3.mlp.fc1.weight",
+      "dec_blocks2.3.mlp.fc2.weight",
+      "dec_blocks2.4.attn.qkv.weight",
+      "dec_blocks2.4.attn.proj.weight",
+      "dec_blocks2.4.cross_attn.projq.weight",
+      "dec_blocks2.4.cross_attn.projk.weight",
+      "dec_blocks2.4.cross_attn.projv.weight",
+      "dec_blocks2.4.cross_attn.proj.weight",
+      "dec_blocks2.4.mlp.fc1.weight",
+      "dec_blocks2.4.mlp.fc2.weight",
+      "dec_blocks2.5.attn.qkv.weight",
+      "dec_blocks2.5.attn.proj.weight",
+      "dec_blocks2.5.cross_attn.projq.weight",
+      "dec_blocks2.5.cross_attn.projk.weight",
+      "dec_blocks2.5.cross_attn.projv.weight",
+      "dec_blocks2.5.cross_attn.proj.weight",
+      "dec_blocks2.5.mlp.fc1.weight",
+      "dec_blocks2.5.mlp.fc2.weight",
+      "dec_blocks2.6.attn.qkv.weight",
+      "dec_blocks2.6.attn.proj.weight",
+      "dec_blocks2.6.cross_attn.projq.weight",
+      "dec_blocks2.6.cross_attn.projk.weight",
+      "dec_blocks2.6.cross_attn.projv.weight",
+      "dec_blocks2.6.cross_attn.proj.weight",
+      "dec_blocks2.6.mlp.fc1.weight",
+      "dec_blocks2.6.mlp.fc2.weight",
+      "dec_blocks2.7.attn.qkv.weight",
+      "dec_blocks2.7.attn.proj.weight",
+      "dec_blocks2.7.cross_attn.projq.weight",
+      "dec_blocks2.7.cross_attn.projk.weight",
+      "dec_blocks2.7.cross_attn.projv.weight",
+      "dec_blocks2.7.cross_attn.proj.weight",
+      "dec_blocks2.7.mlp.fc1.weight",
+      "dec_blocks2.7.mlp.fc2.weight",
+      "dec_blocks2.8.attn.qkv.weight",
+      "dec_blocks2.8.attn.proj.weight",
+      "dec_blocks2.8.cross_attn.projq.weight",
+      "dec_blocks2.8.cross_attn.projk.weight",
+      "dec_blocks2.8.cross_attn.projv.weight",
+      "dec_blocks2.8.cross_attn.proj.weight",
+      "dec_blocks2.8.mlp.fc1.weight",
+      "dec_blocks2.8.mlp.fc2.weight",
+      "dec_blocks2.9.attn.qkv.weight",
+      "dec_blocks2.9.attn.proj.weight",
+      "dec_blocks2.9.cross_attn.projq.weight",
+      "dec_blocks2.9.cross_attn.projk.weight",
+      "dec_blocks2.9.cross_attn.projv.weight",
+      "dec_blocks2.9.cross_attn.proj.weight",
+      "dec_blocks2.9.mlp.fc1.weight",
+      "dec_blocks2.9.mlp.fc2.weight",
+      "dec_blocks2.10.attn.qkv.weight",
+      "dec_blocks2.10.attn.proj.weight",
+      "dec_blocks2.10.cross_attn.projq.weight",
+      "dec_blocks2.10.cross_attn.projk.weight",
+      "dec_blocks2.10.cross_attn.projv.weight",
+      "dec_blocks2.10.cross_attn.proj.weight",
+      "dec_blocks2.10.mlp.fc1.weight",
+      "dec_blocks2.10.mlp.fc2.weight",
+      "dec_blocks2.11.attn.qkv.weight",
+      "dec_blocks2.11.attn.proj.weight",
+      "dec_blocks2.11.cross_attn.projq.weight",
+      "dec_blocks2.11.cross_attn.projk.weight",
+      "dec_blocks2.11.cross_attn.projv.weight",
+      "dec_blocks2.11.cross_attn.proj.weight",
+      "dec_blocks2.11.mlp.fc1.weight",
+      "dec_blocks2.11.mlp.fc2.weight",
+      "downstream_head1.dpt.scratch.layer1_rn.weight",
+      "downstream_head1.dpt.scratch.layer2_rn.weight",
+      "downstream_head1.dpt.scratch.layer3_rn.weight",
+      "downstream_head1.dpt.scratch.layer4_rn.weight",
+      "downstream_head1.dpt.scratch.refinenet1.out_conv.weight",
+      "downstream_head1.dpt.scratch.refinenet1.resConfUnit1.conv1.weight",
+      "downstream_head1.dpt.scratch.refinenet1.resConfUnit1.conv2.weight",
+      "downstream_head1.dpt.scratch.refinenet1.resConfUnit2.conv1.weight",
+      "downstream_head1.dpt.scratch.refinenet1.resConfUnit2.conv2.weight",
+      "downstream_head1.dpt.scratch.refinenet2.out_conv.weight",
+      "downstream_head1.dpt.scratch.refinenet2.resConfUnit1.conv1.weight",
+      "downstream_head1.dpt.scratch.refinenet2.resConfUnit1.conv2.weight",
+      "downstream_head1.dpt.scratch.refinenet2.resConfUnit2.conv1.weight",
+      "downstream_head1.dpt.scratch.refinenet2.resConfUnit2.conv2.weight",
+      "downstream_head1.dpt.scratch.refinenet3.out_conv.weight",
+      "downstream_head1.dpt.scratch.refinenet3.resConfUnit1.conv1.weight",
+      "downstream_head1.dpt.scratch.refinenet3.resConfUnit1.conv2.weight",
+      "downstream_head1.dpt.scratch.refinenet3.resConfUnit2.conv1.weight",
+      "downstream_head1.dpt.scratch.refinenet3.resConfUnit2.conv2.weight",
+      "downstream_head1.dpt.scratch.refinenet4.out_conv.weight",
+      "downstream_head1.dpt.scratch.refinenet4.resConfUnit1.conv1.weight",
+      "downstream_head1.dpt.scratch.refinenet4.resConfUnit1.conv2.weight",
+      "downstream_head1.dpt.scratch.refinenet4.resConfUnit2.conv1.weight",
+      "downstream_head1.dpt.scratch.refinenet4.resConfUnit2.conv2.weight",
+      "downstream_head1.dpt.head.0.weight",
+      "downstream_head1.dpt.head.2.weight",
+      "downstream_head1.dpt.head.4.weight",
+      "downstream_head1.dpt.act_postprocess.0.0.weight",
+      "downstream_head1.dpt.act_postprocess.0.1.weight",
+      "downstream_head1.dpt.act_postprocess.1.0.weight",
+      "downstream_head1.dpt.act_postprocess.1.1.weight",
+      "downstream_head1.dpt.act_postprocess.2.0.weight",
+      "downstream_head1.dpt.act_postprocess.3.0.weight",
+      "downstream_head1.dpt.act_postprocess.3.1.weight",
+      "downstream_head1.head_local_features.fc1.weight",
+      "downstream_head1.head_local_features.fc2.weight",
+      "downstream_head2.dpt.scratch.layer1_rn.weight",
+      "downstream_head2.dpt.scratch.layer2_rn.weight",
+      "downstream_head2.dpt.scratch.layer3_rn.weight",
+      "downstream_head2.dpt.scratch.layer4_rn.weight",
+      "downstream_head2.dpt.scratch.refinenet1.out_conv.weight",
+      "downstream_head2.dpt.scratch.refinenet1.resConfUnit1.conv1.weight",
+      "downstream_head2.dpt.scratch.refinenet1.resConfUnit1.conv2.weight",
+      "downstream_head2.dpt.scratch.refinenet1.resConfUnit2.conv1.weight",
+      "downstream_head2.dpt.scratch.refinenet1.resConfUnit2.conv2.weight",
+      "downstream_head2.dpt.scratch.refinenet2.out_conv.weight",
+      "downstream_head2.dpt.scratch.refinenet2.resConfUnit1.conv1.weight",
+      "downstream_head2.dpt.scratch.refinenet2.resConfUnit1.conv2.weight",
+      "downstream_head2.dpt.scratch.refinenet2.resConfUnit2.conv1.weight",
+      "downstream_head2.dpt.scratch.refinenet2.resConfUnit2.conv2.weight",
+      "downstream_head2.dpt.scratch.refinenet3.out_conv.weight",
+      "downstream_head2.dpt.scratch.refinenet3.resConfUnit1.conv1.weight",
+      "downstream_head2.dpt.scratch.refinenet3.resConfUnit1.conv2.weight",
+      "downstream_head2.dpt.scratch.refinenet3.resConfUnit2.conv1.weight",
+      "downstream_head2.dpt.scratch.refinenet3.resConfUnit2.conv2.weight",
+      "downstream_head2.dpt.scratch.refinenet4.out_conv.weight",
+      "downstream_head2.dpt.scratch.refinenet4.resConfUnit1.conv1.weight",
+      "downstream_head2.dpt.scratch.refinenet4.resConfUnit1.conv2.weight",
+      "downstream_head2.dpt.scratch.refinenet4.resConfUnit2.conv1.weight",
+      "downstream_head2.dpt.scratch.refinenet4.resConfUnit2.conv2.weight",
+      "downstream_head2.dpt.head.0.weight",
+      "downstream_head2.dpt.head.2.weight",
+      "downstream_head2.dpt.head.4.weight",
+      "downstream_head2.dpt.act_postprocess.0.0.weight",
+      "downstream_head2.dpt.act_postprocess.0.1.weight",
+      "downstream_head2.dpt.act_postprocess.1.0.weight",
+      "downstream_head2.dpt.act_postprocess.1.1.weight",
+      "downstream_head2.dpt.act_postprocess.2.0.weight",
+      "downstream_head2.dpt.act_postprocess.3.0.weight",
+      "downstream_head2.dpt.act_postprocess.3.1.weight",
+      "downstream_head2.head_local_features.fc1.weight",
+      "downstream_head2.head_local_features.fc2.weight"
+    ],
+    "lr_scale": 1.0
+  },
+  "no_decay": {
+    "weight_decay": 0.0,
+    "params": [
+      "patch_embed.proj.bias",
+      "enc_blocks.0.norm1.weight",
+      "enc_blocks.0.norm1.bias",
+      "enc_blocks.0.attn.qkv.bias",
+      "enc_blocks.0.attn.proj.bias",
+      "enc_blocks.0.norm2.weight",
+      "enc_blocks.0.norm2.bias",
+      "enc_blocks.0.mlp.fc1.bias",
+      "enc_blocks.0.mlp.fc2.bias",
+      "enc_blocks.1.norm1.weight",
+      "enc_blocks.1.norm1.bias",
+      "enc_blocks.1.attn.qkv.bias",
+      "enc_blocks.1.attn.proj.bias",
+      "enc_blocks.1.norm2.weight",
+      "enc_blocks.1.norm2.bias",
+      "enc_blocks.1.mlp.fc1.bias",
+      "enc_blocks.1.mlp.fc2.bias",
+      "enc_blocks.2.norm1.weight",
+      "enc_blocks.2.norm1.bias",
+      "enc_blocks.2.attn.qkv.bias",
+      "enc_blocks.2.attn.proj.bias",
+      "enc_blocks.2.norm2.weight",
+      "enc_blocks.2.norm2.bias",
+      "enc_blocks.2.mlp.fc1.bias",
+      "enc_blocks.2.mlp.fc2.bias",
+      "enc_blocks.3.norm1.weight",
+      "enc_blocks.3.norm1.bias",
+      "enc_blocks.3.attn.qkv.bias",
+      "enc_blocks.3.attn.proj.bias",
+      "enc_blocks.3.norm2.weight",
+      "enc_blocks.3.norm2.bias",
+      "enc_blocks.3.mlp.fc1.bias",
+      "enc_blocks.3.mlp.fc2.bias",
+      "enc_blocks.4.norm1.weight",
+      "enc_blocks.4.norm1.bias",
+      "enc_blocks.4.attn.qkv.bias",
+      "enc_blocks.4.attn.proj.bias",
+      "enc_blocks.4.norm2.weight",
+      "enc_blocks.4.norm2.bias",
+      "enc_blocks.4.mlp.fc1.bias",
+      "enc_blocks.4.mlp.fc2.bias",
+      "enc_blocks.5.norm1.weight",
+      "enc_blocks.5.norm1.bias",
+      "enc_blocks.5.attn.qkv.bias",
+      "enc_blocks.5.attn.proj.bias",
+      "enc_blocks.5.norm2.weight",
+      "enc_blocks.5.norm2.bias",
+      "enc_blocks.5.mlp.fc1.bias",
+      "enc_blocks.5.mlp.fc2.bias",
+      "enc_blocks.6.norm1.weight",
+      "enc_blocks.6.norm1.bias",
+      "enc_blocks.6.attn.qkv.bias",
+      "enc_blocks.6.attn.proj.bias",
+      "enc_blocks.6.norm2.weight",
+      "enc_blocks.6.norm2.bias",
+      "enc_blocks.6.mlp.fc1.bias",
+      "enc_blocks.6.mlp.fc2.bias",
+      "enc_blocks.7.norm1.weight",
+      "enc_blocks.7.norm1.bias",
+      "enc_blocks.7.attn.qkv.bias",
+      "enc_blocks.7.attn.proj.bias",
+      "enc_blocks.7.norm2.weight",
+      "enc_blocks.7.norm2.bias",
+      "enc_blocks.7.mlp.fc1.bias",
+      "enc_blocks.7.mlp.fc2.bias",
+      "enc_blocks.8.norm1.weight",
+      "enc_blocks.8.norm1.bias",
+      "enc_blocks.8.attn.qkv.bias",
+      "enc_blocks.8.attn.proj.bias",
+      "enc_blocks.8.norm2.weight",
+      "enc_blocks.8.norm2.bias",
+      "enc_blocks.8.mlp.fc1.bias",
+      "enc_blocks.8.mlp.fc2.bias",
+      "enc_blocks.9.norm1.weight",
+      "enc_blocks.9.norm1.bias",
+      "enc_blocks.9.attn.qkv.bias",
+      "enc_blocks.9.attn.proj.bias",
+      "enc_blocks.9.norm2.weight",
+      "enc_blocks.9.norm2.bias",
+      "enc_blocks.9.mlp.fc1.bias",
+      "enc_blocks.9.mlp.fc2.bias",
+      "enc_blocks.10.norm1.weight",
+      "enc_blocks.10.norm1.bias",
+      "enc_blocks.10.attn.qkv.bias",
+      "enc_blocks.10.attn.proj.bias",
+      "enc_blocks.10.norm2.weight",
+      "enc_blocks.10.norm2.bias",
+      "enc_blocks.10.mlp.fc1.bias",
+      "enc_blocks.10.mlp.fc2.bias",
+      "enc_blocks.11.norm1.weight",
+      "enc_blocks.11.norm1.bias",
+      "enc_blocks.11.attn.qkv.bias",
+      "enc_blocks.11.attn.proj.bias",
+      "enc_blocks.11.norm2.weight",
+      "enc_blocks.11.norm2.bias",
+      "enc_blocks.11.mlp.fc1.bias",
+      "enc_blocks.11.mlp.fc2.bias",
+      "enc_blocks.12.norm1.weight",
+      "enc_blocks.12.norm1.bias",
+      "enc_blocks.12.attn.qkv.bias",
+      "enc_blocks.12.attn.proj.bias",
+      "enc_blocks.12.norm2.weight",
+      "enc_blocks.12.norm2.bias",
+      "enc_blocks.12.mlp.fc1.bias",
+      "enc_blocks.12.mlp.fc2.bias",
+      "enc_blocks.13.norm1.weight",
+      "enc_blocks.13.norm1.bias",
+      "enc_blocks.13.attn.qkv.bias",
+      "enc_blocks.13.attn.proj.bias",
+      "enc_blocks.13.norm2.weight",
+      "enc_blocks.13.norm2.bias",
+      "enc_blocks.13.mlp.fc1.bias",
+      "enc_blocks.13.mlp.fc2.bias",
+      "enc_blocks.14.norm1.weight",
+      "enc_blocks.14.norm1.bias",
+      "enc_blocks.14.attn.qkv.bias",
+      "enc_blocks.14.attn.proj.bias",
+      "enc_blocks.14.norm2.weight",
+      "enc_blocks.14.norm2.bias",
+      "enc_blocks.14.mlp.fc1.bias",
+      "enc_blocks.14.mlp.fc2.bias",
+      "enc_blocks.15.norm1.weight",
+      "enc_blocks.15.norm1.bias",
+      "enc_blocks.15.attn.qkv.bias",
+      "enc_blocks.15.attn.proj.bias",
+      "enc_blocks.15.norm2.weight",
+      "enc_blocks.15.norm2.bias",
+      "enc_blocks.15.mlp.fc1.bias",
+      "enc_blocks.15.mlp.fc2.bias",
+      "enc_blocks.16.norm1.weight",
+      "enc_blocks.16.norm1.bias",
+      "enc_blocks.16.attn.qkv.bias",
+      "enc_blocks.16.attn.proj.bias",
+      "enc_blocks.16.norm2.weight",
+      "enc_blocks.16.norm2.bias",
+      "enc_blocks.16.mlp.fc1.bias",
+      "enc_blocks.16.mlp.fc2.bias",
+      "enc_blocks.17.norm1.weight",
+      "enc_blocks.17.norm1.bias",
+      "enc_blocks.17.attn.qkv.bias",
+      "enc_blocks.17.attn.proj.bias",
+      "enc_blocks.17.norm2.weight",
+      "enc_blocks.17.norm2.bias",
+      "enc_blocks.17.mlp.fc1.bias",
+      "enc_blocks.17.mlp.fc2.bias",
+      "enc_blocks.18.norm1.weight",
+      "enc_blocks.18.norm1.bias",
+      "enc_blocks.18.attn.qkv.bias",
+      "enc_blocks.18.attn.proj.bias",
+      "enc_blocks.18.norm2.weight",
+      "enc_blocks.18.norm2.bias",
+      "enc_blocks.18.mlp.fc1.bias",
+      "enc_blocks.18.mlp.fc2.bias",
+      "enc_blocks.19.norm1.weight",
+      "enc_blocks.19.norm1.bias",
+      "enc_blocks.19.attn.qkv.bias",
+      "enc_blocks.19.attn.proj.bias",
+      "enc_blocks.19.norm2.weight",
+      "enc_blocks.19.norm2.bias",
+      "enc_blocks.19.mlp.fc1.bias",
+      "enc_blocks.19.mlp.fc2.bias",
+      "enc_blocks.20.norm1.weight",
+      "enc_blocks.20.norm1.bias",
+      "enc_blocks.20.attn.qkv.bias",
+      "enc_blocks.20.attn.proj.bias",
+      "enc_blocks.20.norm2.weight",
+      "enc_blocks.20.norm2.bias",
+      "enc_blocks.20.mlp.fc1.bias",
+      "enc_blocks.20.mlp.fc2.bias",
+      "enc_blocks.21.norm1.weight",
+      "enc_blocks.21.norm1.bias",
+      "enc_blocks.21.attn.qkv.bias",
+      "enc_blocks.21.attn.proj.bias",
+      "enc_blocks.21.norm2.weight",
+      "enc_blocks.21.norm2.bias",
+      "enc_blocks.21.mlp.fc1.bias",
+      "enc_blocks.21.mlp.fc2.bias",
+      "enc_blocks.22.norm1.weight",
+      "enc_blocks.22.norm1.bias",
+      "enc_blocks.22.attn.qkv.bias",
+      "enc_blocks.22.attn.proj.bias",
+      "enc_blocks.22.norm2.weight",
+      "enc_blocks.22.norm2.bias",
+      "enc_blocks.22.mlp.fc1.bias",
+      "enc_blocks.22.mlp.fc2.bias",
+      "enc_blocks.23.norm1.weight",
+      "enc_blocks.23.norm1.bias",
+      "enc_blocks.23.attn.qkv.bias",
+      "enc_blocks.23.attn.proj.bias",
+      "enc_blocks.23.norm2.weight",
+      "enc_blocks.23.norm2.bias",
+      "enc_blocks.23.mlp.fc1.bias",
+      "enc_blocks.23.mlp.fc2.bias",
+      "enc_norm.weight",
+      "enc_norm.bias",
+      "decoder_embed.bias",
+      "dec_blocks.0.norm1.weight",
+      "dec_blocks.0.norm1.bias",
+      "dec_blocks.0.attn.qkv.bias",
+      "dec_blocks.0.attn.proj.bias",
+      "dec_blocks.0.cross_attn.projq.bias",
+      "dec_blocks.0.cross_attn.projk.bias",
+      "dec_blocks.0.cross_attn.projv.bias",
+      "dec_blocks.0.cross_attn.proj.bias",
+      "dec_blocks.0.norm2.weight",
+      "dec_blocks.0.norm2.bias",
+      "dec_blocks.0.norm3.weight",
+      "dec_blocks.0.norm3.bias",
+      "dec_blocks.0.mlp.fc1.bias",
+      "dec_blocks.0.mlp.fc2.bias",
+      "dec_blocks.0.norm_y.weight",
+      "dec_blocks.0.norm_y.bias",
+      "dec_blocks.1.norm1.weight",
+      "dec_blocks.1.norm1.bias",
+      "dec_blocks.1.attn.qkv.bias",
+      "dec_blocks.1.attn.proj.bias",
+      "dec_blocks.1.cross_attn.projq.bias",
+      "dec_blocks.1.cross_attn.projk.bias",
+      "dec_blocks.1.cross_attn.projv.bias",
+      "dec_blocks.1.cross_attn.proj.bias",
+      "dec_blocks.1.norm2.weight",
+      "dec_blocks.1.norm2.bias",
+      "dec_blocks.1.norm3.weight",
+      "dec_blocks.1.norm3.bias",
+      "dec_blocks.1.mlp.fc1.bias",
+      "dec_blocks.1.mlp.fc2.bias",
+      "dec_blocks.1.norm_y.weight",
+      "dec_blocks.1.norm_y.bias",
+      "dec_blocks.2.norm1.weight",
+      "dec_blocks.2.norm1.bias",
+      "dec_blocks.2.attn.qkv.bias",
+      "dec_blocks.2.attn.proj.bias",
+      "dec_blocks.2.cross_attn.projq.bias",
+      "dec_blocks.2.cross_attn.projk.bias",
+      "dec_blocks.2.cross_attn.projv.bias",
+      "dec_blocks.2.cross_attn.proj.bias",
+      "dec_blocks.2.norm2.weight",
+      "dec_blocks.2.norm2.bias",
+      "dec_blocks.2.norm3.weight",
+      "dec_blocks.2.norm3.bias",
+      "dec_blocks.2.mlp.fc1.bias",
+      "dec_blocks.2.mlp.fc2.bias",
+      "dec_blocks.2.norm_y.weight",
+      "dec_blocks.2.norm_y.bias",
+      "dec_blocks.3.norm1.weight",
+      "dec_blocks.3.norm1.bias",
+      "dec_blocks.3.attn.qkv.bias",
+      "dec_blocks.3.attn.proj.bias",
+      "dec_blocks.3.cross_attn.projq.bias",
+      "dec_blocks.3.cross_attn.projk.bias",
+      "dec_blocks.3.cross_attn.projv.bias",
+      "dec_blocks.3.cross_attn.proj.bias",
+      "dec_blocks.3.norm2.weight",
+      "dec_blocks.3.norm2.bias",
+      "dec_blocks.3.norm3.weight",
+      "dec_blocks.3.norm3.bias",
+      "dec_blocks.3.mlp.fc1.bias",
+      "dec_blocks.3.mlp.fc2.bias",
+      "dec_blocks.3.norm_y.weight",
+      "dec_blocks.3.norm_y.bias",
+      "dec_blocks.4.norm1.weight",
+      "dec_blocks.4.norm1.bias",
+      "dec_blocks.4.attn.qkv.bias",
+      "dec_blocks.4.attn.proj.bias",
+      "dec_blocks.4.cross_attn.projq.bias",
+      "dec_blocks.4.cross_attn.projk.bias",
+      "dec_blocks.4.cross_attn.projv.bias",
+      "dec_blocks.4.cross_attn.proj.bias",
+      "dec_blocks.4.norm2.weight",
+      "dec_blocks.4.norm2.bias",
+      "dec_blocks.4.norm3.weight",
+      "dec_blocks.4.norm3.bias",
+      "dec_blocks.4.mlp.fc1.bias",
+      "dec_blocks.4.mlp.fc2.bias",
+      "dec_blocks.4.norm_y.weight",
+      "dec_blocks.4.norm_y.bias",
+      "dec_blocks.5.norm1.weight",
+      "dec_blocks.5.norm1.bias",
+      "dec_blocks.5.attn.qkv.bias",
+      "dec_blocks.5.attn.proj.bias",
+      "dec_blocks.5.cross_attn.projq.bias",
+      "dec_blocks.5.cross_attn.projk.bias",
+      "dec_blocks.5.cross_attn.projv.bias",
+      "dec_blocks.5.cross_attn.proj.bias",
+      "dec_blocks.5.norm2.weight",
+      "dec_blocks.5.norm2.bias",
+      "dec_blocks.5.norm3.weight",
+      "dec_blocks.5.norm3.bias",
+      "dec_blocks.5.mlp.fc1.bias",
+      "dec_blocks.5.mlp.fc2.bias",
+      "dec_blocks.5.norm_y.weight",
+      "dec_blocks.5.norm_y.bias",
+      "dec_blocks.6.norm1.weight",
+      "dec_blocks.6.norm1.bias",
+      "dec_blocks.6.attn.qkv.bias",
+      "dec_blocks.6.attn.proj.bias",
+      "dec_blocks.6.cross_attn.projq.bias",
+      "dec_blocks.6.cross_attn.projk.bias",
+      "dec_blocks.6.cross_attn.projv.bias",
+      "dec_blocks.6.cross_attn.proj.bias",
+      "dec_blocks.6.norm2.weight",
+      "dec_blocks.6.norm2.bias",
+      "dec_blocks.6.norm3.weight",
+      "dec_blocks.6.norm3.bias",
+      "dec_blocks.6.mlp.fc1.bias",
+      "dec_blocks.6.mlp.fc2.bias",
+      "dec_blocks.6.norm_y.weight",
+      "dec_blocks.6.norm_y.bias",
+      "dec_blocks.7.norm1.weight",
+      "dec_blocks.7.norm1.bias",
+      "dec_blocks.7.attn.qkv.bias",
+      "dec_blocks.7.attn.proj.bias",
+      "dec_blocks.7.cross_attn.projq.bias",
+      "dec_blocks.7.cross_attn.projk.bias",
+      "dec_blocks.7.cross_attn.projv.bias",
+      "dec_blocks.7.cross_attn.proj.bias",
+      "dec_blocks.7.norm2.weight",
+      "dec_blocks.7.norm2.bias",
+      "dec_blocks.7.norm3.weight",
+      "dec_blocks.7.norm3.bias",
+      "dec_blocks.7.mlp.fc1.bias",
+      "dec_blocks.7.mlp.fc2.bias",
+      "dec_blocks.7.norm_y.weight",
+      "dec_blocks.7.norm_y.bias",
+      "dec_blocks.8.norm1.weight",
+      "dec_blocks.8.norm1.bias",
+      "dec_blocks.8.attn.qkv.bias",
+      "dec_blocks.8.attn.proj.bias",
+      "dec_blocks.8.cross_attn.projq.bias",
+      "dec_blocks.8.cross_attn.projk.bias",
+      "dec_blocks.8.cross_attn.projv.bias",
+      "dec_blocks.8.cross_attn.proj.bias",
+      "dec_blocks.8.norm2.weight",
+      "dec_blocks.8.norm2.bias",
+      "dec_blocks.8.norm3.weight",
+      "dec_blocks.8.norm3.bias",
+      "dec_blocks.8.mlp.fc1.bias",
+      "dec_blocks.8.mlp.fc2.bias",
+      "dec_blocks.8.norm_y.weight",
+      "dec_blocks.8.norm_y.bias",
+      "dec_blocks.9.norm1.weight",
+      "dec_blocks.9.norm1.bias",
+      "dec_blocks.9.attn.qkv.bias",
+      "dec_blocks.9.attn.proj.bias",
+      "dec_blocks.9.cross_attn.projq.bias",
+      "dec_blocks.9.cross_attn.projk.bias",
+      "dec_blocks.9.cross_attn.projv.bias",
+      "dec_blocks.9.cross_attn.proj.bias",
+      "dec_blocks.9.norm2.weight",
+      "dec_blocks.9.norm2.bias",
+      "dec_blocks.9.norm3.weight",
+      "dec_blocks.9.norm3.bias",
+      "dec_blocks.9.mlp.fc1.bias",
+      "dec_blocks.9.mlp.fc2.bias",
+      "dec_blocks.9.norm_y.weight",
+      "dec_blocks.9.norm_y.bias",
+      "dec_blocks.10.norm1.weight",
+      "dec_blocks.10.norm1.bias",
+      "dec_blocks.10.attn.qkv.bias",
+      "dec_blocks.10.attn.proj.bias",
+      "dec_blocks.10.cross_attn.projq.bias",
+      "dec_blocks.10.cross_attn.projk.bias",
+      "dec_blocks.10.cross_attn.projv.bias",
+      "dec_blocks.10.cross_attn.proj.bias",
+      "dec_blocks.10.norm2.weight",
+      "dec_blocks.10.norm2.bias",
+      "dec_blocks.10.norm3.weight",
+      "dec_blocks.10.norm3.bias",
+      "dec_blocks.10.mlp.fc1.bias",
+      "dec_blocks.10.mlp.fc2.bias",
+      "dec_blocks.10.norm_y.weight",
+      "dec_blocks.10.norm_y.bias",
+      "dec_blocks.11.norm1.weight",
+      "dec_blocks.11.norm1.bias",
+      "dec_blocks.11.attn.qkv.bias",
+      "dec_blocks.11.attn.proj.bias",
+      "dec_blocks.11.cross_attn.projq.bias",
+      "dec_blocks.11.cross_attn.projk.bias",
+      "dec_blocks.11.cross_attn.projv.bias",
+      "dec_blocks.11.cross_attn.proj.bias",
+      "dec_blocks.11.norm2.weight",
+      "dec_blocks.11.norm2.bias",
+      "dec_blocks.11.norm3.weight",
+      "dec_blocks.11.norm3.bias",
+      "dec_blocks.11.mlp.fc1.bias",
+      "dec_blocks.11.mlp.fc2.bias",
+      "dec_blocks.11.norm_y.weight",
+      "dec_blocks.11.norm_y.bias",
+      "dec_norm.weight",
+      "dec_norm.bias",
+      "dec_blocks2.0.norm1.weight",
+      "dec_blocks2.0.norm1.bias",
+      "dec_blocks2.0.attn.qkv.bias",
+      "dec_blocks2.0.attn.proj.bias",
+      "dec_blocks2.0.cross_attn.projq.bias",
+      "dec_blocks2.0.cross_attn.projk.bias",
+      "dec_blocks2.0.cross_attn.projv.bias",
+      "dec_blocks2.0.cross_attn.proj.bias",
+      "dec_blocks2.0.norm2.weight",
+      "dec_blocks2.0.norm2.bias",
+      "dec_blocks2.0.norm3.weight",
+      "dec_blocks2.0.norm3.bias",
+      "dec_blocks2.0.mlp.fc1.bias",
+      "dec_blocks2.0.mlp.fc2.bias",
+      "dec_blocks2.0.norm_y.weight",
+      "dec_blocks2.0.norm_y.bias",
+      "dec_blocks2.1.norm1.weight",
+      "dec_blocks2.1.norm1.bias",
+      "dec_blocks2.1.attn.qkv.bias",
+      "dec_blocks2.1.attn.proj.bias",
+      "dec_blocks2.1.cross_attn.projq.bias",
+      "dec_blocks2.1.cross_attn.projk.bias",
+      "dec_blocks2.1.cross_attn.projv.bias",
+      "dec_blocks2.1.cross_attn.proj.bias",
+      "dec_blocks2.1.norm2.weight",
+      "dec_blocks2.1.norm2.bias",
+      "dec_blocks2.1.norm3.weight",
+      "dec_blocks2.1.norm3.bias",
+      "dec_blocks2.1.mlp.fc1.bias",
+      "dec_blocks2.1.mlp.fc2.bias",
+      "dec_blocks2.1.norm_y.weight",
+      "dec_blocks2.1.norm_y.bias",
+      "dec_blocks2.2.norm1.weight",
+      "dec_blocks2.2.norm1.bias",
+      "dec_blocks2.2.attn.qkv.bias",
+      "dec_blocks2.2.attn.proj.bias",
+      "dec_blocks2.2.cross_attn.projq.bias",
+      "dec_blocks2.2.cross_attn.projk.bias",
+      "dec_blocks2.2.cross_attn.projv.bias",
+      "dec_blocks2.2.cross_attn.proj.bias",
+      "dec_blocks2.2.norm2.weight",
+      "dec_blocks2.2.norm2.bias",
+      "dec_blocks2.2.norm3.weight",
+      "dec_blocks2.2.norm3.bias",
+      "dec_blocks2.2.mlp.fc1.bias",
+      "dec_blocks2.2.mlp.fc2.bias",
+      "dec_blocks2.2.norm_y.weight",
+      "dec_blocks2.2.norm_y.bias",
+      "dec_blocks2.3.norm1.weight",
+      "dec_blocks2.3.norm1.bias",
+      "dec_blocks2.3.attn.qkv.bias",
+      "dec_blocks2.3.attn.proj.bias",
+      "dec_blocks2.3.cross_attn.projq.bias",
+      "dec_blocks2.3.cross_attn.projk.bias",
+      "dec_blocks2.3.cross_attn.projv.bias",
+      "dec_blocks2.3.cross_attn.proj.bias",
+      "dec_blocks2.3.norm2.weight",
+      "dec_blocks2.3.norm2.bias",
+      "dec_blocks2.3.norm3.weight",
+      "dec_blocks2.3.norm3.bias",
+      "dec_blocks2.3.mlp.fc1.bias",
+      "dec_blocks2.3.mlp.fc2.bias",
+      "dec_blocks2.3.norm_y.weight",
+      "dec_blocks2.3.norm_y.bias",
+      "dec_blocks2.4.norm1.weight",
+      "dec_blocks2.4.norm1.bias",
+      "dec_blocks2.4.attn.qkv.bias",
+      "dec_blocks2.4.attn.proj.bias",
+      "dec_blocks2.4.cross_attn.projq.bias",
+      "dec_blocks2.4.cross_attn.projk.bias",
+      "dec_blocks2.4.cross_attn.projv.bias",
+      "dec_blocks2.4.cross_attn.proj.bias",
+      "dec_blocks2.4.norm2.weight",
+      "dec_blocks2.4.norm2.bias",
+      "dec_blocks2.4.norm3.weight",
+      "dec_blocks2.4.norm3.bias",
+      "dec_blocks2.4.mlp.fc1.bias",
+      "dec_blocks2.4.mlp.fc2.bias",
+      "dec_blocks2.4.norm_y.weight",
+      "dec_blocks2.4.norm_y.bias",
+      "dec_blocks2.5.norm1.weight",
+      "dec_blocks2.5.norm1.bias",
+      "dec_blocks2.5.attn.qkv.bias",
+      "dec_blocks2.5.attn.proj.bias",
+      "dec_blocks2.5.cross_attn.projq.bias",
+      "dec_blocks2.5.cross_attn.projk.bias",
+      "dec_blocks2.5.cross_attn.projv.bias",
+      "dec_blocks2.5.cross_attn.proj.bias",
+      "dec_blocks2.5.norm2.weight",
+      "dec_blocks2.5.norm2.bias",
+      "dec_blocks2.5.norm3.weight",
+      "dec_blocks2.5.norm3.bias",
+      "dec_blocks2.5.mlp.fc1.bias",
+      "dec_blocks2.5.mlp.fc2.bias",
+      "dec_blocks2.5.norm_y.weight",
+      "dec_blocks2.5.norm_y.bias",
+      "dec_blocks2.6.norm1.weight",
+      "dec_blocks2.6.norm1.bias",
+      "dec_blocks2.6.attn.qkv.bias",
+      "dec_blocks2.6.attn.proj.bias",
+      "dec_blocks2.6.cross_attn.projq.bias",
+      "dec_blocks2.6.cross_attn.projk.bias",
+      "dec_blocks2.6.cross_attn.projv.bias",
+      "dec_blocks2.6.cross_attn.proj.bias",
+      "dec_blocks2.6.norm2.weight",
+      "dec_blocks2.6.norm2.bias",
+      "dec_blocks2.6.norm3.weight",
+      "dec_blocks2.6.norm3.bias",
+      "dec_blocks2.6.mlp.fc1.bias",
+      "dec_blocks2.6.mlp.fc2.bias",
+      "dec_blocks2.6.norm_y.weight",
+      "dec_blocks2.6.norm_y.bias",
+      "dec_blocks2.7.norm1.weight",
+      "dec_blocks2.7.norm1.bias",
+      "dec_blocks2.7.attn.qkv.bias",
+      "dec_blocks2.7.attn.proj.bias",
+      "dec_blocks2.7.cross_attn.projq.bias",
+      "dec_blocks2.7.cross_attn.projk.bias",
+      "dec_blocks2.7.cross_attn.projv.bias",
+      "dec_blocks2.7.cross_attn.proj.bias",
+      "dec_blocks2.7.norm2.weight",
+      "dec_blocks2.7.norm2.bias",
+      "dec_blocks2.7.norm3.weight",
+      "dec_blocks2.7.norm3.bias",
+      "dec_blocks2.7.mlp.fc1.bias",
+      "dec_blocks2.7.mlp.fc2.bias",
+      "dec_blocks2.7.norm_y.weight",
+      "dec_blocks2.7.norm_y.bias",
+      "dec_blocks2.8.norm1.weight",
+      "dec_blocks2.8.norm1.bias",
+      "dec_blocks2.8.attn.qkv.bias",
+      "dec_blocks2.8.attn.proj.bias",
+      "dec_blocks2.8.cross_attn.projq.bias",
+      "dec_blocks2.8.cross_attn.projk.bias",
+      "dec_blocks2.8.cross_attn.projv.bias",
+      "dec_blocks2.8.cross_attn.proj.bias",
+      "dec_blocks2.8.norm2.weight",
+      "dec_blocks2.8.norm2.bias",
+      "dec_blocks2.8.norm3.weight",
+      "dec_blocks2.8.norm3.bias",
+      "dec_blocks2.8.mlp.fc1.bias",
+      "dec_blocks2.8.mlp.fc2.bias",
+      "dec_blocks2.8.norm_y.weight",
+      "dec_blocks2.8.norm_y.bias",
+      "dec_blocks2.9.norm1.weight",
+      "dec_blocks2.9.norm1.bias",
+      "dec_blocks2.9.attn.qkv.bias",
+      "dec_blocks2.9.attn.proj.bias",
+      "dec_blocks2.9.cross_attn.projq.bias",
+      "dec_blocks2.9.cross_attn.projk.bias",
+      "dec_blocks2.9.cross_attn.projv.bias",
+      "dec_blocks2.9.cross_attn.proj.bias",
+      "dec_blocks2.9.norm2.weight",
+      "dec_blocks2.9.norm2.bias",
+      "dec_blocks2.9.norm3.weight",
+      "dec_blocks2.9.norm3.bias",
+      "dec_blocks2.9.mlp.fc1.bias",
+      "dec_blocks2.9.mlp.fc2.bias",
+      "dec_blocks2.9.norm_y.weight",
+      "dec_blocks2.9.norm_y.bias",
+      "dec_blocks2.10.norm1.weight",
+      "dec_blocks2.10.norm1.bias",
+      "dec_blocks2.10.attn.qkv.bias",
+      "dec_blocks2.10.attn.proj.bias",
+      "dec_blocks2.10.cross_attn.projq.bias",
+      "dec_blocks2.10.cross_attn.projk.bias",
+      "dec_blocks2.10.cross_attn.projv.bias",
+      "dec_blocks2.10.cross_attn.proj.bias",
+      "dec_blocks2.10.norm2.weight",
+      "dec_blocks2.10.norm2.bias",
+      "dec_blocks2.10.norm3.weight",
+      "dec_blocks2.10.norm3.bias",
+      "dec_blocks2.10.mlp.fc1.bias",
+      "dec_blocks2.10.mlp.fc2.bias",
+      "dec_blocks2.10.norm_y.weight",
+      "dec_blocks2.10.norm_y.bias",
+      "dec_blocks2.11.norm1.weight",
+      "dec_blocks2.11.norm1.bias",
+      "dec_blocks2.11.attn.qkv.bias",
+      "dec_blocks2.11.attn.proj.bias",
+      "dec_blocks2.11.cross_attn.projq.bias",
+      "dec_blocks2.11.cross_attn.projk.bias",
+      "dec_blocks2.11.cross_attn.projv.bias",
+      "dec_blocks2.11.cross_attn.proj.bias",
+      "dec_blocks2.11.norm2.weight",
+      "dec_blocks2.11.norm2.bias",
+      "dec_blocks2.11.norm3.weight",
+      "dec_blocks2.11.norm3.bias",
+      "dec_blocks2.11.mlp.fc1.bias",
+      "dec_blocks2.11.mlp.fc2.bias",
+      "dec_blocks2.11.norm_y.weight",
+      "dec_blocks2.11.norm_y.bias",
+      "downstream_head1.dpt.scratch.refinenet1.out_conv.bias",
+      "downstream_head1.dpt.scratch.refinenet1.resConfUnit1.conv1.bias",
+      "downstream_head1.dpt.scratch.refinenet1.resConfUnit1.conv2.bias",
+      "downstream_head1.dpt.scratch.refinenet1.resConfUnit2.conv1.bias",
+      "downstream_head1.dpt.scratch.refinenet1.resConfUnit2.conv2.bias",
+      "downstream_head1.dpt.scratch.refinenet2.out_conv.bias",
+      "downstream_head1.dpt.scratch.refinenet2.resConfUnit1.conv1.bias",
+      "downstream_head1.dpt.scratch.refinenet2.resConfUnit1.conv2.bias",
+      "downstream_head1.dpt.scratch.refinenet2.resConfUnit2.conv1.bias",
+      "downstream_head1.dpt.scratch.refinenet2.resConfUnit2.conv2.bias",
+      "downstream_head1.dpt.scratch.refinenet3.out_conv.bias",
+      "downstream_head1.dpt.scratch.refinenet3.resConfUnit1.conv1.bias",
+      "downstream_head1.dpt.scratch.refinenet3.resConfUnit1.conv2.bias",
+      "downstream_head1.dpt.scratch.refinenet3.resConfUnit2.conv1.bias",
+      "downstream_head1.dpt.scratch.refinenet3.resConfUnit2.conv2.bias",
+      "downstream_head1.dpt.scratch.refinenet4.out_conv.bias",
+      "downstream_head1.dpt.scratch.refinenet4.resConfUnit1.conv1.bias",
+      "downstream_head1.dpt.scratch.refinenet4.resConfUnit1.conv2.bias",
+      "downstream_head1.dpt.scratch.refinenet4.resConfUnit2.conv1.bias",
+      "downstream_head1.dpt.scratch.refinenet4.resConfUnit2.conv2.bias",
+      "downstream_head1.dpt.head.0.bias",
+      "downstream_head1.dpt.head.2.bias",
+      "downstream_head1.dpt.head.4.bias",
+      "downstream_head1.dpt.act_postprocess.0.0.bias",
+      "downstream_head1.dpt.act_postprocess.0.1.bias",
+      "downstream_head1.dpt.act_postprocess.1.0.bias",
+      "downstream_head1.dpt.act_postprocess.1.1.bias",
+      "downstream_head1.dpt.act_postprocess.2.0.bias",
+      "downstream_head1.dpt.act_postprocess.3.0.bias",
+      "downstream_head1.dpt.act_postprocess.3.1.bias",
+      "downstream_head1.head_local_features.fc1.bias",
+      "downstream_head1.head_local_features.fc2.bias",
+      "downstream_head2.dpt.scratch.refinenet1.out_conv.bias",
+      "downstream_head2.dpt.scratch.refinenet1.resConfUnit1.conv1.bias",
+      "downstream_head2.dpt.scratch.refinenet1.resConfUnit1.conv2.bias",
+      "downstream_head2.dpt.scratch.refinenet1.resConfUnit2.conv1.bias",
+      "downstream_head2.dpt.scratch.refinenet1.resConfUnit2.conv2.bias",
+      "downstream_head2.dpt.scratch.refinenet2.out_conv.bias",
+      "downstream_head2.dpt.scratch.refinenet2.resConfUnit1.conv1.bias",
+      "downstream_head2.dpt.scratch.refinenet2.resConfUnit1.conv2.bias",
+      "downstream_head2.dpt.scratch.refinenet2.resConfUnit2.conv1.bias",
+      "downstream_head2.dpt.scratch.refinenet2.resConfUnit2.conv2.bias",
+      "downstream_head2.dpt.scratch.refinenet3.out_conv.bias",
+      "downstream_head2.dpt.scratch.refinenet3.resConfUnit1.conv1.bias",
+      "downstream_head2.dpt.scratch.refinenet3.resConfUnit1.conv2.bias",
+      "downstream_head2.dpt.scratch.refinenet3.resConfUnit2.conv1.bias",
+      "downstream_head2.dpt.scratch.refinenet3.resConfUnit2.conv2.bias",
+      "downstream_head2.dpt.scratch.refinenet4.out_conv.bias",
+      "downstream_head2.dpt.scratch.refinenet4.resConfUnit1.conv1.bias",
+      "downstream_head2.dpt.scratch.refinenet4.resConfUnit1.conv2.bias",
+      "downstream_head2.dpt.scratch.refinenet4.resConfUnit2.conv1.bias",
+      "downstream_head2.dpt.scratch.refinenet4.resConfUnit2.conv2.bias",
+      "downstream_head2.dpt.head.0.bias",
+      "downstream_head2.dpt.head.2.bias",
+      "downstream_head2.dpt.head.4.bias",
+      "downstream_head2.dpt.act_postprocess.0.0.bias",
+      "downstream_head2.dpt.act_postprocess.0.1.bias",
+      "downstream_head2.dpt.act_postprocess.1.0.bias",
+      "downstream_head2.dpt.act_postprocess.1.1.bias",
+      "downstream_head2.dpt.act_postprocess.2.0.bias",
+      "downstream_head2.dpt.act_postprocess.3.0.bias",
+      "downstream_head2.dpt.act_postprocess.3.1.bias",
+      "downstream_head2.head_local_features.fc1.bias",
+      "downstream_head2.head_local_features.fc2.bias"
+    ],
+    "lr_scale": 1.0
+  }
+}
+/cis/home/zshao14/miniconda3/envs/mast3r/lib/python3.11/site-packages/torch/nn/parallel/distributed.py:2351: UserWarning: You passed find_unused_parameters=true to DistributedDataParallel, `_set_static_graph` will detect unused parameters automatically, so you do not need to set find_unused_parameters=true, just be sure these unused parameters will not change during training loop while calling `_set_static_graph`.
+  warnings.warn(
+/cis/home/zshao14/miniconda3/envs/mast3r/lib/python3.11/site-packages/torch/nn/parallel/distributed.py:2351: UserWarning: You passed find_unused_parameters=true to DistributedDataParallel, `_set_static_graph` will detect unused parameters automatically, so you do not need to set find_unused_parameters=true, just be sure these unused parameters will not change during training loop while calling `_set_static_graph`.
+  warnings.warn(
+[18:24:57.906091] AdamW (
+Parameter Group 0
+    amsgrad: False
+    betas: (0.9, 0.95)
+    capturable: False
+    differentiable: False
+    eps: 1e-08
+    foreach: None
+    fused: None
+    lr: 0.0001
+    lr_scale: 1.0
+    maximize: False
+    weight_decay: 0.05
+
+Parameter Group 1
+    amsgrad: False
+    betas: (0.9, 0.95)
+    capturable: False
+    differentiable: False
+    eps: 1e-08
+    foreach: None
+    fused: None
+    lr: 0.0001
+    lr_scale: 1.0
+    maximize: False
+    weight_decay: 0.0
+)
+/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/croco/utils/misc.py:250: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  self._scaler = torch.cuda.amp.GradScaler(enabled=enabled)
+/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/croco/utils/misc.py:250: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  self._scaler = torch.cuda.amp.GradScaler(enabled=enabled)
+/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/croco/utils/misc.py:250: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  self._scaler = torch.cuda.amp.GradScaler(enabled=enabled)
+/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/croco/utils/misc.py:250: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  self._scaler = torch.cuda.amp.GradScaler(enabled=enabled)
+/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/croco/utils/misc.py:250: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  self._scaler = torch.cuda.amp.GradScaler(enabled=enabled)
+/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/croco/utils/misc.py:250: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  self._scaler = torch.cuda.amp.GradScaler(enabled=enabled)
+/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/croco/utils/misc.py:250: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  self._scaler = torch.cuda.amp.GradScaler(enabled=enabled)
+/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/croco/utils/misc.py:250: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  self._scaler = torch.cuda.amp.GradScaler(enabled=enabled)
+[18:24:57.909387] Start training for 50 epochs
+[18:24:57.912313] log_dir: checkpoints/MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric
+/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/dust3r/inference.py:44: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=bool(use_amp)):
+/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/dust3r/inference.py:44: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=bool(use_amp)):
+/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/dust3r/inference.py:44: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=bool(use_amp)):
+/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/dust3r/inference.py:44: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=bool(use_amp)):
+/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/dust3r/inference.py:44: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=bool(use_amp)):
+/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/dust3r/model.py:206: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=False):
+/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/dust3r/model.py:206: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=False):
+/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/dust3r/model.py:206: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=False):
+/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/dust3r/model.py:206: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=False):
+/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/dust3r/inference.py:44: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=bool(use_amp)):
+/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/dust3r/inference.py:44: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=bool(use_amp)):
+/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/dust3r/inference.py:48: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=False):
+/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/dust3r/inference.py:48: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=False):
+/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/dust3r/inference.py:48: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=False):
+/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/dust3r/model.py:206: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=False):
+/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/dust3r/inference.py:48: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=False):
+/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/dust3r/model.py:206: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=False):
+/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/dust3r/model.py:206: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=False):
+/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/dust3r/inference.py:48: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=False):
+/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/dust3r/inference.py:48: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=False):
+[rank7]:[W309 18:25:03.823288479 reducer.cpp:327] Warning: Grad strides do not match bucket view strides. This may indicate grad was not created according to the gradient layout contract, or that the param's strides changed since DDP was constructed.  This is not an error, but may impair performance.
+grad.sizes() = [256, 256, 1, 1], strides() = [256, 1, 256, 256]
+bucket_view.sizes() = [256, 256, 1, 1], strides() = [256, 1, 1, 1] (function operator())
+/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/dust3r/inference.py:44: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=bool(use_amp)):
+/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/dust3r/inference.py:48: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=False):
+[rank3]:[W309 18:25:03.099684209 reducer.cpp:327] Warning: Grad strides do not match bucket view strides. This may indicate grad was not created according to the gradient layout contract, or that the param's strides changed since DDP was constructed.  This is not an error, but may impair performance.
+grad.sizes() = [256, 256, 1, 1], strides() = [256, 1, 256, 256]
+bucket_view.sizes() = [256, 256, 1, 1], strides() = [256, 1, 1, 1] (function operator())
+[rank4]:[W309 18:25:03.105854838 reducer.cpp:327] Warning: Grad strides do not match bucket view strides. This may indicate grad was not created according to the gradient layout contract, or that the param's strides changed since DDP was constructed.  This is not an error, but may impair performance.
+grad.sizes() = [256, 256, 1, 1], strides() = [256, 1, 256, 256]
+bucket_view.sizes() = [256, 256, 1, 1], strides() = [256, 1, 1, 1] (function operator())
+[rank2]:[W309 18:25:03.171672993 reducer.cpp:327] Warning: Grad strides do not match bucket view strides. This may indicate grad was not created according to the gradient layout contract, or that the param's strides changed since DDP was constructed.  This is not an error, but may impair performance.
+grad.sizes() = [256, 256, 1, 1], strides() = [256, 1, 256, 256]
+bucket_view.sizes() = [256, 256, 1, 1], strides() = [256, 1, 1, 1] (function operator())
+/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/dust3r/model.py:206: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=False):
+[rank0]:[W309 18:25:03.330385590 reducer.cpp:327] Warning: Grad strides do not match bucket view strides. This may indicate grad was not created according to the gradient layout contract, or that the param's strides changed since DDP was constructed.  This is not an error, but may impair performance.
+grad.sizes() = [256, 256, 1, 1], strides() = [256, 1, 256, 256]
+bucket_view.sizes() = [256, 256, 1, 1], strides() = [256, 1, 1, 1] (function operator())
+[rank1]:[W309 18:25:03.349128642 reducer.cpp:327] Warning: Grad strides do not match bucket view strides. This may indicate grad was not created according to the gradient layout contract, or that the param's strides changed since DDP was constructed.  This is not an error, but may impair performance.
+grad.sizes() = [256, 256, 1, 1], strides() = [256, 1, 256, 256]
+bucket_view.sizes() = [256, 256, 1, 1], strides() = [256, 1, 1, 1] (function operator())
+/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/dust3r/inference.py:48: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=False):
+[rank6]:[W309 18:25:04.815377051 reducer.cpp:327] Warning: Grad strides do not match bucket view strides. This may indicate grad was not created according to the gradient layout contract, or that the param's strides changed since DDP was constructed.  This is not an error, but may impair performance.
+grad.sizes() = [256, 256, 1, 1], strides() = [256, 1, 256, 256]
+bucket_view.sizes() = [256, 256, 1, 1], strides() = [256, 1, 1, 1] (function operator())
+[rank5]:[W309 18:25:04.300156828 reducer.cpp:327] Warning: Grad strides do not match bucket view strides. This may indicate grad was not created according to the gradient layout contract, or that the param's strides changed since DDP was constructed.  This is not an error, but may impair performance.
+grad.sizes() = [256, 256, 1, 1], strides() = [256, 1, 256, 256]
+bucket_view.sizes() = [256, 256, 1, 1], strides() = [256, 1, 1, 1] (function operator())
+[18:25:04.854835] Epoch: [0]  [    0/22087]  eta: 1 day, 11:55:13  lr: 0.000000  epoch: 0.0000 (0.0000)  loss: 1.9754 (1.9754)  conf_loss_1: -0.1626 (-0.1626)  conf_loss2: -0.1447 (-0.1447)  Regr3D_pts3d_1: 0.0732 (0.0732)  Regr3D_pts3d_2: 0.0687 (0.0687)  matching_conf_loss: 30.4375 (30.4375)  Conf1_std: 0.1388 (0.1388)  Conf2_std: 0.1377 (0.1377)  MatchingLoss: 30.1920 (30.1920)  time: 5.8547  data: 3.3955  max mem: 15762
+[rank6]: Traceback (most recent call last):
+[rank6]:   File "/cis/home/zshao14/Downloads/RoMa/mast3r/train.py", line 48, in <module>
+[rank6]:     train(args)
+[rank6]:   File "/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/dust3r/training.py", line 226, in train
+[rank6]:     train_stats = train_one_epoch(
+[rank6]:                   ^^^^^^^^^^^^^^^^
+[rank6]:   File "/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/dust3r/training.py", line 290, in train_one_epoch
+[rank6]:     for data_iter_step, batch in enumerate(metric_logger.log_every(data_loader, args.print_freq, header)):
+[rank6]:   File "/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/croco/utils/misc.py", line 148, in log_every
+[rank6]:     for it,obj in enumerate(iterable):
+[rank6]:   File "/cis/home/zshao14/miniconda3/envs/mast3r/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 701, in __next__
+[rank6]:     data = self._next_data()
+[rank6]:            ^^^^^^^^^^^^^^^^^
+[rank6]:   File "/cis/home/zshao14/miniconda3/envs/mast3r/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 1445, in _next_data
+[rank6]:     return self._process_data(data)
+[rank6]:            ^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/cis/home/zshao14/miniconda3/envs/mast3r/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 1491, in _process_data
+[rank6]:     data.reraise()
+[rank6]:   File "/cis/home/zshao14/miniconda3/envs/mast3r/lib/python3.11/site-packages/torch/_utils.py", line 715, in reraise
+[rank6]:     raise exception
+[rank6]: FileNotFoundError: Caught FileNotFoundError in DataLoader worker process 3.
+[rank6]: Original Traceback (most recent call last):
+[rank6]:   File "/cis/home/zshao14/miniconda3/envs/mast3r/lib/python3.11/site-packages/torch/utils/data/_utils/worker.py", line 351, in _worker_loop
+[rank6]:     data = fetcher.fetch(index)  # type: ignore[possibly-undefined]
+[rank6]:            ^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/cis/home/zshao14/miniconda3/envs/mast3r/lib/python3.11/site-packages/torch/utils/data/_utils/fetch.py", line 52, in fetch
+[rank6]:     data = [self.dataset[idx] for idx in possibly_batched_index]
+[rank6]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/cis/home/zshao14/miniconda3/envs/mast3r/lib/python3.11/site-packages/torch/utils/data/_utils/fetch.py", line 52, in <listcomp>
+[rank6]:     data = [self.dataset[idx] for idx in possibly_batched_index]
+[rank6]:             ~~~~~~~~~~~~^^^^^
+[rank6]:   File "/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/dust3r/datasets/base/easy_dataset.py", line 151, in __getitem__
+[rank6]:     return dataset[new_idx]
+[rank6]:            ~~~~~~~^^^^^^^^^
+[rank6]:   File "/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/dust3r/datasets/base/easy_dataset.py", line 151, in __getitem__
+[rank6]:     return dataset[new_idx]
+[rank6]:            ~~~~~~~^^^^^^^^^
+[rank6]:   File "/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/dust3r/datasets/base/easy_dataset.py", line 151, in __getitem__
+[rank6]:     return dataset[new_idx]
+[rank6]:            ~~~~~~~^^^^^^^^^
+[rank6]:   [Previous line repeated 4 more times]
+[rank6]:   File "/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/dust3r/datasets/base/easy_dataset.py", line 107, in __getitem__
+[rank6]:     return self.dataset[self._idxs_mapping[idx], other]
+[rank6]:            ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/cis/home/zshao14/Downloads/RoMa/mast3r/mast3r/datasets/base/mast3r_base_stereo_view_dataset.py", line 199, in __getitem__
+[rank6]:     views = self._get_views(idx, resolution, self._rng)
+[rank6]:             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/dust3r/datasets/habitat.py", line 47, in _get_views
+[rank6]:     image, depthmap, intrinsics, camera_pose = self._load_one_view(data_path, key, ii % 5, resolution, rng)
+[rank6]:                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/cis/home/zshao14/Downloads/RoMa/mast3r/dust3r/dust3r/datasets/habitat.py", line 63, in _load_one_view
+[rank6]:     image = Image.open(impath)
+[rank6]:             ^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/cis/home/zshao14/miniconda3/envs/mast3r/lib/python3.11/site-packages/PIL/Image.py", line 3277, in open
+[rank6]:     fp = builtins.open(filename, "rb")
+[rank6]:          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]: FileNotFoundError: [Errno 2] No such file or directory: '/cis/net/io99/data/zshao/dust3r/data/habitat_processed/hm3d/train/00570-kyoZhaD9HuW/kyoZhaD9HuW.basis/306_5.jpeg'
+
+W0309 18:25:09.344000 2372716 site-packages/torch/distributed/elastic/multiprocessing/api.py:897] Sending process 2372846 closing signal SIGTERM
+W0309 18:25:09.346000 2372716 site-packages/torch/distributed/elastic/multiprocessing/api.py:897] Sending process 2372847 closing signal SIGTERM
+W0309 18:25:09.360000 2372716 site-packages/torch/distributed/elastic/multiprocessing/api.py:897] Sending process 2372848 closing signal SIGTERM
+W0309 18:25:09.361000 2372716 site-packages/torch/distributed/elastic/multiprocessing/api.py:897] Sending process 2372849 closing signal SIGTERM
+W0309 18:25:09.365000 2372716 site-packages/torch/distributed/elastic/multiprocessing/api.py:897] Sending process 2372850 closing signal SIGTERM
+W0309 18:25:09.367000 2372716 site-packages/torch/distributed/elastic/multiprocessing/api.py:897] Sending process 2372851 closing signal SIGTERM
+W0309 18:25:09.372000 2372716 site-packages/torch/distributed/elastic/multiprocessing/api.py:897] Sending process 2372853 closing signal SIGTERM
+E0309 18:25:11.223000 2372716 site-packages/torch/distributed/elastic/multiprocessing/api.py:869] failed (exitcode: 1) local_rank: 6 (pid: 2372852) of binary: /cis/home/zshao14/miniconda3/envs/mast3r/bin/python
+Traceback (most recent call last):
+  File "/cis/home/zshao14/miniconda3/envs/mast3r/bin/torchrun", line 33, in <module>
+    sys.exit(load_entry_point('torch==2.5.1', 'console_scripts', 'torchrun')())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/cis/home/zshao14/miniconda3/envs/mast3r/lib/python3.11/site-packages/torch/distributed/elastic/multiprocessing/errors/__init__.py", line 355, in wrapper
+    return f(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/cis/home/zshao14/miniconda3/envs/mast3r/lib/python3.11/site-packages/torch/distributed/run.py", line 919, in main
+    run(args)
+  File "/cis/home/zshao14/miniconda3/envs/mast3r/lib/python3.11/site-packages/torch/distributed/run.py", line 910, in run
+    elastic_launch(
+  File "/cis/home/zshao14/miniconda3/envs/mast3r/lib/python3.11/site-packages/torch/distributed/launcher/api.py", line 138, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/cis/home/zshao14/miniconda3/envs/mast3r/lib/python3.11/site-packages/torch/distributed/launcher/api.py", line 269, in launch_agent
+    raise ChildFailedError(
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
+============================================================
+train.py FAILED
+------------------------------------------------------------
+Failures:
+  <NO_OTHER_FAILURES>
+------------------------------------------------------------
+Root Cause (first observed failure):
+[0]:
+  time      : 2025-03-09_18:25:09
+  host      : io99
+  rank      : 6 (local_rank: 6)
+  exitcode  : 1 (pid: 2372852)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+============================================================
