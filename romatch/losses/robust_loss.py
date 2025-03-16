@@ -576,22 +576,12 @@ class RobustLosses_Depth(nn.Module):
             x2 = gt_warp.float()
             prob = gt_prob
 
-            gt_pts1, gt_valid1 = get_gt_pts(
-                batch["im_A_depth"],
-                batch["K1"],
-                batch["T1"],
-                H=h,
-                W=w,
-            )
+            gt_pts1 = F.interpolate(batch['pts1'].permute(0,3,1,2), size=(h,w), mode='bilinear', align_corner=False).permute(0,2,3,1) #[B, H, W, 3]  
+            gt_valid1 = F.interpolate(batch['mask1'].unsqueeze(1), size=(h,w), mode='nearest').squeeze(1) #[B, H, W]
             valid1 = gt_valid1
 
-            gt_pts2, gt_valid2 = get_gt_pts(
-                batch["im_B_depth"],
-                batch["K2"],
-                batch["T2"],
-                H=h,
-                W=w,
-            )
+            gt_pts2 = F.interpolate(batch['pts2'].permute(0,3,1,2), size=(h,w), mode='bilinear', align_corner=False).permute(0,2,3,1) #[B, H, W, 3]  
+            gt_valid2 = F.interpolate(batch['mask2'].unsqueeze(1), size=(h,w), mode='nearest').squeeze(1) #[B, H, W]
             valid2 = gt_valid2
 
             T1 = batch['T1']
