@@ -342,7 +342,7 @@ def train(args):
     experiment_name = os.path.splitext(os.path.basename(__file__))[0]
     wandb_mode = "online" if wandb_log and rank == 0 else "disabled"
     wandb.init(project="romatch", entity=args.wandb_entity, name=experiment_name, reinit=False, mode = wandb_mode)
-    checkpoint_dir = "/cis/net/r24a/data/zshao/Mast3rRoMa_checkpoints/"
+    checkpoint_dir = "/home/cpeng26/scratchrchella4/checkpoints/"
     h,w = resolutions[resolution]
     model = get_SD_model(pretrained_backbone=True, resolution=resolution, attenuate_cert = False).to(device_id)
     for name,module in model.named_children():
@@ -358,7 +358,7 @@ def train(args):
     romatch.STEP_SIZE = step_size
     
     
-    dataset_path = '/cis/net/io99/data/zshao/megadepth'
+    dataset_path = '/home/cpeng26/scratchrchella4/data/megadepth'
     # Data
     print('Building train dataset {:s}'.format(args.train_dataset))
     data_loader_train = build_dataset(args.train_dataset, args.gpu_batch_size, args.num_workers, test=False)
