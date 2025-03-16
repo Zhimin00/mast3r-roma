@@ -15,7 +15,8 @@ import numpy as np
 import os 
 import sys
 
-mast3r_path = os.path.abspath("./RoMa/mast3r")
+mast3r_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../mast3r"))
+print(mast3r_path)
 sys.path.insert(0, mast3r_path)
 
 from mast3r.model import AsymmetricMASt3R
