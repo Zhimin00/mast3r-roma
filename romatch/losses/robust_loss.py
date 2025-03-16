@@ -868,23 +868,23 @@ class RobustLosses_Depth(nn.Module):
                         < (1 / 2) * (self.local_dist[scale] * scale)
                 )
             
-            if scale_gm_cls is not None:
-                gm_cls_losses = self.gm_cls_loss(x2, prob, scale_gm_cls, scale_gm_certainty, scale)
-                gm_loss = self.ce_weight * gm_cls_losses[f"gm_certainty_loss_{scale}"] + gm_cls_losses[f"gm_cls_loss_{scale}"]
-                tot_loss = tot_loss + scale_weights[scale] * gm_loss
-            elif scale_gm_flow is not None:
-                gm_flow_losses = self.regression_loss(x2, prob, scale_gm_flow, scale_gm_certainty, scale, mode = "gm")
-                gm_loss = self.ce_weight * gm_flow_losses[f"gm_certainty_loss_{scale}"] + gm_flow_losses[f"gm_regression_loss_{scale}"]
-                tot_loss = tot_loss + scale_weights[scale] * gm_loss
+            # if scale_gm_cls is not None:
+            #     gm_cls_losses = self.gm_cls_loss(x2, prob, scale_gm_cls, scale_gm_certainty, scale)
+            #     gm_loss = self.ce_weight * gm_cls_losses[f"gm_certainty_loss_{scale}"] + gm_cls_losses[f"gm_cls_loss_{scale}"]
+            #     tot_loss = tot_loss + scale_weights[scale] * gm_loss
+            # elif scale_gm_flow is not None:
+            #     gm_flow_losses = self.regression_loss(x2, prob, scale_gm_flow, scale_gm_certainty, scale, mode = "gm")
+            #     gm_loss = self.ce_weight * gm_flow_losses[f"gm_certainty_loss_{scale}"] + gm_flow_losses[f"gm_regression_loss_{scale}"]
+            #     tot_loss = tot_loss + scale_weights[scale] * gm_loss
             
-            if delta_cls is not None:
-                delta_cls_losses = self.delta_cls_loss(x2, prob, flow_pre_delta, delta_cls, scale_certainty, scale, offset_scale)
-                delta_cls_loss = self.ce_weight * delta_cls_losses[f"delta_certainty_loss_{scale}"] + delta_cls_losses[f"delta_cls_loss_{scale}"]
-                tot_loss = tot_loss + scale_weights[scale] * delta_cls_loss
-            else:
-                delta_regression_losses = self.regression_loss(x2, prob, flow, scale_certainty, scale)
-                reg_loss = self.ce_weight * delta_regression_losses[f"delta_certainty_loss_{scale}"] + delta_regression_losses[f"delta_regression_loss_{scale}"]
-                tot_loss = tot_loss + scale_weights[scale] * reg_loss
+            # if delta_cls is not None:
+            #     delta_cls_losses = self.delta_cls_loss(x2, prob, flow_pre_delta, delta_cls, scale_certainty, scale, offset_scale)
+            #     delta_cls_loss = self.ce_weight * delta_cls_losses[f"delta_certainty_loss_{scale}"] + delta_cls_losses[f"delta_cls_loss_{scale}"]
+            #     tot_loss = tot_loss + scale_weights[scale] * delta_cls_loss
+            # else:
+            #     delta_regression_losses = self.regression_loss(x2, prob, flow, scale_certainty, scale)
+            #     reg_loss = self.ce_weight * delta_regression_losses[f"delta_certainty_loss_{scale}"] + delta_regression_losses[f"delta_regression_loss_{scale}"]
+            #     tot_loss = tot_loss + scale_weights[scale] * reg_loss
             if scale_pts3d1 is not None and scale_pts3d2 is not None:
                 conf_loss, epe1, epe2 = self.Confloss(scale_pts3d1, scale_conf1, scale_pts3d2, scale_conf2, gt_pts1, valid1, gt_pts2, valid2, T1, scale)
                 tot_loss = tot_loss + scale_weights[scale] * (conf_loss[f"conf_loss1_{scale}"]+conf_loss[f"conf_loss2_{scale}"])
@@ -892,6 +892,139 @@ class RobustLosses_Depth(nn.Module):
             prev_epe1 = epe1.detach()
             prev_epe2 = epe2.detach()
         return tot_loss
+
+class RobustLosses_only_dpt(nn.Module):
+    def __init__(
+        self,
+        robust=False,
+        center_coords=False,
+        scale_normalize=False,
+        ce_weight=0.01,
+        local_loss=True,
+        local_dist=4.0,
+        local_largest_scale=8,
+        smooth_mask = False,
+        depth_interpolation_mode = "bilinear",
+        mask_depth_loss = False,
+        relative_depth_error_threshold = 0.05,
+        alpha = 1.,
+        c = 1e-3,
+        _alpha = 0.2,
+    ):
+        super().__init__()
+        self.robust = robust  # measured in pixels
+        self.center_coords = center_coords
+        self.scale_normalize = scale_normalize
+        self.ce_weight = ce_weight
+        self.local_loss = local_loss
+        self.local_dist = local_dist
+        self.local_largest_scale = local_largest_scale
+        self.smooth_mask = smooth_mask
+        self.depth_interpolation_mode = depth_interpolation_mode
+        self.mask_depth_loss = mask_depth_loss
+        self.relative_depth_error_threshold = relative_depth_error_threshold
+        self.avg_overlap = dict()
+        self.alpha = alpha
+        self.c = c
+        self.criterion = L21Loss()
+        self._alpha = _alpha
+
+    def get_conf_log(self, x):
+        return x, torch.log(x)
+
+    def Confloss(self, pred_pts3d1, pred_conf1, pred_pts3d2, pred_conf2, gt_pts3d1, gt_valid1, gt_pts3d2, gt_valid2, T1, scale, dist_clip = None, norm_mode = None, gt_scale = None):
+        pred_pts3d1, pred_conf1 = reg(pred_pts3d1, pred_conf1)
+        pred_pts3d2, pred_conf2 = reg(pred_pts3d2, pred_conf2)
+        in_camera1 = inv(T1)
+        gt_pts1 = geotrf(in_camera1, gt_pts3d1)  # B,H,W,3
+        gt_pts2 = geotrf(in_camera1, gt_pts3d2)  # B,H,W,3
+        valid1 = gt_valid1.clone() # B,H,W
+        valid2 = gt_valid2.clone()
+        if dist_clip is not None:
+            dis1 = gt_pts1.norm(dim=-1)
+            dis2 = gt_pts2.norm(dim=-1)
+            valid1 = valid1 & (dis1 <= dist_clip)
+            valid2 = valid2 & (dis2 <= dist_clip)
+        epe1 = (pred_pts3d1 - gt_pts1).norm(dim=-1)
+        epe2 = (pred_pts3d2 - gt_pts2).norm(dim=-1)
+        pr_pts1, pr_pts2 = normalize_pointcloud(pred_pts3d1, pred_pts3d2, 'avg_dis', valid1, valid2)
+        gt_pts1, gt_pts2 = normalize_pointcloud(gt_pts1, gt_pts2, 'avg_dis', valid1, valid2)
+        l1 = self.criterion(pr_pts1[valid1], gt_pts1[valid1])
+        l2 = self.criterion(pr_pts2[valid2], gt_pts2[valid2])
+        
+        if l1.numel() == 0:
+            print('NO VALID POINTS in img1')
+        if l2.numel() == 0:
+            print('NO VALID POINTS in img2')
+        # weight by confidence
+        conf1, log_conf1 = self.get_conf_log(pred_conf1[valid1])
+        conf2, log_conf2 = self.get_conf_log(pred_conf2[valid2])
+        conf_loss1 = l1 * conf1 - self._alpha * log_conf1
+        conf_loss2 = l2 * conf2 - self._alpha * log_conf2
+
+        # average + nan protection (in case of no valid pixels at all)
+        conf_loss1 = conf_loss1.mean() if conf_loss1.numel() > 0 else 0
+        conf_loss2 = conf_loss2.mean() if conf_loss2.numel() > 0 else 0
+
+        losses = {
+            f"conf_loss1_{scale}": conf_loss1,
+            f"conf_loss2_{scale}": conf_loss2,
+        }
+        wandb.log(losses, step = romatch.GLOBAL_STEP)
+        return losses, epe1, epe2        
+
+    def forward(self, corresps, batch):
+        scales = list(corresps.keys())
+        tot_loss = 0.0
+        # scale_weights due to differences in scale for regression gradients and classification gradients
+        scale_weights = {1:1, 2:1, 4:1, 8:1, 16:1}
+        for scale in scales:
+            scale_corresps = corresps[scale]
+            scale_pts3d1, scale_conf1, scale_pts3d2, scale_conf2 = (
+                scale_corresps.get('pts1'),
+                scale_corresps.get('pts_conf1'),
+                scale_corresps.get('pts2'),
+                scale_corresps.get('pts_conf2'),
+            )
+            
+            b, _, h, w = scale_pts3d1.shape
+            
+            gt_pts1, gt_valid1 = get_gt_pts(
+                batch["im_A_depth"],
+                batch["K1"],
+                batch["T1"],
+                H=h,
+                W=w,
+            )
+            valid1 = gt_valid1
+
+            gt_pts2, gt_valid2 = get_gt_pts(
+                batch["im_B_depth"],
+                batch["K2"],
+                batch["T2"],
+                H=h,
+                W=w,
+            )
+            valid2 = gt_valid2
+
+            T1 = batch['T1']
+            if self.local_largest_scale >= scale:
+                valid1 = valid1 * (
+                     F.interpolate(prev_epe1[:, None], size=(h, w), mode="nearest-exact")[:, 0]
+                        < (5 / 32) * (self.local_dist[scale] * scale)
+                )
+                valid2 = valid2 * (
+                     F.interpolate(prev_epe2[:, None], size=(h, w), mode="nearest-exact")[:, 0]
+                        < (1 / 2) * (self.local_dist[scale] * scale)
+                )
+            
+            if scale_pts3d1 is not None and scale_pts3d2 is not None:
+                conf_loss, epe1, epe2 = self.Confloss(scale_pts3d1, scale_conf1, scale_pts3d2, scale_conf2, gt_pts1, valid1, gt_pts2, valid2, T1, scale)
+                tot_loss = tot_loss + scale_weights[scale] * (conf_loss[f"conf_loss1_{scale}"]+conf_loss[f"conf_loss2_{scale}"])
+            prev_epe1 = epe1.detach()
+            prev_epe2 = epe2.detach()
+        return tot_loss
+
 
 class RobustLosses_3D(nn.Module):
     def __init__(

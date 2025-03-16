@@ -811,6 +811,181 @@ class Decoder_dpt(nn.Module):
             #torch.cuda.empty_cache()        
         return corresps
 
+class Decoder_only_dpt(nn.Module):
+    def __init__(
+        self, dpt1, dpt2, dpt_refiner1, dpt_refiner2, gps, proj, detach=False, scales="all", pos_embeddings = None,
+        num_refinement_steps_per_scale = 1, warp_noise_std = 0.0, displacement_dropout_p = 0.0, gm_warp_dropout_p = 0.0,
+        flow_upsample_mode = "bilinear", amp_dtype = torch.float16,
+    ):
+        super().__init__()
+        self.num_refinement_steps_per_scale = num_refinement_steps_per_scale
+        self.gps = gps
+        self.proj = proj
+        self.detach = detach
+        if pos_embeddings is None:
+            self.pos_embeddings = {}
+        else:
+            self.pos_embeddings = pos_embeddings
+        if scales == "all":
+            self.scales = ["32", "16", "8", "4", "2", "1"]
+        else:
+            self.scales = scales
+        self.warp_noise_std = warp_noise_std
+        self.refine_init = 4
+        self.displacement_dropout_p = displacement_dropout_p
+        self.gm_warp_dropout_p = gm_warp_dropout_p
+        self.flow_upsample_mode = flow_upsample_mode
+        self.amp_dtype = amp_dtype
+        self.dpt1 = dpt1
+        self.dpt_refiner1 = dpt_refiner1
+        self.dpt2 = dpt2
+        self.dpt_refiner2 = dpt_refiner2
+        
+    def get_placeholder_flow(self, b, h, w, device):
+        coarse_coords = torch.meshgrid(
+            (
+                torch.linspace(-1 + 1 / h, 1 - 1 / h, h, device=device),
+                torch.linspace(-1 + 1 / w, 1 - 1 / w, w, device=device),
+            ),
+            indexing = 'ij'
+        )
+        coarse_coords = torch.stack((coarse_coords[1], coarse_coords[0]), dim=-1)[
+            None
+        ].expand(b, h, w, 2)
+        coarse_coords = rearrange(coarse_coords, "b h w d -> b d h w")
+        return coarse_coords
+    
+    def get_positional_embedding(self, b, h ,w, device):
+        coarse_coords = torch.meshgrid(
+            (
+                torch.linspace(-1 + 1 / h, 1 - 1 / h, h, device=device),
+                torch.linspace(-1 + 1 / w, 1 - 1 / w, w, device=device),
+            ),
+            indexing = 'ij'
+        )
+
+        coarse_coords = torch.stack((coarse_coords[1], coarse_coords[0]), dim=-1)[
+            None
+        ].expand(b, h, w, 2)
+        coarse_coords = rearrange(coarse_coords, "b h w d -> b d h w")
+        coarse_embedded_coords = self.pos_embedding(coarse_coords)
+        return coarse_embedded_coords
+
+    def forward(self, f1, f2, gt_warp = None, gt_prob = None, upsample = False, flow = None, certainty = None, pts1 = None, pts_conf1 = None, pts2 = None, pts_conf2 = None, scale_factor = 1):
+        coarse_scales = 16
+        all_scales = self.scales if not upsample else ["8", "4", "2", "1"] 
+        sizes = {scale: f1[scale].shape[-2:] for scale in f1}
+        h, w = sizes[1]
+        b = f1[1].shape[0]
+        device = f1[1].device
+        coarsest_scale = int(all_scales[0])
+        
+        old_pts1 = torch.zeros(
+            b, 3, *sizes[coarsest_scale], device=f1[coarsest_scale].device
+        )
+        old_pts2 = torch.zeros(
+            b, 3, *sizes[coarsest_scale], device=f1[coarsest_scale].device
+        )
+        corresps = {}
+        if not upsample:
+            pts1 = old_pts1
+            pts_conf1 = 0.0
+            pts2 = old_pts2
+            pts_conf2 = 0.0
+        else:
+            pts1 = F.interpolate(
+                pts1,
+                size=sizes[coarsest_scale],
+                align_corners=False,
+                mode="bilinear",
+            )
+            pts_conf1 = F.interpolate(
+                pts_conf1,
+                size=sizes[coarsest_scale],
+                align_corners=False,
+                mode="bilinear",
+            )
+            pts2 = F.interpolate(
+                pts2,
+                size=sizes[coarsest_scale],
+                align_corners=False,
+                mode="bilinear",
+            )
+            pts_conf2 = F.interpolate(
+                pts_conf2,
+                size=sizes[coarsest_scale],
+                align_corners=False,
+                mode="bilinear",
+            )
+        for new_scale in all_scales:
+            ins = int(new_scale)
+            corresps[ins] = {}
+            f1_s, f2_s = f1[ins], f2[ins]
+            if new_scale in self.proj:
+                autocast_device, autocast_enabled, autocast_dtype = get_autocast_params(f1_s.device, str(f1_s)=='cuda', self.amp_dtype)
+                with torch.autocast(autocast_device, enabled=autocast_enabled, dtype = autocast_dtype):
+                    if not autocast_enabled:
+                        f1_s, f2_s = f1_s.to(torch.float32), f2_s.to(torch.float32)
+                    f1_s, f2_s = self.proj[new_scale](f1_s), self.proj[new_scale](f2_s)
+
+            if ins in coarse_scales:
+                pts1, pts_conf1 = self.dpt1(f1_s)
+                pts2, pts_conf2 = self.dpt2(f2_s)
+                corresps[ins].update({"pts1": pts1, "pts_conf1": pts_conf1, "pts2": pts2, "pts_conf2": pts_conf2}) if self.training else None
+                    
+            if new_scale in self.dpt_refiner1:
+                corresps[ins].update({"pts1_pre_delta": pts1, "pts2_pre_delta": pts2}) if self.training else None
+                delta_pts1, delta_conf1 = self.dpt_refiner1[new_scale](
+                    f1_s, f2_s, pts1, logits = pts_conf1
+                )
+                delta_pts2, delta_conf2 = self.dpt_refiner2[new_scale](
+                    f2_s, f1_s, pts2, logits = pts_conf2
+                )
+                pts1 = pts1 + delta_pts1
+                pts2 = pts2 + delta_pts2
+                pts_conf1 = (pts_conf1 + delta_conf1)
+                pts_conf2 = (pts_conf2 + delta_conf2)
+
+            corresps[ins].update({   
+                "pts1": pts1,
+                "pts2": pts2,
+                "pts_conf1": pts_conf1,
+                "pts_conf2": pts_conf2,         
+            })
+            if new_scale != "1":
+                certainty = F.interpolate(
+                    certainty,
+                    size=sizes[ins // 2],
+                    mode=self.flow_upsample_mode,
+                )
+                pts1 = F.interpolate(
+                    pts1,
+                    size=sizes[ins // 2],
+                    mode=self.flow_upsample_mode,
+                )
+                pts_conf1 = F.interpolate(
+                    pts_conf1,
+                    size=sizes[ins // 2],
+                    mode=self.flow_upsample_mode,
+                )
+                pts2 = F.interpolate(
+                    pts2,
+                    size=sizes[ins // 2],
+                    mode=self.flow_upsample_mode,
+                )
+                pts_conf2 = F.interpolate(
+                    pts_conf2,
+                    size=sizes[ins // 2],
+                    mode=self.flow_upsample_mode,
+                )
+                if self.detach:
+                    pts1 = pts1.detach()
+                    pts_conf1 = pts_conf1.detach()
+                    pts2 = pts2.detach()
+                    pts_conf2 = pts_conf2.detach()
+            #torch.cuda.empty_cache()        
+        return corresps
+
 class RegressionMatcher(nn.Module):
     def __init__(
         self,
@@ -2647,6 +2822,367 @@ class RegressionMatcher_dpt(nn.Module):
                           replacement=False)
         return good_matches[balanced_samples], good_certainty[balanced_samples]
     
+        
+    def forward(self, batch, batched = True, upsample = False, scale_factor = 1):
+        feature_pyramid = self.extract_backbone_features(batch, batched=batched, upsample = upsample)
+        if batched:
+            f_q_pyramid = {
+                scale: f_scale.chunk(2)[0] for scale, f_scale in feature_pyramid.items()
+            }
+            f_s_pyramid = {
+                scale: f_scale.chunk(2)[1] for scale, f_scale in feature_pyramid.items()
+            }
+        else:
+            f_q_pyramid, f_s_pyramid = feature_pyramid
+        corresps = self.decoder(f_q_pyramid, 
+                                f_s_pyramid, 
+                                upsample = upsample, 
+                                **(batch["corresps"] if "corresps" in batch else {}),
+                                scale_factor=scale_factor)
+        return corresps
+        
+    def forward_symmetric(self, batch, batched = True, upsample = False, scale_factor = 1):
+        feature_pyramid = self.extract_backbone_features(batch, batched = batched, upsample = upsample)
+        f_q_pyramid = feature_pyramid
+        f_s_pyramid = {
+            scale: torch.cat((f_scale.chunk(2)[1], f_scale.chunk(2)[0]), dim = 0)
+            for scale, f_scale in feature_pyramid.items()
+        }
+        corresps = self.decoder(f_q_pyramid, 
+                                f_s_pyramid, 
+                                upsample = upsample, 
+                                **(batch["corresps"] if "corresps" in batch else {}),
+                                scale_factor=scale_factor)
+        return corresps
+    
+    def conf_from_fb_consistency(self, flow_forward, flow_backward, th = 2):
+        # assumes that flow forward is of shape (..., H, W, 2)
+        has_batch = False
+        if len(flow_forward.shape) == 3:
+            flow_forward, flow_backward = flow_forward[None], flow_backward[None]
+        else:
+            has_batch = True
+        H,W = flow_forward.shape[-3:-1]
+        th_n = 2 * th / max(H,W)
+        coords = torch.stack(torch.meshgrid(
+            torch.linspace(-1 + 1 / W, 1 - 1 / W, W), 
+            torch.linspace(-1 + 1 / H, 1 - 1 / H, H), indexing = "xy"),
+                             dim = -1).to(flow_forward.device)
+        coords_fb = F.grid_sample(
+            flow_backward.permute(0, 3, 1, 2), 
+            flow_forward, 
+            align_corners=False, mode="bilinear").permute(0, 2, 3, 1)
+        diff = (coords - coords_fb).norm(dim=-1)
+        in_th = (diff < th_n).float()
+        if not has_batch:
+            in_th = in_th[0]
+        return in_th
+         
+    def to_pixel_coordinates(self, coords, H_A, W_A, H_B = None, W_B = None):
+        if coords.shape[-1] == 2:
+            return self._to_pixel_coordinates(coords, H_A, W_A) 
+        
+        if isinstance(coords, (list, tuple)):
+            kpts_A, kpts_B = coords[0], coords[1]
+        else:
+            kpts_A, kpts_B = coords[...,:2], coords[...,2:]
+        return self._to_pixel_coordinates(kpts_A, H_A, W_A), self._to_pixel_coordinates(kpts_B, H_B, W_B)
+
+    def _to_pixel_coordinates(self, coords, H, W):
+        kpts = torch.stack((W/2 * (coords[...,0]+1), H/2 * (coords[...,1]+1)),axis=-1)
+        return kpts
+ 
+    def to_normalized_coordinates(self, coords, H_A, W_A, H_B, W_B):
+        if isinstance(coords, (list, tuple)):
+            kpts_A, kpts_B = coords[0], coords[1]
+        else:
+            kpts_A, kpts_B = coords[...,:2], coords[...,2:]
+        kpts_A = torch.stack((2/W_A * kpts_A[...,0] - 1, 2/H_A * kpts_A[...,1] - 1),axis=-1)
+        kpts_B = torch.stack((2/W_B * kpts_B[...,0] - 1, 2/H_B * kpts_B[...,1] - 1),axis=-1)
+        return kpts_A, kpts_B
+
+    def match_keypoints(self, x_A, x_B, warp, certainty, return_tuple = True, return_inds = False):
+        x_A_to_B = F.grid_sample(warp[...,-2:].permute(2,0,1)[None], x_A[None,None], align_corners = False, mode = "bilinear")[0,:,0].mT
+        cert_A_to_B = F.grid_sample(certainty[None,None,...], x_A[None,None], align_corners = False, mode = "bilinear")[0,0,0]
+        D = torch.cdist(x_A_to_B, x_B)
+        inds_A, inds_B = torch.nonzero((D == D.min(dim=-1, keepdim = True).values) * (D == D.min(dim=-2, keepdim = True).values) * (cert_A_to_B[:,None] > self.sample_thresh), as_tuple = True)
+        
+        if return_tuple:
+            if return_inds:
+                return inds_A, inds_B
+            else:
+                return x_A[inds_A], x_B[inds_B]
+        else:
+            if return_inds:
+                return torch.cat((inds_A, inds_B),dim=-1)
+            else:
+                return torch.cat((x_A[inds_A], x_B[inds_B]),dim=-1)
+
+    def match_keypoints2(self, x_A, x_B, warp, certainty): 
+        assert len(warp.shape) == 3 and int(warp.shape[2]) == 4, str(warp.shape)
+        H,W2,_ = warp.shape
+        print(H, W2)
+        W = W2//2
+        # warp B keypoints into image A
+        #x_A_from_B = F.grid_sample(warp[:, :, :2].permute(2,0,1)[None], x_B[None,None], align_corners = False, mode = "bilinear")[0,:,0].mT
+        #cert_A_from_B = F.grid_sample(certainty[None, None, :, :], x_B[None,None], align_corners = False, mode = "bilinear")[0,0,0]
+        
+        x_A_from_B = F.grid_sample(warp[:, W:, :2].permute(2,0,1)[None], x_B[None,None], align_corners = False, mode = "bilinear")[0,:,0].mT
+        cert_A_from_B = F.grid_sample(certainty[None, None, :, W:], x_B[None,None], align_corners = False, mode = "bilinear")[0,0,0]
+        # match in the coordinate system of A
+        D = torch.cdist(x_A, x_A_from_B)
+        inds_A, inds_B = torch.nonzero((D == D.min(dim=-1, keepdim = True).values) * (D == D.min(dim=-2, keepdim = True).values) * (cert_A_from_B[None,:] > 0.01), as_tuple = True)
+        return inds_A, inds_B, cert_A_from_B[inds_B]
+        '''
+        x_A_to_B = F.grid_sample(warp[...,-2:].permute(2,0,1)[None], x_A[None,None], align_corners = False, mode = "bilinear")[0,:,0].mT
+        cert_A_to_B = F.grid_sample(certainty[None,None,...], x_A[None,None], align_corners = False, mode = "bilinear")[0,0,0]
+        D = torch.cdist(x_A_to_B, x_B)
+        inds_A, inds_B = torch.nonzero((D == D.min(dim=-1, keepdim = True).values) * (D == D.min(dim=-2, keepdim = True).values) * (cert_A_to_B[:,None] > self.sample_thresh), as_tuple = True)
+        return inds_A, inds_B, cert_A_to_B[inds_A]
+        '''
+    @torch.inference_mode()
+    def match(
+        self,
+        im_A_input,
+        im_B_input,
+        *args,
+        batched=False,
+        device=None,
+    ):
+        if device is None:
+            device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+        # Check if inputs are file paths or already loaded images
+        if isinstance(im_A_input, (str, os.PathLike)):
+            im_A = Image.open(im_A_input).convert("RGB")
+        else:
+            im_A = im_A_input
+
+        if isinstance(im_B_input, (str, os.PathLike)):
+            im_B = Image.open(im_B_input).convert("RGB")
+        else:
+            im_B = im_B_input
+
+        symmetric = self.symmetric
+        self.train(False)
+        with torch.no_grad():
+            if not batched:
+                b = 1
+                w, h = im_A.size
+                w2, h2 = im_B.size
+                # Get images in good format
+                ws = self.w_resized
+                hs = self.h_resized
+
+                test_transform = get_tuple_transform_ops(
+                    resize=(hs, ws), normalize=True, clahe=False
+                )
+                im_A, im_B = test_transform((im_A, im_B))
+                batch = {"im_A": im_A[None].to(device), "im_B": im_B[None].to(device)}
+            else:
+                b, c, h, w = im_A.shape
+                b, c, h2, w2 = im_B.shape
+                assert w == w2 and h == h2, "For batched images we assume same size"
+                batch = {"im_A": im_A.to(device), "im_B": im_B.to(device)}
+                if h != self.h_resized or self.w_resized != w:
+                    warn("Model resolution and batch resolution differ, may produce unexpected results")
+                hs, ws = h, w
+            finest_scale = 1
+            # Run matcher
+            if symmetric:
+                corresps = self.forward_symmetric(batch)
+            else:
+                corresps = self.forward(batch, batched=True)
+
+            if self.upsample_preds:
+                hs, ws = self.upsample_res
+
+            if self.attenuate_cert:
+                low_res_certainty = F.interpolate(
+                    corresps[16]["certainty"], size=(hs, ws), align_corners=False, mode="bilinear"
+                )
+                cert_clamp = 0
+                factor = 0.5
+                low_res_certainty = factor * low_res_certainty * (low_res_certainty < cert_clamp)
+
+            if self.upsample_preds:
+                finest_corresps = corresps[finest_scale]
+                torch.cuda.empty_cache()
+                test_transform = get_tuple_transform_ops(
+                    resize=(hs, ws), normalize=True
+                )
+                if isinstance(im_A_input, (str, os.PathLike)):
+                    im_A, im_B = test_transform(
+                        (Image.open(im_A_input).convert('RGB'), Image.open(im_B_input).convert('RGB')))
+                else:
+                    im_A, im_B = test_transform((im_A_input, im_B_input))
+
+                im_A, im_B = im_A[None].to(device), im_B[None].to(device)
+                scale_factor = math.sqrt(self.upsample_res[0] * self.upsample_res[1] / (self.w_resized * self.h_resized))
+                batch = {"im_A": im_A, "im_B": im_B, "corresps": finest_corresps}
+                if symmetric:
+                    corresps = self.forward_symmetric(batch, upsample=True, batched=True, scale_factor=scale_factor)
+                else:
+                    corresps = self.forward(batch, batched=True, upsample=True, scale_factor=scale_factor)
+
+            im_A_to_im_B = corresps[finest_scale]["flow"]
+            certainty = corresps[finest_scale]["certainty"] - (low_res_certainty if self.attenuate_cert else 0)
+            pts1 = corresps[finest_scale]['pts1']
+            pts_conf1 = corresps[finest_scale]['pts_conf1']
+            pts2 = corresps[finest_scale]['pts2']
+            pts_conf2 = corresps[finest_scale]['pts_conf2']
+            if finest_scale != 1:
+                im_A_to_im_B = F.interpolate(
+                    im_A_to_im_B, size=(hs, ws), align_corners=False, mode="bilinear"
+                )
+                certainty = F.interpolate(
+                    certainty, size=(hs, ws), align_corners=False, mode="bilinear"
+                )
+                pts1 = F.interpolate(
+                    pts1, size=(hs, ws), align_corners=False, mode="bilinear"
+                )
+                pts2 = F.interpolate(
+                    pts2, size=(hs, ws), align_corners=False, mode="bilinear"
+                )
+                pts_conf1 = F.interpolate(
+                    pts_conf1, size=(hs, ws), align_corners=False, mode="bilinear"
+                )
+                pts_conf2 = F.interpolate(
+                    pts_conf2, size=(hs, ws), align_corners=False, mode="bilinear"
+                )
+            im_A_to_im_B = im_A_to_im_B.permute(
+                0, 2, 3, 1
+            )
+            pts1, pts_conf1 = reg(pts1, pts_conf1)
+            pts2, pts_conf2 = reg(pts2, pts_conf2)
+            # Create im_A meshgrid
+            im_A_coords = torch.meshgrid(
+                (
+                    torch.linspace(-1 + 1 / hs, 1 - 1 / hs, hs, device=device),
+                    torch.linspace(-1 + 1 / ws, 1 - 1 / ws, ws, device=device),
+                ),
+                indexing='ij'
+            )
+            im_A_coords = torch.stack((im_A_coords[1], im_A_coords[0]))
+            im_A_coords = im_A_coords[None].expand(b, 2, hs, ws)
+            certainty = certainty.sigmoid()  # logits -> probs
+            im_A_coords = im_A_coords.permute(0, 2, 3, 1)
+            if (im_A_to_im_B.abs() > 1).any() and True:
+                wrong = (im_A_to_im_B.abs() > 1).sum(dim=-1) > 0
+                certainty[wrong[:, None]] = 0
+            im_A_to_im_B = torch.clamp(im_A_to_im_B, -1, 1)
+            if symmetric:
+                A_to_B, B_to_A = im_A_to_im_B.chunk(2)
+                q_warp = torch.cat((im_A_coords, A_to_B), dim=-1)
+                im_B_coords = im_A_coords
+                s_warp = torch.cat((B_to_A, im_B_coords), dim=-1)
+                warp = torch.cat((q_warp, s_warp), dim=2)
+                certainty = torch.cat(certainty.chunk(2), dim=3)
+                # t1_pts1, t2_pts2 = pts1.chunk(2)
+                # t1_pts2, t2_pts1 = pts2.chunk(2) 
+                # pts1 = torch.cat((t1_pts1, t2_pts1), dim=-1)
+                # pts2 = torch.cat(t1_pts1, t2_pts2), dim = -1)
+            else:
+                warp = torch.cat((im_A_coords, im_A_to_im_B), dim=-1)
+            if batched:
+                return (
+                    warp,
+                    certainty[:, 0],
+                    pts1,
+                    pts_conf1,
+                    pts2,
+                    pts_conf2,
+                )
+            else:
+                return (
+                    warp[0],
+                    certainty[0, 0],
+                    pts1[0],
+                    pts_conf1[0],
+                    pts2[0],
+                    pts_conf2[0],
+                )
+
+    def visualize_warp(self, warp, certainty, im_A = None, im_B = None, 
+                       im_A_path = None, im_B_path = None, device = "cuda", symmetric = True, save_path = None, unnormalize = False):
+        #assert symmetric == True, "Currently assuming bidirectional warp, might update this if someone complains ;)"
+        H,W2,_ = warp.shape
+        W = W2//2 if symmetric else W2
+        if im_A is None:
+            from PIL import Image
+            im_A, im_B = Image.open(im_A_path).convert("RGB"), Image.open(im_B_path).convert("RGB")
+        if not isinstance(im_A, torch.Tensor):
+            im_A = im_A.resize((W,H))
+            im_B = im_B.resize((W,H))    
+            x_B = (torch.tensor(np.array(im_B)) / 255).to(device).permute(2, 0, 1)
+            if symmetric:
+                x_A = (torch.tensor(np.array(im_A)) / 255).to(device).permute(2, 0, 1)
+        else:
+            if symmetric:
+                x_A = im_A
+            x_B = im_B
+        im_A_transfer_rgb = F.grid_sample(
+        x_B[None], warp[:,:W, 2:][None], mode="bilinear", align_corners=False
+        )[0]
+        if symmetric:
+            im_B_transfer_rgb = F.grid_sample(
+            x_A[None], warp[:, W:, :2][None], mode="bilinear", align_corners=False
+            )[0]
+            warp_im = torch.cat((im_A_transfer_rgb,im_B_transfer_rgb),dim=2)
+            white_im = torch.ones((H,2*W),device=device)
+        else:
+            warp_im = im_A_transfer_rgb
+            white_im = torch.ones((H, W), device = device)
+        vis_im = certainty * warp_im + (1 - certainty) * white_im
+        if save_path is not None:
+            from romatch.utils import tensor_to_pil
+            tensor_to_pil(vis_im, unnormalize=unnormalize).save(save_path)
+        return vis_im
+
+
+class RegressionMatcher_only_dpt(nn.Module):
+    def __init__(
+        self,
+        encoder,
+        decoder,
+        h=448,
+        w=448,
+        sample_mode = "threshold_balanced",
+        upsample_preds = False,
+        upsample_res = (14*16*6, 14*16*6),
+        symmetric = False,
+        name = None,
+        attenuate_cert = None,
+    ):
+        super().__init__()
+        self.attenuate_cert = attenuate_cert
+        self.encoder = encoder
+        self.decoder = decoder
+        self.name = name
+        self.w_resized = w
+        self.h_resized = h
+        self.og_transforms = get_tuple_transform_ops(resize=None, normalize=True)
+        self.sample_mode = sample_mode
+        self.upsample_preds = upsample_preds
+        self.upsample_res = upsample_res
+        self.symmetric = symmetric
+        self.sample_thresh = 0.05
+            
+    def get_output_resolution(self):
+        if not self.upsample_preds:
+            return self.h_resized, self.w_resized
+        else:
+            return self.upsample_res
+    
+    def extract_backbone_features(self, batch, batched = True, upsample = False):
+        x_q = batch["im_A"]
+        x_s = batch["im_B"]
+        if batched:
+            X = torch.cat((x_q, x_s), dim = 0)
+            feature_pyramid = self.encoder(X, upsample = upsample)
+        else:
+            feature_pyramid = self.encoder(x_q, upsample = upsample), self.encoder(x_s, upsample = upsample)
+        return feature_pyramid
         
     def forward(self, batch, batched = True, upsample = False, scale_factor = 1):
         feature_pyramid = self.extract_backbone_features(batch, batched=batched, upsample = upsample)
