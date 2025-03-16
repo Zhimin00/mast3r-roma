@@ -307,7 +307,7 @@ def get_SD_model(pretrained_backbone=True, resolution = "medium", **kwargs):
                       gm_warp_dropout_p = gm_warp_dropout_p)
     
     h,w = resolutions[resolution]
-    dinov2_weights = torch.load('/home/cpeng26/scratchrchella4/checkpoints/dinov2_vitl14_pretrain.pth')
+    dinov2_weights = torch.load('/home/cpeng26/scratchrchella4/checkpoints/dinov2_vitl14_pretrain.pth', map_location="cpu")
     encoder = CNNandDinov2(
         cnn_kwargs = dict(
             pretrained=pretrained_backbone,
@@ -317,7 +317,7 @@ def get_SD_model(pretrained_backbone=True, resolution = "medium", **kwargs):
         use_vgg = True,
     )
     matcher = RegressionMatcher_dpt(encoder, decoder, h=h, w=w,**kwargs)
-    weights = torch.load('roma_outdoor.pth', map_location="cuda")
+    weights = torch.load('/home/cpeng26/scratchrchella4/checkpoints/roma_outdoor.pth', map_location="cuda")
     # del weights["decoder.proj.16.0.weight"]
     # del weights["decoder.proj.16.0.bias"]
     matcher.load_state_dict(weights, strict = False)
