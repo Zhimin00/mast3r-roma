@@ -41,11 +41,14 @@ torchrun --nproc_per_node=1 train.py \
     --save_freq 1 --keep_freq 5 --eval_freq 1 --print_freq=10 --disable_cudnn_benchmark \
     --output_dir "checkpoints/MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric"
 
+torchrun --nproc_per_node=8 train_roma_loader.py --train_dataset "10_000 @ Habitat2(800_000, split='train', ROOT='/home/cpeng26/scratchrchella4/data/habitat_processed', resolution=560) + 10_000 @ BlendedMVS2(split='train', ROOT='/home/cpeng26/scratchrchella4/data/blendedmvs_processed', resolution=560) + 10_000 @ MegaDepth2(split='train',ROOT='/home/cpeng26/scratchrchella4/data/megadepth_dataset_processed', resolution=560) + 10_000 @ ARKitScenes2(split='train', ROOT='/home/cpeng26/scratchrchella4/data/arkitscenes_processed', resolution=560) + 10_000 @ Co3d2(split='train',mask_bg='rand',ROOT='/home/cpeng26/scratchrchella4/data/co3d_processed', resolution=560) + 10_000 @ StaticThings3D2(ROOT='/home/cpeng26/scratchrchella4/data/static_3d_dataset_processed', mask_bg='rand', resolution=560) + 10_000 @ ScanNetpp2(split='train', ROOT='/home/cpeng26/scratchrchella4/data/scannetpp_processed', resolution=560)"  --gpu_batch_size 4
+
+
 torchrun --nproc_per_node=1 train_roma_dpt_loader.py --train_dataset "10_000 @ Habitat2(800_000, split='train', ROOT='/cis/net/io99/data/zshao/dust3r/data/habitat_processed', resolution=560) + 10_000 @ BlendedMVS2(split='train', ROOT='/cis/net/io99/data/zshao/dust3r/data/blendedmvs_processed', resolution=560) + 10_000 @ MegaDepth2(split='train',ROOT='/cis/net/io99/data/zshao/dust3r/data/megadepth_dataset_processed', resolution=560) + 10_000 @ ARKitScenes2(split='train', ROOT='/cis/net/io99/data/zshao/dust3r/data/arkitscenes_processed', resolution=560) + 10_000 @ Co3d2(split='train',mask_bg='rand',ROOT='/cis/net/io99/data/zshao/dust3r/data/co3d_processed', resolution=560) + 10_000 @ StaticThings3D2(ROOT='/cis/net/io99/data/zshao/dust3r/data/static_3d_dataset_processed', mask_bg='rand', resolution=560) + 10_000 @ ScanNetpp2(split='train', ROOT='/cis/net/io99/data/zshao/dust3r/data/scannetpp_processed', resolution=560)"  --gpu_batch_size 2
 
 torchrun --nproc_per_node=1 train_dpt_loader.py --train_dataset 
 torchrun --nproc_per_node=4 train.py \
-    --train_dataset "1000 @ Co3d(split='train', ROOT='/home/cpeng26/scratchrchella4/data/co3d_subset_processed', aug_crop=16, mask_bg='rand', resolution=224, transform=ColorJitter)" \
+    --train_dataset "1000 @ Co3d2(split='train', ROOT='/home/cpeng26/scratchrchella4/data/co3d_subset_processed', aug_crop=16, mask_bg='rand', resolution=224, transform=ColorJitter)" \
     --gpu_batch_size 2
 
 
