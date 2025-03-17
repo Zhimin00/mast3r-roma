@@ -1,0 +1,632 @@
+WARNING:dinov2:xFormers not available
+Warning, cannot find cuda-compiled version of RoPE2D, using a slow pytorch version instead
+Start running DDP on rank 0
+wandb: Using wandb-core as the SDK backend.  Please refer to https://wandb.me/wandb-core for more information.
+wandb: Currently logged in as: zhiminshao (zhiminshao__) to https://api.wandb.ai. Use `wandb login --relogin` to force relogin
+wandb: Tracking run with wandb version 0.19.8
+wandb: Run data is saved locally in /weka/scratch/rchella4/mast3r-roma/mast3r/wandb/run-20250317_004256-huwk4vob
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run train_roma_loader
+wandb: ⭐️ View project at https://wandb.ai/zhiminshao__/romatch
+wandb: 🚀 View run at https://wandb.ai/zhiminshao__/romatch/runs/huwk4vob
+/home/cpeng26/anaconda3/envs/mast3r/lib/python3.11/site-packages/torchvision/models/_utils.py:208: UserWarning: The parameter 'pretrained' is deprecated since 0.13 and may be removed in the future, please use 'weights' instead.
+  warnings.warn(
+/home/cpeng26/anaconda3/envs/mast3r/lib/python3.11/site-packages/torchvision/models/_utils.py:223: UserWarning: Arguments other than a weight enum or `None` for 'weights' are deprecated since 0.13 and may be removed in the future. The current behavior is equivalent to passing `weights=VGG19_BN_Weights.IMAGENET1K_V1`. You can also use `weights=VGG19_BN_Weights.DEFAULT` to get the most up-to-date weights.
+  warnings.warn(msg)
+W0317 00:43:00.572000 2739902 /weka/home/cpeng26/anaconda3/envs/mast3r/lib/python3.11/site-packages/torch/distributed/elastic/agent/server/api.py:704] Received 2 death signal, shutting down workers
+W0317 00:43:00.573000 2739902 /weka/home/cpeng26/anaconda3/envs/mast3r/lib/python3.11/site-packages/torch/distributed/elastic/multiprocessing/api.py:897] Sending process 2739905 closing signal SIGINT
+Traceback (most recent call last):
+  File "/weka/scratch/rchella4/mast3r-roma/mast3r/train_roma_loader.py", line 342, in <module>
+    train(args)
+  File "/weka/scratch/rchella4/mast3r-roma/mast3r/train_roma_loader.py", line 225, in train
+    model = get_SD_model(pretrained_backbone=True, resolution=resolution, attenuate_cert = False).to(device_id)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/weka/scratch/rchella4/mast3r-roma/mast3r/train_roma_loader.py", line 188, in get_SD_model
+    encoder = CNNandDinov2(
+              ^^^^^^^^^^^^^
+  File "/weka/scratch/rchella4/mast3r-roma/romatch/models/encoders.py", line 760, in __init__
+    self.cnn = VGG19(**cnn_kwargs)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/weka/scratch/rchella4/mast3r-roma/romatch/models/encoders.py", line 689, in __init__
+    self.layers = nn.ModuleList(tvm.vgg19_bn(pretrained=pretrained).features[:40])#40
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/cpeng26/anaconda3/envs/mast3r/lib/python3.11/site-packages/torchvision/models/_utils.py", line 142, in wrapper
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/cpeng26/anaconda3/envs/mast3r/lib/python3.11/site-packages/torchvision/models/_utils.py", line 228, in inner_wrapper
+    return builder(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/cpeng26/anaconda3/envs/mast3r/lib/python3.11/site-packages/torchvision/models/vgg.py", line 511, in vgg19_bn
+    return _vgg("E", True, weights, progress, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/cpeng26/anaconda3/envs/mast3r/lib/python3.11/site-packages/torchvision/models/vgg.py", line 103, in _vgg
+    model = VGG(make_layers(cfgs[cfg], batch_norm=batch_norm), **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/cpeng26/anaconda3/envs/mast3r/lib/python3.11/site-packages/torchvision/models/vgg.py", line 44, in __init__
+    nn.Linear(512 * 7 * 7, 4096),
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/cpeng26/anaconda3/envs/mast3r/lib/python3.11/site-packages/torch/nn/modules/linear.py", line 112, in __init__
+    self.reset_parameters()
+  File "/home/cpeng26/anaconda3/envs/mast3r/lib/python3.11/site-packages/torch/nn/modules/linear.py", line 118, in reset_parameters
+    init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+  File "/home/cpeng26/anaconda3/envs/mast3r/lib/python3.11/site-packages/torch/nn/init.py", line 518, in kaiming_uniform_
+    return tensor.uniform_(-bound, bound, generator=generator)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "/weka/scratch/rchella4/mast3r-roma/mast3r/train_roma_loader.py", line 342, in <module>
+[rank0]:     train(args)
+[rank0]:   File "/weka/scratch/rchella4/mast3r-roma/mast3r/train_roma_loader.py", line 225, in train
+[rank0]:     model = get_SD_model(pretrained_backbone=True, resolution=resolution, attenuate_cert = False).to(device_id)
+[rank0]:             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/weka/scratch/rchella4/mast3r-roma/mast3r/train_roma_loader.py", line 188, in get_SD_model
+[rank0]:     encoder = CNNandDinov2(
+[rank0]:               ^^^^^^^^^^^^^
+[rank0]:   File "/weka/scratch/rchella4/mast3r-roma/romatch/models/encoders.py", line 760, in __init__
+[rank0]:     self.cnn = VGG19(**cnn_kwargs)
+[rank0]:                ^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/weka/scratch/rchella4/mast3r-roma/romatch/models/encoders.py", line 689, in __init__
+[rank0]:     self.layers = nn.ModuleList(tvm.vgg19_bn(pretrained=pretrained).features[:40])#40
+[rank0]:                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/cpeng26/anaconda3/envs/mast3r/lib/python3.11/site-packages/torchvision/models/_utils.py", line 142, in wrapper
+[rank0]:     return fn(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/cpeng26/anaconda3/envs/mast3r/lib/python3.11/site-packages/torchvision/models/_utils.py", line 228, in inner_wrapper
+[rank0]:     return builder(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/cpeng26/anaconda3/envs/mast3r/lib/python3.11/site-packages/torchvision/models/vgg.py", line 511, in vgg19_bn
+[rank0]:     return _vgg("E", True, weights, progress, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/cpeng26/anaconda3/envs/mast3r/lib/python3.11/site-packages/torchvision/models/vgg.py", line 103, in _vgg
+[rank0]:     model = VGG(make_layers(cfgs[cfg], batch_norm=batch_norm), **kwargs)
+[rank0]:             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/cpeng26/anaconda3/envs/mast3r/lib/python3.11/site-packages/torchvision/models/vgg.py", line 44, in __init__
+[rank0]:     nn.Linear(512 * 7 * 7, 4096),
+[rank0]:     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/cpeng26/anaconda3/envs/mast3r/lib/python3.11/site-packages/torch/nn/modules/linear.py", line 112, in __init__
+[rank0]:     self.reset_parameters()
+[rank0]:   File "/home/cpeng26/anaconda3/envs/mast3r/lib/python3.11/site-packages/torch/nn/modules/linear.py", line 118, in reset_parameters
+[rank0]:     init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+[rank0]:   File "/home/cpeng26/anaconda3/envs/mast3r/lib/python3.11/site-packages/torch/nn/init.py", line 518, in kaiming_uniform_
+[rank0]:     return tensor.uniform_(-bound, bound, generator=generator)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]: KeyboardInterrupt
+[1;34mwandb[0m: 
+[1;34mwandb[0m: 🚀 View run [33mtrain_roma_loader[0m at: [34mhttps://wandb.ai/zhiminshao__/romatch/runs/huwk4vob[0m
+[1;34mwandb[0m: Find logs at: [1;35m../../../../../weka/scratch/rchella4/mast3r-roma/mast3r/wandb/run-20250317_004256-huwk4vob/logs[0m
+[rank0]:[W317 00:43:02.126991011 ProcessGroupNCCL.cpp:1250] Warning: WARNING: process group has NOT been destroyed before we destruct ProcessGroupNCCL. On normal program exit, the application should call destroy_process_group to ensure that any pending NCCL operations have finished in this process. In rare cases this process can exit before this point and block the progress of another member of the process group. This constraint has always been present,  but this warning has only been added since PyTorch 2.4 (function operator())
+Traceback (most recent call last):
+  File "/home/cpeng26/anaconda3/envs/mast3r/bin/torchrun", line 33, in <module>
+    sys.exit(load_entry_point('torch==2.5.1', 'console_scripts', 'torchrun')())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/cpeng26/anaconda3/envs/mast3r/lib/python3.11/site-packages/torch/distributed/elastic/multiprocessing/errors/__init__.py", line 355, in wrapper
+    return f(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/home/cpeng26/anaconda3/envs/mast3r/lib/python3.11/site-packages/torch/distributed/run.py", line 919, in main
+    run(args)
+  File "/home/cpeng26/anaconda3/envs/mast3r/lib/python3.11/site-packages/torch/distributed/run.py", line 910, in run
+    elastic_launch(
+  File "/home/cpeng26/anaconda3/envs/mast3r/lib/python3.11/site-packages/torch/distributed/launcher/api.py", line 138, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/cpeng26/anaconda3/envs/mast3r/lib/python3.11/site-packages/torch/distributed/launcher/api.py", line 260, in launch_agent
+    result = agent.run()
+             ^^^^^^^^^^^
+  File "/home/cpeng26/anaconda3/envs/mast3r/lib/python3.11/site-packages/torch/distributed/elastic/metrics/api.py", line 137, in wrapper
+    result = f(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^
+  File "/home/cpeng26/anaconda3/envs/mast3r/lib/python3.11/site-packages/torch/distributed/elastic/agent/server/api.py", line 696, in run
+    result = self._invoke_run(role)
+             ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/cpeng26/anaconda3/envs/mast3r/lib/python3.11/site-packages/torch/distributed/elastic/agent/server/api.py", line 855, in _invoke_run
+    time.sleep(monitor_interval)
+  File "/home/cpeng26/anaconda3/envs/mast3r/lib/python3.11/site-packages/torch/distributed/elastic/multiprocessing/api.py", line 84, in _terminate_process_handler
+    raise SignalException(f"Process {os.getpid()} got signal: {sigval}", sigval=sigval)
+torch.distributed.elastic.multiprocessing.api.SignalException: Process 2739902 got signal: 2
+WARNING:dinov2:xFormers not available
+Warning, cannot find cuda-compiled version of RoPE2D, using a slow pytorch version instead
+Start running DDP on rank 0
+wandb: Using wandb-core as the SDK backend.  Please refer to https://wandb.me/wandb-core for more information.
+wandb: Currently logged in as: zhiminshao (zhiminshao__) to https://api.wandb.ai. Use `wandb login --relogin` to force relogin
+wandb: Tracking run with wandb version 0.19.8
+wandb: Run data is saved locally in /weka/scratch/rchella4/mast3r-roma/mast3r/wandb/run-20250317_004312-xa4w1t7d
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run train_roma_loader
+wandb: ⭐️ View project at https://wandb.ai/zhiminshao__/romatch
+wandb: 🚀 View run at https://wandb.ai/zhiminshao__/romatch/runs/xa4w1t7d
+/home/cpeng26/anaconda3/envs/mast3r/lib/python3.11/site-packages/torchvision/models/_utils.py:208: UserWarning: The parameter 'pretrained' is deprecated since 0.13 and may be removed in the future, please use 'weights' instead.
+  warnings.warn(
+/home/cpeng26/anaconda3/envs/mast3r/lib/python3.11/site-packages/torchvision/models/_utils.py:223: UserWarning: Arguments other than a weight enum or `None` for 'weights' are deprecated since 0.13 and may be removed in the future. The current behavior is equivalent to passing `weights=VGG19_BN_Weights.IMAGENET1K_V1`. You can also use `weights=VGG19_BN_Weights.DEFAULT` to get the most up-to-date weights.
+  warnings.warn(msg)
+Submodule: encoder
+ - cnn.layers.0.weight is trainable
+ - cnn.layers.0.bias is trainable
+ - cnn.layers.1.weight is trainable
+ - cnn.layers.1.bias is trainable
+ - cnn.layers.3.weight is trainable
+ - cnn.layers.3.bias is trainable
+ - cnn.layers.4.weight is trainable
+ - cnn.layers.4.bias is trainable
+ - cnn.layers.7.weight is trainable
+ - cnn.layers.7.bias is trainable
+ - cnn.layers.8.weight is trainable
+ - cnn.layers.8.bias is trainable
+ - cnn.layers.10.weight is trainable
+ - cnn.layers.10.bias is trainable
+ - cnn.layers.11.weight is trainable
+ - cnn.layers.11.bias is trainable
+ - cnn.layers.14.weight is trainable
+ - cnn.layers.14.bias is trainable
+ - cnn.layers.15.weight is trainable
+ - cnn.layers.15.bias is trainable
+ - cnn.layers.17.weight is trainable
+ - cnn.layers.17.bias is trainable
+ - cnn.layers.18.weight is trainable
+ - cnn.layers.18.bias is trainable
+ - cnn.layers.20.weight is trainable
+ - cnn.layers.20.bias is trainable
+ - cnn.layers.21.weight is trainable
+ - cnn.layers.21.bias is trainable
+ - cnn.layers.23.weight is trainable
+ - cnn.layers.23.bias is trainable
+ - cnn.layers.24.weight is trainable
+ - cnn.layers.24.bias is trainable
+ - cnn.layers.27.weight is trainable
+ - cnn.layers.27.bias is trainable
+ - cnn.layers.28.weight is trainable
+ - cnn.layers.28.bias is trainable
+ - cnn.layers.30.weight is trainable
+ - cnn.layers.30.bias is trainable
+ - cnn.layers.31.weight is trainable
+ - cnn.layers.31.bias is trainable
+ - cnn.layers.33.weight is trainable
+ - cnn.layers.33.bias is trainable
+ - cnn.layers.34.weight is trainable
+ - cnn.layers.34.bias is trainable
+ - cnn.layers.36.weight is trainable
+ - cnn.layers.36.bias is trainable
+ - cnn.layers.37.weight is trainable
+ - cnn.layers.37.bias is trainable
+Submodule: decoder
+ - embedding_decoder.blocks.0.norm1.weight is trainable
+ - embedding_decoder.blocks.0.norm1.bias is trainable
+ - embedding_decoder.blocks.0.attn.qkv.weight is trainable
+ - embedding_decoder.blocks.0.attn.proj.weight is trainable
+ - embedding_decoder.blocks.0.attn.proj.bias is trainable
+ - embedding_decoder.blocks.0.norm2.weight is trainable
+ - embedding_decoder.blocks.0.norm2.bias is trainable
+ - embedding_decoder.blocks.0.mlp.fc1.weight is trainable
+ - embedding_decoder.blocks.0.mlp.fc1.bias is trainable
+ - embedding_decoder.blocks.0.mlp.fc2.weight is trainable
+ - embedding_decoder.blocks.0.mlp.fc2.bias is trainable
+ - embedding_decoder.blocks.1.norm1.weight is trainable
+ - embedding_decoder.blocks.1.norm1.bias is trainable
+ - embedding_decoder.blocks.1.attn.qkv.weight is trainable
+ - embedding_decoder.blocks.1.attn.proj.weight is trainable
+ - embedding_decoder.blocks.1.attn.proj.bias is trainable
+ - embedding_decoder.blocks.1.norm2.weight is trainable
+ - embedding_decoder.blocks.1.norm2.bias is trainable
+ - embedding_decoder.blocks.1.mlp.fc1.weight is trainable
+ - embedding_decoder.blocks.1.mlp.fc1.bias is trainable
+ - embedding_decoder.blocks.1.mlp.fc2.weight is trainable
+ - embedding_decoder.blocks.1.mlp.fc2.bias is trainable
+ - embedding_decoder.blocks.2.norm1.weight is trainable
+ - embedding_decoder.blocks.2.norm1.bias is trainable
+ - embedding_decoder.blocks.2.attn.qkv.weight is trainable
+ - embedding_decoder.blocks.2.attn.proj.weight is trainable
+ - embedding_decoder.blocks.2.attn.proj.bias is trainable
+ - embedding_decoder.blocks.2.norm2.weight is trainable
+ - embedding_decoder.blocks.2.norm2.bias is trainable
+ - embedding_decoder.blocks.2.mlp.fc1.weight is trainable
+ - embedding_decoder.blocks.2.mlp.fc1.bias is trainable
+ - embedding_decoder.blocks.2.mlp.fc2.weight is trainable
+ - embedding_decoder.blocks.2.mlp.fc2.bias is trainable
+ - embedding_decoder.blocks.3.norm1.weight is trainable
+ - embedding_decoder.blocks.3.norm1.bias is trainable
+ - embedding_decoder.blocks.3.attn.qkv.weight is trainable
+ - embedding_decoder.blocks.3.attn.proj.weight is trainable
+ - embedding_decoder.blocks.3.attn.proj.bias is trainable
+ - embedding_decoder.blocks.3.norm2.weight is trainable
+ - embedding_decoder.blocks.3.norm2.bias is trainable
+ - embedding_decoder.blocks.3.mlp.fc1.weight is trainable
+ - embedding_decoder.blocks.3.mlp.fc1.bias is trainable
+ - embedding_decoder.blocks.3.mlp.fc2.weight is trainable
+ - embedding_decoder.blocks.3.mlp.fc2.bias is trainable
+ - embedding_decoder.blocks.4.norm1.weight is trainable
+ - embedding_decoder.blocks.4.norm1.bias is trainable
+ - embedding_decoder.blocks.4.attn.qkv.weight is trainable
+ - embedding_decoder.blocks.4.attn.proj.weight is trainable
+ - embedding_decoder.blocks.4.attn.proj.bias is trainable
+ - embedding_decoder.blocks.4.norm2.weight is trainable
+ - embedding_decoder.blocks.4.norm2.bias is trainable
+ - embedding_decoder.blocks.4.mlp.fc1.weight is trainable
+ - embedding_decoder.blocks.4.mlp.fc1.bias is trainable
+ - embedding_decoder.blocks.4.mlp.fc2.weight is trainable
+ - embedding_decoder.blocks.4.mlp.fc2.bias is trainable
+ - embedding_decoder.to_out.weight is trainable
+ - embedding_decoder.to_out.bias is trainable
+ - gps.16.pos_conv.weight is trainable
+ - gps.16.pos_conv.bias is trainable
+ - proj.16.0.weight is trainable
+ - proj.16.0.bias is trainable
+ - proj.16.1.weight is trainable
+ - proj.16.1.bias is trainable
+ - proj.8.0.weight is trainable
+ - proj.8.0.bias is trainable
+ - proj.8.1.weight is trainable
+ - proj.8.1.bias is trainable
+ - proj.4.0.weight is trainable
+ - proj.4.0.bias is trainable
+ - proj.4.1.weight is trainable
+ - proj.4.1.bias is trainable
+ - proj.2.0.weight is trainable
+ - proj.2.0.bias is trainable
+ - proj.2.1.weight is trainable
+ - proj.2.1.bias is trainable
+ - proj.1.0.weight is trainable
+ - proj.1.0.bias is trainable
+ - proj.1.1.weight is trainable
+ - proj.1.1.bias is trainable
+ - conv_refiner.16.block1.0.weight is trainable
+ - conv_refiner.16.block1.0.bias is trainable
+ - conv_refiner.16.block1.1.weight is trainable
+ - conv_refiner.16.block1.1.bias is trainable
+ - conv_refiner.16.block1.3.weight is trainable
+ - conv_refiner.16.block1.3.bias is trainable
+ - conv_refiner.16.hidden_blocks.0.0.weight is trainable
+ - conv_refiner.16.hidden_blocks.0.0.bias is trainable
+ - conv_refiner.16.hidden_blocks.0.1.weight is trainable
+ - conv_refiner.16.hidden_blocks.0.1.bias is trainable
+ - conv_refiner.16.hidden_blocks.0.3.weight is trainable
+ - conv_refiner.16.hidden_blocks.0.3.bias is trainable
+ - conv_refiner.16.hidden_blocks.1.0.weight is trainable
+ - conv_refiner.16.hidden_blocks.1.0.bias is trainable
+ - conv_refiner.16.hidden_blocks.1.1.weight is trainable
+ - conv_refiner.16.hidden_blocks.1.1.bias is trainable
+ - conv_refiner.16.hidden_blocks.1.3.weight is trainable
+ - conv_refiner.16.hidden_blocks.1.3.bias is trainable
+ - conv_refiner.16.hidden_blocks.2.0.weight is trainable
+ - conv_refiner.16.hidden_blocks.2.0.bias is trainable
+ - conv_refiner.16.hidden_blocks.2.1.weight is trainable
+ - conv_refiner.16.hidden_blocks.2.1.bias is trainable
+ - conv_refiner.16.hidden_blocks.2.3.weight is trainable
+ - conv_refiner.16.hidden_blocks.2.3.bias is trainable
+ - conv_refiner.16.hidden_blocks.3.0.weight is trainable
+ - conv_refiner.16.hidden_blocks.3.0.bias is trainable
+ - conv_refiner.16.hidden_blocks.3.1.weight is trainable
+ - conv_refiner.16.hidden_blocks.3.1.bias is trainable
+ - conv_refiner.16.hidden_blocks.3.3.weight is trainable
+ - conv_refiner.16.hidden_blocks.3.3.bias is trainable
+ - conv_refiner.16.hidden_blocks.4.0.weight is trainable
+ - conv_refiner.16.hidden_blocks.4.0.bias is trainable
+ - conv_refiner.16.hidden_blocks.4.1.weight is trainable
+ - conv_refiner.16.hidden_blocks.4.1.bias is trainable
+ - conv_refiner.16.hidden_blocks.4.3.weight is trainable
+ - conv_refiner.16.hidden_blocks.4.3.bias is trainable
+ - conv_refiner.16.hidden_blocks.5.0.weight is trainable
+ - conv_refiner.16.hidden_blocks.5.0.bias is trainable
+ - conv_refiner.16.hidden_blocks.5.1.weight is trainable
+ - conv_refiner.16.hidden_blocks.5.1.bias is trainable
+ - conv_refiner.16.hidden_blocks.5.3.weight is trainable
+ - conv_refiner.16.hidden_blocks.5.3.bias is trainable
+ - conv_refiner.16.hidden_blocks.6.0.weight is trainable
+ - conv_refiner.16.hidden_blocks.6.0.bias is trainable
+ - conv_refiner.16.hidden_blocks.6.1.weight is trainable
+ - conv_refiner.16.hidden_blocks.6.1.bias is trainable
+ - conv_refiner.16.hidden_blocks.6.3.weight is trainable
+ - conv_refiner.16.hidden_blocks.6.3.bias is trainable
+ - conv_refiner.16.hidden_blocks.7.0.weight is trainable
+ - conv_refiner.16.hidden_blocks.7.0.bias is trainable
+ - conv_refiner.16.hidden_blocks.7.1.weight is trainable
+ - conv_refiner.16.hidden_blocks.7.1.bias is trainable
+ - conv_refiner.16.hidden_blocks.7.3.weight is trainable
+ - conv_refiner.16.hidden_blocks.7.3.bias is trainable
+ - conv_refiner.16.out_conv.weight is trainable
+ - conv_refiner.16.out_conv.bias is trainable
+ - conv_refiner.16.disp_emb.weight is trainable
+ - conv_refiner.16.disp_emb.bias is trainable
+ - conv_refiner.8.block1.0.weight is trainable
+ - conv_refiner.8.block1.0.bias is trainable
+ - conv_refiner.8.block1.1.weight is trainable
+ - conv_refiner.8.block1.1.bias is trainable
+ - conv_refiner.8.block1.3.weight is trainable
+ - conv_refiner.8.block1.3.bias is trainable
+ - conv_refiner.8.hidden_blocks.0.0.weight is trainable
+ - conv_refiner.8.hidden_blocks.0.0.bias is trainable
+ - conv_refiner.8.hidden_blocks.0.1.weight is trainable
+ - conv_refiner.8.hidden_blocks.0.1.bias is trainable
+ - conv_refiner.8.hidden_blocks.0.3.weight is trainable
+ - conv_refiner.8.hidden_blocks.0.3.bias is trainable
+ - conv_refiner.8.hidden_blocks.1.0.weight is trainable
+ - conv_refiner.8.hidden_blocks.1.0.bias is trainable
+ - conv_refiner.8.hidden_blocks.1.1.weight is trainable
+ - conv_refiner.8.hidden_blocks.1.1.bias is trainable
+ - conv_refiner.8.hidden_blocks.1.3.weight is trainable
+ - conv_refiner.8.hidden_blocks.1.3.bias is trainable
+ - conv_refiner.8.hidden_blocks.2.0.weight is trainable
+ - conv_refiner.8.hidden_blocks.2.0.bias is trainable
+ - conv_refiner.8.hidden_blocks.2.1.weight is trainable
+ - conv_refiner.8.hidden_blocks.2.1.bias is trainable
+ - conv_refiner.8.hidden_blocks.2.3.weight is trainable
+ - conv_refiner.8.hidden_blocks.2.3.bias is trainable
+ - conv_refiner.8.hidden_blocks.3.0.weight is trainable
+ - conv_refiner.8.hidden_blocks.3.0.bias is trainable
+ - conv_refiner.8.hidden_blocks.3.1.weight is trainable
+ - conv_refiner.8.hidden_blocks.3.1.bias is trainable
+ - conv_refiner.8.hidden_blocks.3.3.weight is trainable
+ - conv_refiner.8.hidden_blocks.3.3.bias is trainable
+ - conv_refiner.8.hidden_blocks.4.0.weight is trainable
+ - conv_refiner.8.hidden_blocks.4.0.bias is trainable
+ - conv_refiner.8.hidden_blocks.4.1.weight is trainable
+ - conv_refiner.8.hidden_blocks.4.1.bias is trainable
+ - conv_refiner.8.hidden_blocks.4.3.weight is trainable
+ - conv_refiner.8.hidden_blocks.4.3.bias is trainable
+ - conv_refiner.8.hidden_blocks.5.0.weight is trainable
+ - conv_refiner.8.hidden_blocks.5.0.bias is trainable
+ - conv_refiner.8.hidden_blocks.5.1.weight is trainable
+ - conv_refiner.8.hidden_blocks.5.1.bias is trainable
+ - conv_refiner.8.hidden_blocks.5.3.weight is trainable
+ - conv_refiner.8.hidden_blocks.5.3.bias is trainable
+ - conv_refiner.8.hidden_blocks.6.0.weight is trainable
+ - conv_refiner.8.hidden_blocks.6.0.bias is trainable
+ - conv_refiner.8.hidden_blocks.6.1.weight is trainable
+ - conv_refiner.8.hidden_blocks.6.1.bias is trainable
+ - conv_refiner.8.hidden_blocks.6.3.weight is trainable
+ - conv_refiner.8.hidden_blocks.6.3.bias is trainable
+ - conv_refiner.8.hidden_blocks.7.0.weight is trainable
+ - conv_refiner.8.hidden_blocks.7.0.bias is trainable
+ - conv_refiner.8.hidden_blocks.7.1.weight is trainable
+ - conv_refiner.8.hidden_blocks.7.1.bias is trainable
+ - conv_refiner.8.hidden_blocks.7.3.weight is trainable
+ - conv_refiner.8.hidden_blocks.7.3.bias is trainable
+ - conv_refiner.8.out_conv.weight is trainable
+ - conv_refiner.8.out_conv.bias is trainable
+ - conv_refiner.8.disp_emb.weight is trainable
+ - conv_refiner.8.disp_emb.bias is trainable
+ - conv_refiner.4.block1.0.weight is trainable
+ - conv_refiner.4.block1.0.bias is trainable
+ - conv_refiner.4.block1.1.weight is trainable
+ - conv_refiner.4.block1.1.bias is trainable
+ - conv_refiner.4.block1.3.weight is trainable
+ - conv_refiner.4.block1.3.bias is trainable
+ - conv_refiner.4.hidden_blocks.0.0.weight is trainable
+ - conv_refiner.4.hidden_blocks.0.0.bias is trainable
+ - conv_refiner.4.hidden_blocks.0.1.weight is trainable
+ - conv_refiner.4.hidden_blocks.0.1.bias is trainable
+ - conv_refiner.4.hidden_blocks.0.3.weight is trainable
+ - conv_refiner.4.hidden_blocks.0.3.bias is trainable
+ - conv_refiner.4.hidden_blocks.1.0.weight is trainable
+ - conv_refiner.4.hidden_blocks.1.0.bias is trainable
+ - conv_refiner.4.hidden_blocks.1.1.weight is trainable
+ - conv_refiner.4.hidden_blocks.1.1.bias is trainable
+ - conv_refiner.4.hidden_blocks.1.3.weight is trainable
+ - conv_refiner.4.hidden_blocks.1.3.bias is trainable
+ - conv_refiner.4.hidden_blocks.2.0.weight is trainable
+ - conv_refiner.4.hidden_blocks.2.0.bias is trainable
+ - conv_refiner.4.hidden_blocks.2.1.weight is trainable
+ - conv_refiner.4.hidden_blocks.2.1.bias is trainable
+ - conv_refiner.4.hidden_blocks.2.3.weight is trainable
+ - conv_refiner.4.hidden_blocks.2.3.bias is trainable
+ - conv_refiner.4.hidden_blocks.3.0.weight is trainable
+ - conv_refiner.4.hidden_blocks.3.0.bias is trainable
+ - conv_refiner.4.hidden_blocks.3.1.weight is trainable
+ - conv_refiner.4.hidden_blocks.3.1.bias is trainable
+ - conv_refiner.4.hidden_blocks.3.3.weight is trainable
+ - conv_refiner.4.hidden_blocks.3.3.bias is trainable
+ - conv_refiner.4.hidden_blocks.4.0.weight is trainable
+ - conv_refiner.4.hidden_blocks.4.0.bias is trainable
+ - conv_refiner.4.hidden_blocks.4.1.weight is trainable
+ - conv_refiner.4.hidden_blocks.4.1.bias is trainable
+ - conv_refiner.4.hidden_blocks.4.3.weight is trainable
+ - conv_refiner.4.hidden_blocks.4.3.bias is trainable
+ - conv_refiner.4.hidden_blocks.5.0.weight is trainable
+ - conv_refiner.4.hidden_blocks.5.0.bias is trainable
+ - conv_refiner.4.hidden_blocks.5.1.weight is trainable
+ - conv_refiner.4.hidden_blocks.5.1.bias is trainable
+ - conv_refiner.4.hidden_blocks.5.3.weight is trainable
+ - conv_refiner.4.hidden_blocks.5.3.bias is trainable
+ - conv_refiner.4.hidden_blocks.6.0.weight is trainable
+ - conv_refiner.4.hidden_blocks.6.0.bias is trainable
+ - conv_refiner.4.hidden_blocks.6.1.weight is trainable
+ - conv_refiner.4.hidden_blocks.6.1.bias is trainable
+ - conv_refiner.4.hidden_blocks.6.3.weight is trainable
+ - conv_refiner.4.hidden_blocks.6.3.bias is trainable
+ - conv_refiner.4.hidden_blocks.7.0.weight is trainable
+ - conv_refiner.4.hidden_blocks.7.0.bias is trainable
+ - conv_refiner.4.hidden_blocks.7.1.weight is trainable
+ - conv_refiner.4.hidden_blocks.7.1.bias is trainable
+ - conv_refiner.4.hidden_blocks.7.3.weight is trainable
+ - conv_refiner.4.hidden_blocks.7.3.bias is trainable
+ - conv_refiner.4.out_conv.weight is trainable
+ - conv_refiner.4.out_conv.bias is trainable
+ - conv_refiner.4.disp_emb.weight is trainable
+ - conv_refiner.4.disp_emb.bias is trainable
+ - conv_refiner.2.block1.0.weight is trainable
+ - conv_refiner.2.block1.0.bias is trainable
+ - conv_refiner.2.block1.1.weight is trainable
+ - conv_refiner.2.block1.1.bias is trainable
+ - conv_refiner.2.block1.3.weight is trainable
+ - conv_refiner.2.block1.3.bias is trainable
+ - conv_refiner.2.hidden_blocks.0.0.weight is trainable
+ - conv_refiner.2.hidden_blocks.0.0.bias is trainable
+ - conv_refiner.2.hidden_blocks.0.1.weight is trainable
+ - conv_refiner.2.hidden_blocks.0.1.bias is trainable
+ - conv_refiner.2.hidden_blocks.0.3.weight is trainable
+ - conv_refiner.2.hidden_blocks.0.3.bias is trainable
+ - conv_refiner.2.hidden_blocks.1.0.weight is trainable
+ - conv_refiner.2.hidden_blocks.1.0.bias is trainable
+ - conv_refiner.2.hidden_blocks.1.1.weight is trainable
+ - conv_refiner.2.hidden_blocks.1.1.bias is trainable
+ - conv_refiner.2.hidden_blocks.1.3.weight is trainable
+ - conv_refiner.2.hidden_blocks.1.3.bias is trainable
+ - conv_refiner.2.hidden_blocks.2.0.weight is trainable
+ - conv_refiner.2.hidden_blocks.2.0.bias is trainable
+ - conv_refiner.2.hidden_blocks.2.1.weight is trainable
+ - conv_refiner.2.hidden_blocks.2.1.bias is trainable
+ - conv_refiner.2.hidden_blocks.2.3.weight is trainable
+ - conv_refiner.2.hidden_blocks.2.3.bias is trainable
+ - conv_refiner.2.hidden_blocks.3.0.weight is trainable
+ - conv_refiner.2.hidden_blocks.3.0.bias is trainable
+ - conv_refiner.2.hidden_blocks.3.1.weight is trainable
+ - conv_refiner.2.hidden_blocks.3.1.bias is trainable
+ - conv_refiner.2.hidden_blocks.3.3.weight is trainable
+ - conv_refiner.2.hidden_blocks.3.3.bias is trainable
+ - conv_refiner.2.hidden_blocks.4.0.weight is trainable
+ - conv_refiner.2.hidden_blocks.4.0.bias is trainable
+ - conv_refiner.2.hidden_blocks.4.1.weight is trainable
+ - conv_refiner.2.hidden_blocks.4.1.bias is trainable
+ - conv_refiner.2.hidden_blocks.4.3.weight is trainable
+ - conv_refiner.2.hidden_blocks.4.3.bias is trainable
+ - conv_refiner.2.hidden_blocks.5.0.weight is trainable
+ - conv_refiner.2.hidden_blocks.5.0.bias is trainable
+ - conv_refiner.2.hidden_blocks.5.1.weight is trainable
+ - conv_refiner.2.hidden_blocks.5.1.bias is trainable
+ - conv_refiner.2.hidden_blocks.5.3.weight is trainable
+ - conv_refiner.2.hidden_blocks.5.3.bias is trainable
+ - conv_refiner.2.hidden_blocks.6.0.weight is trainable
+ - conv_refiner.2.hidden_blocks.6.0.bias is trainable
+ - conv_refiner.2.hidden_blocks.6.1.weight is trainable
+ - conv_refiner.2.hidden_blocks.6.1.bias is trainable
+ - conv_refiner.2.hidden_blocks.6.3.weight is trainable
+ - conv_refiner.2.hidden_blocks.6.3.bias is trainable
+ - conv_refiner.2.hidden_blocks.7.0.weight is trainable
+ - conv_refiner.2.hidden_blocks.7.0.bias is trainable
+ - conv_refiner.2.hidden_blocks.7.1.weight is trainable
+ - conv_refiner.2.hidden_blocks.7.1.bias is trainable
+ - conv_refiner.2.hidden_blocks.7.3.weight is trainable
+ - conv_refiner.2.hidden_blocks.7.3.bias is trainable
+ - conv_refiner.2.out_conv.weight is trainable
+ - conv_refiner.2.out_conv.bias is trainable
+ - conv_refiner.2.disp_emb.weight is trainable
+ - conv_refiner.2.disp_emb.bias is trainable
+ - conv_refiner.1.block1.0.weight is trainable
+ - conv_refiner.1.block1.0.bias is trainable
+ - conv_refiner.1.block1.1.weight is trainable
+ - conv_refiner.1.block1.1.bias is trainable
+ - conv_refiner.1.block1.3.weight is trainable
+ - conv_refiner.1.block1.3.bias is trainable
+ - conv_refiner.1.hidden_blocks.0.0.weight is trainable
+ - conv_refiner.1.hidden_blocks.0.0.bias is trainable
+ - conv_refiner.1.hidden_blocks.0.1.weight is trainable
+ - conv_refiner.1.hidden_blocks.0.1.bias is trainable
+ - conv_refiner.1.hidden_blocks.0.3.weight is trainable
+ - conv_refiner.1.hidden_blocks.0.3.bias is trainable
+ - conv_refiner.1.hidden_blocks.1.0.weight is trainable
+ - conv_refiner.1.hidden_blocks.1.0.bias is trainable
+ - conv_refiner.1.hidden_blocks.1.1.weight is trainable
+ - conv_refiner.1.hidden_blocks.1.1.bias is trainable
+ - conv_refiner.1.hidden_blocks.1.3.weight is trainable
+ - conv_refiner.1.hidden_blocks.1.3.bias is trainable
+ - conv_refiner.1.hidden_blocks.2.0.weight is trainable
+ - conv_refiner.1.hidden_blocks.2.0.bias is trainable
+ - conv_refiner.1.hidden_blocks.2.1.weight is trainable
+ - conv_refiner.1.hidden_blocks.2.1.bias is trainable
+ - conv_refiner.1.hidden_blocks.2.3.weight is trainable
+ - conv_refiner.1.hidden_blocks.2.3.bias is trainable
+ - conv_refiner.1.hidden_blocks.3.0.weight is trainable
+ - conv_refiner.1.hidden_blocks.3.0.bias is trainable
+ - conv_refiner.1.hidden_blocks.3.1.weight is trainable
+ - conv_refiner.1.hidden_blocks.3.1.bias is trainable
+ - conv_refiner.1.hidden_blocks.3.3.weight is trainable
+ - conv_refiner.1.hidden_blocks.3.3.bias is trainable
+ - conv_refiner.1.hidden_blocks.4.0.weight is trainable
+ - conv_refiner.1.hidden_blocks.4.0.bias is trainable
+ - conv_refiner.1.hidden_blocks.4.1.weight is trainable
+ - conv_refiner.1.hidden_blocks.4.1.bias is trainable
+ - conv_refiner.1.hidden_blocks.4.3.weight is trainable
+ - conv_refiner.1.hidden_blocks.4.3.bias is trainable
+ - conv_refiner.1.hidden_blocks.5.0.weight is trainable
+ - conv_refiner.1.hidden_blocks.5.0.bias is trainable
+ - conv_refiner.1.hidden_blocks.5.1.weight is trainable
+ - conv_refiner.1.hidden_blocks.5.1.bias is trainable
+ - conv_refiner.1.hidden_blocks.5.3.weight is trainable
+ - conv_refiner.1.hidden_blocks.5.3.bias is trainable
+ - conv_refiner.1.hidden_blocks.6.0.weight is trainable
+ - conv_refiner.1.hidden_blocks.6.0.bias is trainable
+ - conv_refiner.1.hidden_blocks.6.1.weight is trainable
+ - conv_refiner.1.hidden_blocks.6.1.bias is trainable
+ - conv_refiner.1.hidden_blocks.6.3.weight is trainable
+ - conv_refiner.1.hidden_blocks.6.3.bias is trainable
+ - conv_refiner.1.hidden_blocks.7.0.weight is trainable
+ - conv_refiner.1.hidden_blocks.7.0.bias is trainable
+ - conv_refiner.1.hidden_blocks.7.1.weight is trainable
+ - conv_refiner.1.hidden_blocks.7.1.bias is trainable
+ - conv_refiner.1.hidden_blocks.7.3.weight is trainable
+ - conv_refiner.1.hidden_blocks.7.3.bias is trainable
+ - conv_refiner.1.out_conv.weight is trainable
+ - conv_refiner.1.out_conv.bias is trainable
+ - conv_refiner.1.disp_emb.weight is trainable
+ - conv_refiner.1.disp_emb.bias is trainable
+Building train dataset 10_000 @ Habitat2(800_000, split='train', ROOT='/home/cpeng26/scratchrchella4/data/habitat_processed', resolution=560) + 10_000 @ BlendedMVS2(split='train', ROOT='/home/cpeng26/scratchrchella4/data/blendedmvs_processed', resolution=560) + 10_000 @ MegaDepth2(split='train',ROOT='/home/cpeng26/scratchrchella4/data/megadepth_dataset_processed', resolution=560) + 10_000 @ ARKitScenes2(split='train', ROOT='/home/cpeng26/scratchrchella4/data/arkitscenes_processed', resolution=560) + 10_000 @ Co3d2(split='train',mask_bg='rand',ROOT='/home/cpeng26/scratchrchella4/data/co3d_processed', resolution=560) + 10_000 @ StaticThings3D2(ROOT='/home/cpeng26/scratchrchella4/data/static_3d_dataset_processed', mask_bg='rand', resolution=560) + 10_000 @ ScanNetpp2(split='train', ROOT='/home/cpeng26/scratchrchella4/data/scannetpp_processed', resolution=560)
+Building Train Data loader for dataset:  10_000 @ Habitat2(800_000, split='train', ROOT='/home/cpeng26/scratchrchella4/data/habitat_processed', resolution=560) + 10_000 @ BlendedMVS2(split='train', ROOT='/home/cpeng26/scratchrchella4/data/blendedmvs_processed', resolution=560) + 10_000 @ MegaDepth2(split='train',ROOT='/home/cpeng26/scratchrchella4/data/megadepth_dataset_processed', resolution=560) + 10_000 @ ARKitScenes2(split='train', ROOT='/home/cpeng26/scratchrchella4/data/arkitscenes_processed', resolution=560) + 10_000 @ Co3d2(split='train',mask_bg='rand',ROOT='/home/cpeng26/scratchrchella4/data/co3d_processed', resolution=560) + 10_000 @ StaticThings3D2(ROOT='/home/cpeng26/scratchrchella4/data/static_3d_dataset_processed', mask_bg='rand', resolution=560) + 10_000 @ ScanNetpp2(split='train', ROOT='/home/cpeng26/scratchrchella4/data/scannetpp_processed', resolution=560)
+Traceback (most recent call last):
+  File "/weka/scratch/rchella4/mast3r-roma/mast3r/train_roma_loader.py", line 342, in <module>
+    train(args)
+  File "/weka/scratch/rchella4/mast3r-roma/mast3r/train_roma_loader.py", line 244, in train
+    data_loader_train = build_dataset(args.train_dataset, args.gpu_batch_size, args.num_workers, test=False)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/weka/scratch/rchella4/mast3r-roma/mast3r/train_roma_loader.py", line 44, in build_dataset
+    loader = get_data_loader(dataset,
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/weka/scratch/rchella4/mast3r-roma/mast3r/dust3r/dust3r/datasets/__init__.py", line 22, in get_data_loader
+    dataset = eval(dataset)
+              ^^^^^^^^^^^^^
+  File "<string>", line 1, in <module>
+  File "/weka/scratch/rchella4/mast3r-roma/mast3r/dust3r/dust3r/datasets/co3d.py", line 148, in __init__
+    with open(osp.join(self.ROOT, f'selected_seqs_{self.split}.json'), 'r') as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/home/cpeng26/scratchrchella4/data/co3d_processed/selected_seqs_train.json'
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "/weka/scratch/rchella4/mast3r-roma/mast3r/train_roma_loader.py", line 342, in <module>
+[rank0]:     train(args)
+[rank0]:   File "/weka/scratch/rchella4/mast3r-roma/mast3r/train_roma_loader.py", line 244, in train
+[rank0]:     data_loader_train = build_dataset(args.train_dataset, args.gpu_batch_size, args.num_workers, test=False)
+[rank0]:                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/weka/scratch/rchella4/mast3r-roma/mast3r/train_roma_loader.py", line 44, in build_dataset
+[rank0]:     loader = get_data_loader(dataset,
+[rank0]:              ^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/weka/scratch/rchella4/mast3r-roma/mast3r/dust3r/dust3r/datasets/__init__.py", line 22, in get_data_loader
+[rank0]:     dataset = eval(dataset)
+[rank0]:               ^^^^^^^^^^^^^
+[rank0]:   File "<string>", line 1, in <module>
+[rank0]:   File "/weka/scratch/rchella4/mast3r-roma/mast3r/dust3r/dust3r/datasets/co3d.py", line 148, in __init__
+[rank0]:     with open(osp.join(self.ROOT, f'selected_seqs_{self.split}.json'), 'r') as f:
+[rank0]:          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]: FileNotFoundError: [Errno 2] No such file or directory: '/home/cpeng26/scratchrchella4/data/co3d_processed/selected_seqs_train.json'
+[1;34mwandb[0m: 
+[1;34mwandb[0m: 🚀 View run [33mtrain_roma_loader[0m at: [34mhttps://wandb.ai/zhiminshao__/romatch/runs/xa4w1t7d[0m
+[1;34mwandb[0m: Find logs at: [1;35m../../../../../weka/scratch/rchella4/mast3r-roma/mast3r/wandb/run-20250317_004312-xa4w1t7d/logs[0m
+[rank0]:[W317 00:43:19.085338927 ProcessGroupNCCL.cpp:1250] Warning: WARNING: process group has NOT been destroyed before we destruct ProcessGroupNCCL. On normal program exit, the application should call destroy_process_group to ensure that any pending NCCL operations have finished in this process. In rare cases this process can exit before this point and block the progress of another member of the process group. This constraint has always been present,  but this warning has only been added since PyTorch 2.4 (function operator())
+E0317 00:43:20.278000 2740141 /weka/home/cpeng26/anaconda3/envs/mast3r/lib/python3.11/site-packages/torch/distributed/elastic/multiprocessing/api.py:869] failed (exitcode: 1) local_rank: 0 (pid: 2740143) of binary: /home/cpeng26/anaconda3/envs/mast3r/bin/python
+Traceback (most recent call last):
+  File "/home/cpeng26/anaconda3/envs/mast3r/bin/torchrun", line 33, in <module>
+    sys.exit(load_entry_point('torch==2.5.1', 'console_scripts', 'torchrun')())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/cpeng26/anaconda3/envs/mast3r/lib/python3.11/site-packages/torch/distributed/elastic/multiprocessing/errors/__init__.py", line 355, in wrapper
+    return f(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/home/cpeng26/anaconda3/envs/mast3r/lib/python3.11/site-packages/torch/distributed/run.py", line 919, in main
+    run(args)
+  File "/home/cpeng26/anaconda3/envs/mast3r/lib/python3.11/site-packages/torch/distributed/run.py", line 910, in run
+    elastic_launch(
+  File "/home/cpeng26/anaconda3/envs/mast3r/lib/python3.11/site-packages/torch/distributed/launcher/api.py", line 138, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/cpeng26/anaconda3/envs/mast3r/lib/python3.11/site-packages/torch/distributed/launcher/api.py", line 269, in launch_agent
+    raise ChildFailedError(
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
+============================================================
+train_roma_loader.py FAILED
+------------------------------------------------------------
+Failures:
+  <NO_OTHER_FAILURES>
+------------------------------------------------------------
+Root Cause (first observed failure):
+[0]:
+  time      : 2025-03-17_00:43:20
+  host      : c006.mgmt.ai.cluster
+  rank      : 0 (local_rank: 0)
+  exitcode  : 1 (pid: 2740143)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+============================================================

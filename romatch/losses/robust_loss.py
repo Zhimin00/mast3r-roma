@@ -576,13 +576,15 @@ class RobustLosses_Depth(nn.Module):
             x2 = gt_warp.float()
             prob = gt_prob
 
-            gt_pts1 = F.interpolate(batch['pts1'].permute(0,3,1,2), size=(h,w), mode='bilinear', align_corner=False).permute(0,2,3,1) #[B, H, W, 3]  
-            gt_valid1 = F.interpolate(batch['mask1'].unsqueeze(1), size=(h,w), mode='nearest').squeeze(1) #[B, H, W]
-            valid1 = gt_valid1
+            gt_pts1 = F.interpolate(batch['pts1'].permute(0,3,1,2), size=(h,w), mode='bilinear', align_corners=False).permute(0,2,3,1) #[B, H, W, 3]  
+            gt_valid1 = batch['mask1']
+            valid1 = F.interpolate(gt_valid1.float().unsqueeze(1), size=(h,w), mode='nearest').squeeze(1) #[B, H, W]
+            valid1 = valid1 >= 0.5
 
-            gt_pts2 = F.interpolate(batch['pts2'].permute(0,3,1,2), size=(h,w), mode='bilinear', align_corner=False).permute(0,2,3,1) #[B, H, W, 3]  
-            gt_valid2 = F.interpolate(batch['mask2'].unsqueeze(1), size=(h,w), mode='nearest').squeeze(1) #[B, H, W]
-            valid2 = gt_valid2
+            gt_pts2 = F.interpolate(batch['pts2'].permute(0,3,1,2), size=(h,w), mode='bilinear', align_corners=False).permute(0,2,3,1) #[B, H, W, 3]  
+            gt_valid2 = batch['mask2']
+            valid2 = F.interpolate(gt_valid2.float().unsqueeze(1), size=(h,w), mode='nearest').squeeze(1) #[B, H, W]
+            valid2 = valid2 >= 0.5
 
             T1 = batch['T1']
             if self.local_largest_scale >= scale:

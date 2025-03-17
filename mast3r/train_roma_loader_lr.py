@@ -253,8 +253,8 @@ def train(args):
         alpha = 0.5,
         c = 1e-4,)
     parameters = [
-        {"params": model.encoder.parameters(), "lr": romatch.STEP_SIZE * 5e-6 / 8},
-        {"params": model.decoder.parameters(), "lr": romatch.STEP_SIZE * 1e-4 / 8},
+        {"params": model.encoder.parameters(), "lr": romatch.STEP_SIZE * 5e-7 / 8},
+        {"params": model.decoder.parameters(), "lr": romatch.STEP_SIZE * 1e-5 / 8},
     ]
     optimizer = torch.optim.AdamW(parameters, weight_decay=0.01)
     lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
