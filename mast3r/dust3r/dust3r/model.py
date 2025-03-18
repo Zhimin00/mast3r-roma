@@ -326,6 +326,8 @@ class AsymmetricCroCo3DStereo_DINOv2 (
         self.patch_embed.proj = dinov2_vitl14.patch_embed.proj
         self.patch_embed.norm = dinov2_vitl14.patch_embed.norm
         self.enc_norm = dinov2_vitl14.norm
+        del dinov2_vitl14
+        del dinov2_weights
         # dust3r specific initialization
         self.dec_blocks2 = deepcopy(self.dec_blocks)
         self.set_downstream_head(output_mode, head_type, landscape_only, depth_mode, conf_mode, **croco_kwargs)
