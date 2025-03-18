@@ -137,9 +137,15 @@ def train(args):
 
     if args.pretrained and not args.resume:
         print('Loading pretrained: ', args.pretrained)
-        ckpt = torch.load(args.pretrained, map_location=device)
-        print(model.load_state_dict(ckpt['model'], strict=False))
-        del ckpt  # in case it occupies memory
+        ckpt = torch.load(args.pretrained, map_location=device)['model']
+        filtered_ckpt = {k: v for k, v in ckpt.items() if not (
+            k.startswith("patch_embed") or
+            k.startswith("enc_blocks") or
+            k.startswith("enc_norm")
+        )}
+        print(model.load_state_dict(filtered_ckpt, strict=False))
+        del ckpt
+        del filtered_ckpt  # in case it occupies memory
 
     eff_batch_size = args.batch_size * args.accum_iter * misc.get_world_size()
     if args.lr is None:  # only base_lr is specified
