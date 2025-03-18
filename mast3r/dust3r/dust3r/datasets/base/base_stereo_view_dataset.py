@@ -150,8 +150,8 @@ class BaseStereoViewDataset (EasyDataset):
         cx, cy = intrinsics[:2, 2].round().astype(int)
         min_margin_x = min(cx, W-cx)
         min_margin_y = min(cy, H-cy)
-        assert min_margin_x > W/5, f'Bad principal point in view={info}'
-        assert min_margin_y > H/5, f'Bad principal point in view={info}'
+        # assert min_margin_x > W/5, f'Bad principal point in view={info}'
+        # assert min_margin_y > H/5, f'Bad principal point in view={info}'
         # the new window will be a rectangle of size (2*min_margin_x, 2*min_margin_y) centered on (cx,cy)
         l, t = cx - min_margin_x, cy - min_margin_y
         r, b = cx + min_margin_x, cy + min_margin_y

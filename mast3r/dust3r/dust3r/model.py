@@ -19,6 +19,7 @@ from models.croco import CroCoNet  # noqa
 import pdb
 import torch.nn as nn
 import torchvision.models as tvm
+import math
 
 inf = float('inf')
 
@@ -299,7 +300,7 @@ class AsymmetricCroCo3DStereo_DINOv2 (
                  conf_mode=('exp', 1, inf),
                  freeze='encoder',
                  landscape_only=True,
-                 patch_embed_cls='PatchEmbedDust3R',  # PatchEmbedDust3R or ManyAR_PatchEmbed
+                 patch_embed_cls='PatchEmbedDust3R2',  # PatchEmbedDust3R or ManyAR_PatchEmbed
                  dinov2_weights=None,
                  **croco_kwargs):
         self.patch_embed_cls = patch_embed_cls
@@ -322,10 +323,11 @@ class AsymmetricCroCo3DStereo_DINOv2 (
         )
         dinov2_vitl14 = vit_large(**vit_kwargs).eval()
         dinov2_vitl14.load_state_dict(dinov2_weights)
-        self.enc_blocks = dinov2_vitl14.blocks
+        self.enc_blocks = None
         self.patch_embed.proj = dinov2_vitl14.patch_embed.proj
         self.patch_embed.norm = dinov2_vitl14.patch_embed.norm
-        self.enc_norm = dinov2_vitl14.norm
+        self.dinov2_vitl14 = dinov2_vitl14
+        self.enc_norm = None
         del dinov2_vitl14
         del dinov2_weights
         # dust3r specific initialization
@@ -361,7 +363,7 @@ class AsymmetricCroCo3DStereo_DINOv2 (
         to_be_frozen = {
             'none': [],
             'mask': [self.mask_token],
-            'encoder': [self.mask_token, self.patch_embed, self.enc_blocks, self.enc_norm],
+            'encoder': [self.mask_token, self.patch_embed, self.dinov2_vitl14],
         }
         freeze_all_params(to_be_frozen[freeze])
 
@@ -385,16 +387,13 @@ class AsymmetricCroCo3DStereo_DINOv2 (
         self.head2 = transpose_to_landscape(self.downstream_head2, activate=landscape_only)
 
     def _encode_image(self, image, true_shape):
-        # embed the image into patches  (x has size B x Npatches x C)
+        # swap x to landscape if necessary and generate pos
         x, pos = self.patch_embed(image, true_shape=true_shape)
         # add positional embedding without cls token
         assert self.enc_pos_embed is None
-
-        # now apply the transformer encoder and normalization
-        for blk in self.enc_blocks:
-            x = blk(x, pos)
-
-        x = self.enc_norm(x)
+        #extract dinov2 features
+        x = self.dinov2_vitl14.forward_features(x)
+        x = x['x_norm_patchtokens']
         return x, pos, None
 
     def _encode_image_pairs(self, img1, img2, true_shape1, true_shape2):
