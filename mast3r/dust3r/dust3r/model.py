@@ -390,7 +390,7 @@ class AsymmetricCroCo3DStereo_DINOv2 (
         # swap x to landscape if necessary and generate pos
         x, pos = self.patch_embed(image, true_shape=true_shape)
         # add positional embedding without cls token
-        assert self.enc_pos_embed is None
+        # assert self.enc_pos_embed is None
         #extract dinov2 features
         x = self.dinov2_vitl14.forward_features(x)
         x = x['x_norm_patchtokens']
@@ -432,6 +432,9 @@ class AsymmetricCroCo3DStereo_DINOv2 (
         # project to decoder dim
         f1 = self.decoder_embed(f1)
         f2 = self.decoder_embed(f2)
+        if self.dec_pos_embed is not None:
+            f1 = f1 + self.dec_pos_embed
+            f2 = f2 + self.dec_pos_embed
 
         final_output.append((f1, f2))
         for blk1, blk2 in zip(self.dec_blocks, self.dec_blocks2):
@@ -634,24 +637,24 @@ class AsymmetricCroCo3DStereo_VGG (
         res2['pts3d_in_other_view'] = res2.pop('pts3d')  # predict view2's pts3d in view1's frame
         return res1, res2
     
-    class VGG19(nn.Module): #scale 8,4,2,1
-        def __init__(self, pretrained=False, amp = False, amp_dtype = torch.float16) -> None:
-            super().__init__()
-            self.layers = nn.ModuleList(tvm.vgg19_bn(pretrained=pretrained).features[:40])#40
-            self.amp = amp
-            self.amp_dtype = amp_dtype
+class VGG19(nn.Module): #scale 8,4,2,1
+    def __init__(self, pretrained=False, amp = False, amp_dtype = torch.float16) -> None:
+        super().__init__()
+        self.layers = nn.ModuleList(tvm.vgg19_bn(pretrained=pretrained).features[:40])#40
+        self.amp = amp
+        self.amp_dtype = amp_dtype
 
-        def forward(self, x, **kwargs):
-            autocast_device, autocast_enabled, autocast_dtype = get_autocast_params(x.device, self.amp, self.amp_dtype)
-            with torch.autocast(device_type=autocast_device, enabled=autocast_enabled, dtype = autocast_dtype):
-                feats = []
-                scale = 1
-                for layer in self.layers:
-                    if isinstance(layer, nn.MaxPool2d):
-                        feats.append(x)
-                        scale = scale*2
-                    x = layer(x)
-                return feats
+    def forward(self, x, **kwargs):
+        autocast_device, autocast_enabled, autocast_dtype = get_autocast_params(x.device, self.amp, self.amp_dtype)
+        with torch.autocast(device_type=autocast_device, enabled=autocast_enabled, dtype = autocast_dtype):
+            feats = []
+            scale = 1
+            for layer in self.layers:
+                if isinstance(layer, nn.MaxPool2d):
+                    feats.append(x)
+                    scale = scale*2
+                x = layer(x)
+            return feats
 
 def get_autocast_params(device=None, enabled=False, dtype=None):
     if device is None:
