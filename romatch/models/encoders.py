@@ -1327,6 +1327,75 @@ class CNNandMast3r(nn.Module):
                 feature_s_pyramid[16] = feat2
         return feature_q_pyramid, feature_s_pyramid
 
+class CNNandDinov2_Mast3r(nn.Module):
+    def __init__(self, cnn_kwargs = None, amp = False, use_vgg = False, 
+                dinov2_weights = None, 
+                amp_dtype = torch.float16,
+                alpha = 0.5):
+        super().__init__()
+        if dinov2_weights is None:
+            dinov2_weights = torch.hub.load_state_dict_from_url("https://dl.fbaipublicfiles.com/dinov2/dinov2_vitl14/dinov2_vitl14_pretrain.pth", map_location="cpu")
+        from .transformer import vit_large
+        vit_kwargs = dict(img_size= 518,
+            patch_size= 14,
+            init_values = 1.0,
+            ffn_layer = "mlp",
+            block_chunks = 0,
+        )
+        dinov2_vitl14 = vit_large(**vit_kwargs).eval()
+        dinov2_vitl14.load_state_dict(dinov2_weights)
+
+        mast3r_model_name = "naver/MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric"
+                # you can put the path to a local checkpoint in model_name if needed
+        mast3r_model = AsymmetricMASt3R.from_pretrained(mast3r_model_name)
+        #self.backbone = model
+        #feature_dim = 1024 + 768
+        cnn_kwargs = cnn_kwargs if cnn_kwargs is not None else {}
+        if not use_vgg:
+            self.cnn = ResNet50(**cnn_kwargs)
+        else:
+            self.cnn = VGG19(**cnn_kwargs)
+        self.amp = amp
+        self.amp_dtype = amp_dtype
+        self.alpha = alpha
+        if self.amp:
+            mast3r_model = mast3r_model.to("cuda", self.amp_dtype)
+            dinov2_vitl14 = dinov2_vitl14.to("cuda", self.amp_dtype)
+        self.pipe = [dinov2_vitl14, mast3r_model] # ugly hack to not show parameters to DDP
+        
+    def train(self, mode: bool = True):
+        return self.cnn.train(mode)
+    
+    def forward(self, x, upsample = False):
+        img1, img2 = x
+        B,C,H,W = img1.shape
+        feature_q_pyramid = self.cnn(img1)
+        feature_s_pyramid = self.cnn(img2)
+
+        if not upsample:
+            with torch.no_grad():
+                self.pipe[0] = self.pipe[0].to(img1.device, self.amp_dtype)
+                dinov2_features_1 = self.pipe[0].forward_features(img1.to(self.amp_dtype))
+                feat1_dinov2 = dinov2_features_1['x_norm_patchtokens'].permute(0,2,1).reshape(B,1024,H//14, W//14)
+                dinov2_features_2 = self.pipe[0].forward_features(img2.to(self.amp_dtype))
+                feat2_dinov2 = dinov2_features_2['x_norm_patchtokens'].permute(0,2,1).reshape(B,1024,H//14, W//14)
+                del dinov2_features_1, dinov2_features_2
+                feat1_dinov2_norm = feat1_dinov2 / feat1_dinov2.norm(dim=1, keepdim=True)
+                feat2_dinov2_norm = feat2_dinov2 / feat2_dinov2.norm(dim=1, keepdim=True)
+
+                self.pipe[1] = self.pipe[1].to(img1.device, self.amp_dtype)
+                feat1, feat2 = self.pipe[1].decoder_forward(img1.to(self.amp_dtype), img2.to(self.amp_dtype))
+                feat1_resized = F.interpolate(feat1, size=(H//14, W//14), mode='bilinear', align_corners=False)
+                feat1_norm = feat1_resized / feat1_resized.norm(dim=1, keepdim=True)
+                feat2_resized = F.interpolate(feat2, size=(H//14, W//14), mode='bilinear', align_corners=False)
+                feat2_norm = feat2_resized / feat2_resized.norm(dim=1, keepdim=True)
+                del feat1, feat2
+
+                feature_q_pyramid[16] = torch.cat([self.alpha * feat1_dinov2_norm, self.alpha * feat1_norm], dim=1)
+                feature_s_pyramid[16] = torch.cat([self.alpha * feat2_dinov2_norm, self.alpha * feat2_norm], dim=1)
+        
+        return feature_q_pyramid, feature_s_pyramid
+    
 class CNNandMast3r_trainable(nn.Module): #concatenate dinov2 and SD at scale 16
     def __init__(self, cnn_kwargs = None, amp = False, use_vgg = False, 
                 amp_dtype = torch.float16):

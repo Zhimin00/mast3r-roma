@@ -1770,11 +1770,14 @@ class RegressionMatcher_mast3r(nn.Module):
         return corresps
 
     def forward_symmetric(self, batch, batched = True, upsample = False, scale_factor = 1):
-        feature_pyramid = self.extract_backbone_features(batch, batched = batched, upsample = upsample)
-        f_q_pyramid = {key: torch.cat([feature_pyramid[0][key], feature_pyramid[1][key]], dim=0) 
-                   for key in feature_pyramid[0]}
-        f_s_pyramid = {key: torch.cat([feature_pyramid[1][key], feature_pyramid[0][key]], dim=0) 
-                   for key in feature_pyramid[0]}
+        x_q = batch["im_A"]
+        x_s = batch["im_B"]
+        feature_pyramid_q = self.encoder((x_q, x_s), upsample = upsample)
+        feature_pyramid_s = self.encoder((x_s, x_q), upsample = upsample)
+        f_q_pyramid = {key: torch.cat([feature_pyramid_q[0][key], feature_pyramid_q[1][key]], dim=0) 
+                   for key in feature_pyramid_q[0]}
+        f_s_pyramid = {key: torch.cat([feature_pyramid_s[0][key], feature_pyramid_s[1][key]], dim=0) 
+                   for key in feature_pyramid_s[0]}
          
         corresps = self.decoder(f_q_pyramid, 
                                 f_s_pyramid, 
@@ -1906,7 +1909,7 @@ class RegressionMatcher_mast3r(nn.Module):
                 if h != self.h_resized or self.w_resized != w:
                     warn("Model resolution and batch resolution differ, may produce unexpected results")
                 hs, ws = h, w
-            finest_scale = 8
+            finest_scale = 1
             # Run matcher
             if symmetric:
                 corresps = self.forward_symmetric(batch)
