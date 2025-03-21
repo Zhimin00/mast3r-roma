@@ -330,6 +330,9 @@ class AsymmetricCroCo3DStereo_DINOv2 (
         self.enc_norm = None
         del dinov2_vitl14
         del dinov2_weights
+        for n, param in self.dinov2_vitl14.named_parameters():
+            param.requires_grad = True
+        
         # dust3r specific initialization
         self.dec_blocks2 = deepcopy(self.dec_blocks)
         self.set_downstream_head(output_mode, head_type, landscape_only, depth_mode, conf_mode, **croco_kwargs)
