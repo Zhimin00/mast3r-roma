@@ -159,7 +159,7 @@ class MegaDepth_all(BaseStereoViewDataset):
             depth_path = self.depth_paths[scene_name][im_id]
             try:
                 image = imread_cv2(osp.join(self.ROOT, img_path))
-                depthmap = imread_cv2(osp.join(self.root, depth_path))
+                depthmap = imread_cv2(osp.join(self.ROOT, depth_path))
                 intrinsics = self.intrinsics[scene_name][im_id] 
                 camera_pose = self.poses[scene_name][im_id]
 
