@@ -17,6 +17,8 @@ class MegaDepth(BaseStereoViewDataset):
     def __init__(self, *args, split, ROOT, **kwargs):
         self.ROOT = ROOT
         super().__init__(*args, **kwargs)
+        print(self.split)
+        pdb.set_trace()
         self.loaded_data = self._load_data(self.split)
 
         if self.split is None:
