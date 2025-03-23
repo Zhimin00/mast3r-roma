@@ -12,6 +12,7 @@ from PIL.ImageOps import exif_transpose
 import torchvision.transforms as tvf
 os.environ["OPENCV_IO_ENABLE_OPENEXR"] = "1"
 import cv2  # noqa
+import h5py
 
 try:
     from pillow_heif import register_heif_opener  # noqa
@@ -41,6 +42,9 @@ def imread_cv2(path, options=cv2.IMREAD_COLOR):
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     return img
 
+def load_depth(depth_ref, crop=None):
+    depth = np.array(h5py.File(depth_ref, "r")["depth"])
+    return depth
 
 def rgb(ftensor, true_shape=None):
     if isinstance(ftensor, list):
