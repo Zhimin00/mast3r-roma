@@ -103,6 +103,7 @@ class MegaDepth_all(BaseStereoViewDataset):
         self.scene_info_root = osp.join(ROOT, "prep_scene_info")
         self.all_scenes = os.listdir(self.scene_info_root)
         self.test_scenes_loftr = ['0015.npy', '0022.npy']
+        print(self.split)
         if self.split is None:
             pass
         elif self.split == 'train':
