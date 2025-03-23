@@ -18,8 +18,6 @@ class MegaDepth(BaseStereoViewDataset):
     def __init__(self, *args, split, ROOT, **kwargs):
         self.ROOT = ROOT
         super().__init__(*args, **kwargs)
-        print(self.split)
-        pdb.set_trace()
         self.loaded_data = self._load_data(self.split)
 
         if self.split is None:
@@ -99,7 +97,7 @@ class MegaDepth(BaseStereoViewDataset):
         return views
 
 class MegaDepth_all(BaseStereoViewDataset):
-    def __init__(self, *args, split, ROOT, min_overlap=0.0, max_overlap=1.0, max_num_pairs = 100_000, **kwargs):
+    def __init__(self, *args, ROOT, min_overlap=0.0, max_overlap=1.0, max_num_pairs = 100_000, **kwargs):
         self.ROOT = ROOT
         super().__init__(*args, **kwargs)
 
