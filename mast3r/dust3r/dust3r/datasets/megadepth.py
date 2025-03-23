@@ -96,7 +96,7 @@ class MegaDepth(BaseStereoViewDataset):
         return views
 
 class MegaDepth_all(BaseStereoViewDataset):
-    def __init__(self, *args, split, ROOT, min_overlap=0.0, max_overlap=0.0, max_num_pairs = 100_000, **kwargs):
+    def __init__(self, *args, split, ROOT, min_overlap=0.0, max_overlap=1.0, max_num_pairs = 100_000, **kwargs):
         self.ROOT = ROOT
         super().__init__(*args, **kwargs)
 
