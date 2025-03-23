@@ -6,7 +6,7 @@ from .arkitscenes import ARKitScenes, ARKitScenes2  # noqa
 from .blendedmvs import BlendedMVS, BlendedMVS2  # noqa
 from .co3d import Co3d, Co3d2  # noqa
 from .habitat import Habitat, Habitat2  # noqa
-from .megadepth import MegaDepth2, MegaDepth  # noqa
+from .megadepth import MegaDepth2, MegaDepth, MegaDepth_all  # noqa
 from .scannetpp import ScanNetpp, ScanNetpp2 # noqa
 from .staticthings3d import StaticThings3D, StaticThings3D2  # noqa
 from .waymo import Waymo  # noqa
