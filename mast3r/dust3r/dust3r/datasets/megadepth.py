@@ -8,7 +8,7 @@
 # --------------------------------------------------------
 import os.path as osp
 import numpy as np
-
+import os
 from dust3r.datasets.base.base_stereo_view_dataset import BaseStereoViewDataset, BaseStereoViewDataset2
 from dust3r.utils.image import imread_cv2, load_images
 import torch
@@ -95,6 +95,89 @@ class MegaDepth(BaseStereoViewDataset):
 
         return views
 
+class MegaDepth_all(BaseStereoViewDataset):
+    def __init__(self, *args, split, ROOT, min_overlap=0.0, max_overlap=0.0, max_num_pairs = 100_000, **kwargs):
+        self.ROOT = ROOT
+        super().__init__(*args, **kwargs)
+
+        self.scene_info_root = osp.join(ROOT, "prep_scene_info")
+        self.all_scenes = os.listdir(self.scene_info_root)
+        self.test_scenes_loftr = ['0015.npy', '0022.npy']
+        if self.split is None:
+            pass
+        elif self.split == 'train':
+            scene_names = set(self.all_scenes) - set(self.test_scenes_loftr)
+        elif self.split == 'val':
+            scene_names = self.test_scenes_loftr
+        else:
+            raise ValueError(f'bad {self.split=}')
+        self.scene_names = scene_names
+        self.image_paths = {}
+        self.depth_paths = {}
+        self.intrinsics = {}
+        self.poses = {}
+        self.pairs = []
+        
+        self.overlaps = []
+        for scene_name in self.scene_names:
+            scene_info = np.load(
+                osp.join(self.scene_info_root, scene_name), allow_pickle=True
+            ).item()
+            self.image_paths[scene_name] = scene_info['image_paths']
+            self.depth_paths[scene_name] = scene_info['depth_paths']
+            self.intrinsics[scene_name] = scene_info['intrinsics']
+            self.poses[scene_name] = scene_info['poses']
+            pairs = scene_info['pairs']
+            overlaps = scene_info['overlaps']
+            threshold = (overlaps > min_overlap) & (overlaps < max_overlap)
+            pairs = pairs[threshold]
+            overlaps = overlaps[threshold]
+            if len(pairs) > max_num_pairs:
+                pairinds = np.random.choice(
+                    np.arange(0, len(pairs), max_num_pairs, replace=False)
+                )
+                pairs = pairs[pairinds]
+                overlaps = overlaps[pairinds]
+            for pair in pairs:
+                self.pairs.append((scene_name, pair[0], pair[1]))
+
+    def __len__(self):
+        return len(self.pairs)
+
+    def get_stats(self):
+        return f'{len(self)} pairs from {len(self.all_scenes)} scenes'
+
+    def _get_views(self, pair_idx, resolution, rng):
+        scene_name, im1_id, im2_id = self.pairs[pair_idx]
+
+        views = []
+
+        for im_id in [im1_id, im2_id]:
+            img_path = self.image_paths[scene_name][im_id]
+            depth_path = self.depth_paths[scene_name][im_id]
+            try:
+                image = imread_cv2(osp.join(self.ROOT, img_path))
+                depthmap = imread_cv2(osp.join(self.root, depth_path))
+                intrinsics = self.intrinsics[scene_name][im_id] 
+                camera_pose = self.poses[scene_name][im_id]
+
+            except Exception as e:
+                raise OSError(f'cannot load {img_path}, got exception {e}')
+
+            image, depthmap, intrinsics = self._crop_resize_if_necessary(
+                image, depthmap, intrinsics, resolution, rng, info=osp.join(self.ROOT, img_path))
+
+            views.append(dict(
+                img=image,
+                depthmap=depthmap,
+                camera_pose=camera_pose,  # cam2world
+                camera_intrinsics=intrinsics,
+                dataset='MegaDepth',
+                label=img_path,
+                instance=img_path.split('/')[-1]))
+
+        return views
+    
 class MegaDepth2(BaseStereoViewDataset2):
     def __init__(self, *args, split, ROOT, **kwargs):
         self.ROOT = ROOT
