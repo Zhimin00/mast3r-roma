@@ -12,6 +12,7 @@ import os
 from dust3r.datasets.base.base_stereo_view_dataset import BaseStereoViewDataset, BaseStereoViewDataset2
 from dust3r.utils.image import imread_cv2, load_images
 import torch
+import pdb
 
 class MegaDepth(BaseStereoViewDataset):
     def __init__(self, *args, split, ROOT, **kwargs):
