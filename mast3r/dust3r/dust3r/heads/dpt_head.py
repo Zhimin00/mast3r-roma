@@ -115,6 +115,106 @@ def create_dpt_head(net, has_conf=False):
                                 conf_mode=net.conf_mode,
                                 head_type='regression')
 
+class DPTOutputAdapter_fix_resnet(DPTOutputAdapter):
+    """
+    Adapt croco's DPTOutputAdapter implementation for dust3r:
+    remove duplicated weigths, and fix forward for dust3r
+    """
+
+    def init(self, dim_tokens_enc=768):
+        super().init(dim_tokens_enc)
+        # these are duplicated weights
+        self.act_postprocess = nn.ModuleList([
+            self.act_3_postprocess,
+            self.act_4_postprocess
+        ])
+        del self.act_1_postprocess
+        del self.act_2_postprocess
+        del self.act_3_postprocess
+        del self.act_4_postprocess
+
+    def forward(self, encoder_tokens: List[torch.Tensor], resnet_features: List[torch.Tensor], image_size=None):
+        assert self.dim_tokens_enc is not None, 'Need to call init(dim_tokens_enc) function first'
+        # H, W = input_info['image_size']
+        image_size = self.image_size if image_size is None else image_size
+        H, W = image_size
+        # Number of patches in height and width
+        N_H = H // (self.stride_level * self.P_H)
+        N_W = W // (self.stride_level * self.P_W)
+
+        # Hook decoder onto 2 layers from specified ViT layers
+        layers = [encoder_tokens[hook] for hook in self.hooks]
+
+        # Extract only task-relevant tokens and ignore global tokens.
+        layers = [self.adapt_tokens(l) for l in layers]
+
+        # Reshape tokens to spatial representation
+        layers = [rearrange(l, 'b (nh nw) c -> b c nh nw', nh=N_H, nw=N_W) for l in layers]
+        layers = [self.act_postprocess[idx](l) for idx, l in enumerate(layers)]
+
+        # Project layers to chosen feature dim
+        layers = resnet_features + layers
+        layers = [self.scratch.layer_rn[idx](l) for idx, l in enumerate(layers)]
+
+        # Fuse layers using refinement stages
+        path_4 = self.scratch.refinenet4(layers[3])[:, :, :layers[2].shape[2], :layers[2].shape[3]]
+        path_3 = self.scratch.refinenet3(path_4, layers[2])
+        path_2 = self.scratch.refinenet2(path_3, layers[1])
+        path_1 = self.scratch.refinenet1(path_2, layers[0])
+
+        # Output head
+        out = self.head(path_1)
+
+        return out
+    
+class PixelwiseTaskWithDPT_resnet(nn.Module):
+    """ DPT module for dust3r, can return 3D points + confidence for all pixels"""
+
+    def __init__(self, *, n_cls_token=0, hooks_idx=None, dim_tokens=None,
+                 output_width_ratio=1, num_channels=1, postprocess=None, depth_mode=None, conf_mode=None, **kwargs):
+        super(PixelwiseTaskWithDPT_resnet, self).__init__()
+        self.return_all_layers = True  # backbone needs to return all layers
+        self.postprocess = postprocess
+        self.depth_mode = depth_mode
+        self.conf_mode = conf_mode
+
+        assert n_cls_token == 0, "Not implemented"
+        dpt_args = dict(output_width_ratio=output_width_ratio,
+                        num_channels=num_channels,
+                        **kwargs)
+        if hooks_idx is not None:
+            dpt_args.update(hooks=hooks_idx)
+        self.dpt = DPTOutputAdapter_fix_resnet(**dpt_args)
+        dpt_init_args = {} if dim_tokens is None else {'dim_tokens_enc': dim_tokens}
+        self.dpt.init(**dpt_init_args)
+
+    def forward(self,  x, resnet_features,  img_info):
+        out = self.dpt(x, resnet_features, image_size=(img_info[0], img_info[1]))
+        if self.postprocess:
+            out = self.postprocess(out, self.depth_mode, self.conf_mode)
+        return out
+
+def create_dpt_resnet_head(net, has_conf=False):
+    """
+    return PixelwiseTaskWithDPT for given net params
+    """
+    assert net.dec_depth > 9
+    l2 = net.dec_depth
+    feature_dim = 256
+    last_dim = feature_dim//2
+    out_nchan = 3
+    ed = net.enc_embed_dim
+    dd = net.dec_embed_dim
+    return PixelwiseTaskWithDPT_resnet(num_channels=out_nchan + has_conf,
+                                feature_dim=feature_dim,
+                                last_dim=last_dim,
+                                hooks_idx=[l2*3//4, l2],
+                                dim_tokens=[dd, dd],
+                                postprocess=postprocess,
+                                depth_mode=net.depth_mode,
+                                conf_mode=net.conf_mode,
+                                head_type='regression',
+                                layer_dims=[256, 512, 384, 768])
 
 class DPTOutputAdapter_fix2(DPTOutputAdapter2):
     """
