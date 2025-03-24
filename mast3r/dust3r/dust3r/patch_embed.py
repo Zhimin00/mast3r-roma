@@ -96,7 +96,8 @@ class ManyAR_PatchEmbed2 (PatchEmbed):
         assert H % self.patch_size[0] == 0, f"Input image height ({H}) is not a multiple of patch size ({self.patch_size[0]})."
         assert W % self.patch_size[1] == 0, f"Input image width ({W}) is not a multiple of patch size ({self.patch_size[1]})."
         assert true_shape.shape == (B, 2), f"true_shape has the wrong shape={true_shape.shape}"
-
+        
+        x = img.new_zeros((B, C, H, W))
         # size expressed in tokens
         W //= self.patch_size[0]
         H //= self.patch_size[1]
@@ -107,10 +108,9 @@ class ManyAR_PatchEmbed2 (PatchEmbed):
         is_portrait = ~is_landscape
 
         # allocate result
-        x = img.new_zeros((B, n_tokens, self.embed_dim))
         pos = img.new_zeros((B, n_tokens, 2), dtype=torch.int64)
 
-        # linear projection, transposed if necessary
+        # transposed if necessary
         x[is_landscape] = img[is_landscape]
         x[is_portrait] = img[is_portrait].swapaxes(-1, -2)
 

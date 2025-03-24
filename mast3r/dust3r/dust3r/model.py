@@ -324,10 +324,10 @@ class AsymmetricCroCo3DStereo_DINOv2 (
         dinov2_vitl14 = vit_large(**vit_kwargs).eval()
         dinov2_vitl14.load_state_dict(dinov2_weights)
         self.enc_blocks = None
+        self.enc_norm = None
         self.patch_embed.proj = dinov2_vitl14.patch_embed.proj
         self.patch_embed.norm = dinov2_vitl14.patch_embed.norm
         self.dinov2_vitl14 = dinov2_vitl14
-        self.enc_norm = None
         del dinov2_vitl14
         del dinov2_weights
         for n, param in self.dinov2_vitl14.named_parameters():
@@ -395,7 +395,7 @@ class AsymmetricCroCo3DStereo_DINOv2 (
         # add positional embedding without cls token
         # assert self.enc_pos_embed is None
         #extract dinov2 features
-        x = self.dinov2_vitl14.forward_features(x)
+        x = self.dinov2_vitl14.forward_features_flat(x)
         x = x['x_norm_patchtokens']
         return x, pos, None
 
@@ -641,36 +641,40 @@ class AsymmetricCroCo3DStereo_VGG (
         return res1, res2
     
 class VGG19(nn.Module): #scale 8,4,2,1
-    def __init__(self, pretrained=False, amp = False, amp_dtype = torch.float16) -> None:
+    def __init__(self, pretrained=False) -> None:
         super().__init__()
         self.layers = nn.ModuleList(tvm.vgg19_bn(pretrained=pretrained).features[:40])#40
-        self.amp = amp
-        self.amp_dtype = amp_dtype
 
     def forward(self, x, **kwargs):
-        autocast_device, autocast_enabled, autocast_dtype = get_autocast_params(x.device, self.amp, self.amp_dtype)
-        with torch.autocast(device_type=autocast_device, enabled=autocast_enabled, dtype = autocast_dtype):
-            feats = []
-            scale = 1
-            for layer in self.layers:
-                if isinstance(layer, nn.MaxPool2d):
-                    feats.append(x)
-                    scale = scale*2
-                x = layer(x)
-            return feats
+        feats = []
+        scale = 1
+        for layer in self.layers:
+            if isinstance(layer, nn.MaxPool2d):
+                feats.append(x)
+                scale = scale*2
+            x = layer(x)
+        return feats
+    
+class ResNet50(nn.Module):
+    def __init__(self, pretrained=False, dilation = None, freeze_bn = True, anti_aliased = False) -> None:
+        super().__init__()
+        if dilation is None:
+            dilation = [False,False,False]
+        if anti_aliased:
+            pass
+        else:
+            self.net = tvm.resnet50(pretrained=pretrained,replace_stride_with_dilation=dilation)
+        self.freeze_bn = freeze_bn
 
-def get_autocast_params(device=None, enabled=False, dtype=None):
-    if device is None:
-        autocast_device = "cuda" if torch.cuda.is_available() else "cpu"
-    else:
-        #strip :X from device
-        autocast_device = str(device).split(":")[0]
-    if 'cuda' in str(device):
-        out_dtype = dtype
-        enabled = True
-    else:
-        out_dtype = torch.bfloat16
-        enabled = False
-        # mps is not supported
-        autocast_device = "cpu"
-    return autocast_device, enabled, out_dtype
+    def forward(self, x, **kwargs):
+        net = self.net
+        feats = []
+        x = net.conv1(x)
+        x = net.bn1(x)
+        x = net.relu(x)
+        x = net.maxpool(x)
+        x = net.layer1(x)
+        feats.append(x) #scale 4
+        x = net.layer2(x)
+        feats.append(x) #scale 8       
+        return feats

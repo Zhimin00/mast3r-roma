@@ -109,7 +109,6 @@ class BaseStereoViewDataset (EasyDataset):
             for key, val in view.items():
                 res, err_msg = is_good_type(key, val)
                 assert res, f"{err_msg} with {key}={val} for view {view_name(view)}"
-            K = view['camera_intrinsics']
 
         # last thing done!
         for view in views:
