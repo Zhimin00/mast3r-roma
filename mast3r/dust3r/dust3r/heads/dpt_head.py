@@ -133,7 +133,7 @@ class DPTOutputAdapter_fix_resnet(DPTOutputAdapter):
         del self.act_3_postprocess
         del self.act_4_postprocess
 
-    def forward(self, encoder_tokens: List[torch.Tensor], resnet_features: List[torch.Tensor], image_size=None):
+    def forward(self, encoder_tokens: List[torch.Tensor], feat4: torch.Tensor, feat8: torch.Tensor, image_size=None):
         assert self.dim_tokens_enc is not None, 'Need to call init(dim_tokens_enc) function first'
         # H, W = input_info['image_size']
         image_size = self.image_size if image_size is None else image_size
@@ -141,6 +141,10 @@ class DPTOutputAdapter_fix_resnet(DPTOutputAdapter):
         # Number of patches in height and width
         N_H = H // (self.stride_level * self.P_H)
         N_W = W // (self.stride_level * self.P_W)
+        N_H4 = H // 4
+        N_W4 = W // 4
+        N_H8 = H // 8
+        N_W8 = W // 8
 
         # Hook decoder onto 2 layers from specified ViT layers
         layers = [encoder_tokens[hook] for hook in self.hooks]
@@ -151,9 +155,10 @@ class DPTOutputAdapter_fix_resnet(DPTOutputAdapter):
         # Reshape tokens to spatial representation
         layers = [rearrange(l, 'b (nh nw) c -> b c nh nw', nh=N_H, nw=N_W) for l in layers]
         layers = [self.act_postprocess[idx](l) for idx, l in enumerate(layers)]
-
+        feat4 = rearrange(feat4, 'b (nh nw) c -> b c nh nw', nh = N_H4, nw=N_W4)
+        feat8 = rearrange(feat8, 'b (nh nw) c -> b c nh nw', nh = N_H8, nw=N_W8)
         # Project layers to chosen feature dim
-        layers = resnet_features + layers
+        layers = [feat4, feat8] + layers
         layers = [self.scratch.layer_rn[idx](l) for idx, l in enumerate(layers)]
 
         # Fuse layers using refinement stages
@@ -188,8 +193,8 @@ class PixelwiseTaskWithDPT_resnet(nn.Module):
         dpt_init_args = {} if dim_tokens is None else {'dim_tokens_enc': dim_tokens}
         self.dpt.init(**dpt_init_args)
 
-    def forward(self,  x, resnet_features,  img_info):
-        out = self.dpt(x, resnet_features, image_size=(img_info[0], img_info[1]))
+    def forward(self,  x, feat4, feat8,  img_info):
+        out = self.dpt(x, feat4, feat8, image_size=(img_info[0], img_info[1]))
         if self.postprocess:
             out = self.postprocess(out, self.depth_mode, self.conf_mode)
         return out
@@ -209,12 +214,12 @@ def create_dpt_resnet_head(net, has_conf=False):
                                 feature_dim=feature_dim,
                                 last_dim=last_dim,
                                 hooks_idx=[l2*3//4, l2],
-                                dim_tokens=[dd, dd],
+                                dim_tokens=dd,
                                 postprocess=postprocess,
                                 depth_mode=net.depth_mode,
                                 conf_mode=net.conf_mode,
                                 head_type='regression',
-                                layer_dims=[256, 512, 384, 768])
+                                layer_dims=[256, 512, 384, 768],)
 
 class DPTOutputAdapter_fix2(DPTOutputAdapter2):
     """

@@ -26,7 +26,7 @@ import torch.backends.cudnn as cudnn
 from torch.utils.tensorboard import SummaryWriter
 torch.backends.cuda.matmul.allow_tf32 = True  # for gpu >= Ampere and pytorch >= 1.12
 
-from dust3r.model import AsymmetricCroCo3DStereo, AsymmetricCroCo3DStereo_DINOv2, inf  # noqa: F401, needed when loading the model
+from dust3r.model import AsymmetricCroCo3DStereo, AsymmetricCroCo3DStereo_DINOv2, AsymmetricCroCo3DStereo_ResNet, AsymmetricCroCo3DStereo_VGG, inf  # noqa: F401, needed when loading the model
 from dust3r.datasets import get_data_loader  # noqa
 from dust3r.losses import *  # noqa: F401, needed when loading the model
 from dust3r.inference import loss_of_one_batch  # noqa
@@ -138,14 +138,8 @@ def train(args):
     if args.pretrained and not args.resume:
         print('Loading pretrained: ', args.pretrained)
         ckpt = torch.load(args.pretrained, map_location=device)['model']
-        filtered_ckpt = {k: v for k, v in ckpt.items() if not (
-            k.startswith("patch_embed") or
-            k.startswith("enc_blocks") or
-            k.startswith("enc_norm")
-        )}
-        print(model.load_state_dict(filtered_ckpt, strict=False))
-        del ckpt
-        del filtered_ckpt  # in case it occupies memory
+        print(model.load_state_dict(ckpt, strict=False))
+        del ckpt  # in case it occupies memory
 
     eff_batch_size = args.batch_size * args.accum_iter * misc.get_world_size()
     if args.lr is None:  # only base_lr is specified
