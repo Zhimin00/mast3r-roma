@@ -255,7 +255,7 @@ def train(args):
     ddp_model = DDP(model, device_ids=[device_id], find_unused_parameters = False, gradient_as_bucket_view=True)
     grad_scaler = torch.cuda.amp.GradScaler(growth_interval=1_000_000)
     grad_clip_norm = 0.01
-    next_eval_step = 1000000
+    next_eval_step = (romatch.GLOBAL_STEP % 1000000 + 1) * 1000000
     for n in range(romatch.GLOBAL_STEP, N, k * romatch.STEP_SIZE):
         mega_sampler = torch.utils.data.WeightedRandomSampler(
             mega_ws, num_samples = batch_size * k, replacement=False
@@ -268,14 +268,15 @@ def train(args):
                 num_workers = 8,
             )
         )
-        wandb.log(megadense_benchmark.benchmark(model), step = romatch.GLOBAL_STEP)
-        if romatch.GLOBAL_STEP >= next_eval_step:
-            next_eval_step += 1000000
-            wandb.log(mega1500_benchmark.benchmark(model), step = romatch.GLOBAL_STEP)
         train_k_steps(
             n, k, mega_dataloader, ddp_model, depth_loss, optimizer, lr_scheduler, grad_scaler, grad_clip_norm = grad_clip_norm,
         )
         checkpointer.save(model, optimizer, lr_scheduler, romatch.GLOBAL_STEP)
+        wandb.log(megadense_benchmark.benchmark(model), step = romatch.GLOBAL_STEP)
+        if romatch.GLOBAL_STEP >= next_eval_step:
+            next_eval_step += 1000000
+            wandb.log(mega1500_benchmark.benchmark(model), step = romatch.GLOBAL_STEP)
+        
 def test_mega_8_scenes(model, name):
     mega_8_scenes_benchmark = MegaDepthPoseEstimationBenchmark("/export/r24a/data/zshao/data/megadepth",
                                                 scene_names=['mega_8_scenes_0019_0.1_0.3.npz',
