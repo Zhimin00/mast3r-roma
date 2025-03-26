@@ -17,7 +17,9 @@ def head_factory(head_type, output_mode, net, has_conf=False):
         return create_dpt_head(net, has_conf=has_conf)
     elif head_type == 'dpt_resnet' and output_mode == 'pts3d':
         return create_dpt_resnet_head(net, has_conf=has_conf)
-    elif head_type == 'dpt_refine' and output_mode == 'pts3d':
-        return create_dpt_refine_head(net, has_conf=has_conf)
+    elif head_type == 'dpt_resnetrefine' and output_mode == 'pts3d':
+        return create_dpt_refine_head(net, cnn_type='resnet', has_conf=has_conf)
+    elif head_type == 'dpt_vggrefine' and output_mode == 'pts3d':
+        return create_dpt_refine_head(net, cnn_type='vgg', has_conf=has_conf)
     else:
         raise NotImplementedError(f"unexpected {head_type=} and {output_mode=}")

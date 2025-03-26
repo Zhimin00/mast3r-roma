@@ -221,7 +221,7 @@ def create_dpt_resnet_head(net, has_conf=False):
                                 head_type='regression',
                                 layer_dims=[256, 512, 384, 768],)
 
-class DPTOutputAdapter_fix2(DPTOutputAdapter2):
+class DPTOutputAdapter_fix_cnn(DPTOutputAdapter2):
     """
     Adapt croco's DPTOutputAdapter implementation for dust3r:
     remove duplicated weigths, and fix forward for dust3r
@@ -235,7 +235,7 @@ class DPTOutputAdapter_fix2(DPTOutputAdapter2):
         del self.act_3_postprocess
         del self.act_4_postprocess
 
-    def forward(self, encoder_tokens: List[torch.Tensor], vgg_features: List[torch.Tensor], image_size=None):
+    def forward(self, encoder_tokens: List[torch.Tensor], cnn_feats: List[torch.Tensor], image_size=None):
         assert self.dim_tokens_enc is not None, 'Need to call init(dim_tokens_enc) function first'
         # H, W = input_info['image_size']
         image_size = self.image_size if image_size is None else image_size
@@ -243,7 +243,8 @@ class DPTOutputAdapter_fix2(DPTOutputAdapter2):
         # Number of patches in height and width
         N_H = H // (self.stride_level * self.P_H)
         N_W = W // (self.stride_level * self.P_W)
-
+        N_Hs = [H // 1, H // 2, H // 4, H // 8]
+        N_Ws = [W // 1, W // 2, W // 4, W // 8]
         # Hook decoder onto 4 layers from specified ViT layers
         layers = [encoder_tokens[hook] for hook in self.hooks]
 
@@ -253,19 +254,19 @@ class DPTOutputAdapter_fix2(DPTOutputAdapter2):
         # Reshape tokens to spatial representation
         layers = [rearrange(l, 'b (nh nw) c -> b c nh nw', nh=N_H, nw=N_W) for l in layers]
         layers = [self.act_postprocess[idx](l) for idx, l in enumerate(layers)]
+        cnn_feats = [rearrange(cnn_feats[i], 'b (nh nw) c -> b c nh nw', nh = N_Hs[i], nw=N_Ws[i]) for i in range(len(N_Hs))]
 
         # Project layers to chosen feature dim
         layers = [self.scratch.layer_rn[idx](l) for idx, l in enumerate(layers)]
-
-        vgg_layers = [self.scratch.layer_rn2[idx](l) for idx, l in enumerate(layers)]
+        cnn_layers = [self.scratch.layer_rn2[idx](l) for idx, l in enumerate(cnn_feats)]
 
         # Fuse layers using refinement stages
         path_4 = self.scratch.refinenet4(layers[3])[:, :, :layers[2].shape[2], :layers[2].shape[3]] # 32 -> 16
         path_3 = self.scratch.refinenet3(path_4, layers[2]) # 16 -> 8
-        path_2 = self.scratch.refinenet2(path_3, layers[1], vgg_layers[3]) # 8 -> 4
-        path_1 = self.scratch.refinenet1(path_2, layers[0], vgg_layers[2]) # 4 -> 2
-        path_0 = self.scratch.refinenet0(path_1, vgg_layers[1]) # 2 -> 1
-        path = self.scratch.refinenet_1(path_0, vgg_layers[0]) # 1
+        path_2 = self.scratch.refinenet2(path_3, layers[1], cnn_layers[3]) # 8 -> 4
+        path_1 = self.scratch.refinenet1(path_2, layers[0], cnn_layers[2]) # 4 -> 2
+        path_0 = self.scratch.refinenet0(path_1, cnn_layers[1]) # 2 -> 1
+        path = self.scratch.refinenet_1(path_0, cnn_layers[0]) # 1
         # Output head
         out = self.head(path)
 
@@ -288,12 +289,12 @@ class PixelwiseTaskWithDPT_refine(nn.Module):
                         **kwargs)
         if hooks_idx is not None:
             dpt_args.update(hooks=hooks_idx)
-        self.dpt = DPTOutputAdapter_fix2(**dpt_args)
+        self.dpt = DPTOutputAdapter_fix_cnn(**dpt_args)
         dpt_init_args = {} if dim_tokens is None else {'dim_tokens_enc': dim_tokens}
         self.dpt.init(**dpt_init_args)
 
-    def forward(self, x, vgg_features, img_info):
-        out = self.dpt(x, vgg_features,image_size=(img_info[0], img_info[1]))
+    def forward(self, x, cnn_feats, img_info):
+        out = self.dpt(x, cnn_feats, image_size=(img_info[0], img_info[1]))
         if self.postprocess:
             out = self.postprocess(out, self.depth_mode, self.conf_mode)
         return out
@@ -313,7 +314,7 @@ class VGG19(nn.Module): #scale 8,4,2,1
             x = layer(x)
         return feats
 
-def create_dpt_refine_head(net, has_conf=False):
+def create_dpt_refine_head(net, cnn_type = 'resnet', has_conf=False):
     """
     return PixelwiseTaskWithDPT for given net params
     """
@@ -324,6 +325,12 @@ def create_dpt_refine_head(net, has_conf=False):
     out_nchan = 3
     ed = net.enc_embed_dim
     dd = net.dec_embed_dim
+    assert cnn_type in ['resnet', 'vgg']
+    if cnn_type == 'resnet':
+        cnn_feature_dims = [3, 64, 256, 512]
+    elif cnn_type == 'vgg':
+        cnn_feature_dims = [64, 128, 256, 512]
+
     return PixelwiseTaskWithDPT_refine(num_channels=out_nchan + has_conf,
                                 feature_dim=feature_dim,
                                 last_dim=last_dim,
@@ -332,4 +339,5 @@ def create_dpt_refine_head(net, has_conf=False):
                                 postprocess=postprocess,
                                 depth_mode=net.depth_mode,
                                 conf_mode=net.conf_mode,
-                                head_type='regression')
+                                head_type='regression', 
+                                cnn_feature_dims=cnn_feature_dims)

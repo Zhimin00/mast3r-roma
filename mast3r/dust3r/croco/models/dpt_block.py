@@ -656,7 +656,7 @@ class DPTOutputAdapter2(nn.Module):
                  dim_tokens_enc: Optional[int] = None,
                  head_type: str = 'regression',
                  output_width_ratio=1,
-                 vgg_feature_dims: List[int] = [64,128, 256, 512],
+                 cnn_feature_dims: List[int] = [64,128, 256, 512],
                  **kwargs):
         super().__init__()
         self.num_channels = num_channels
@@ -675,7 +675,7 @@ class DPTOutputAdapter2(nn.Module):
 
         self.scratch = make_scratch(layer_dims, feature_dim, groups=1, expand=False)
         layer1_rn = nn.Conv2d(
-            vgg_feature_dims[0],
+            cnn_feature_dims[0],
             feature_dim,
             kernel_size=3,
             stride=1,
@@ -684,7 +684,7 @@ class DPTOutputAdapter2(nn.Module):
             groups=1,
         )
         layer2_rn = nn.Conv2d(
-            vgg_feature_dims[1],
+            cnn_feature_dims[1],
             feature_dim,
             kernel_size=3,
             stride=1,
@@ -693,7 +693,7 @@ class DPTOutputAdapter2(nn.Module):
             groups=1,
         )
         layer3_rn = nn.Conv2d(
-            vgg_feature_dims[2],
+            cnn_feature_dims[2],
             feature_dim,
             kernel_size=3,
             stride=1,
@@ -702,7 +702,7 @@ class DPTOutputAdapter2(nn.Module):
             groups=1,
         )
         layer4_rn = nn.Conv2d(
-            vgg_feature_dims[3],
+            cnn_feature_dims[3],
             feature_dim,
             kernel_size=3,
             stride=1,

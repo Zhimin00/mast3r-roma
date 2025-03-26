@@ -10,7 +10,7 @@ import os
 from packaging import version
 import huggingface_hub
 
-from .utils.misc import fill_default_args, freeze_all_params, is_symmetrized, interleave, transpose_to_landscape, transpose_to_landscape2
+from .utils.misc import fill_default_args, freeze_all_params, is_symmetrized, interleave, transpose_to_landscape, transpose_to_landscape2, transpose_to_landscape_cnn
 from .heads import head_factory
 from dust3r.patch_embed import get_patch_embed
 
@@ -500,7 +500,6 @@ class AsymmetricCroCo3DStereo_VGG (
 
         # dust3r specific initialization
         self.dec_blocks2 = deepcopy(self.dec_blocks)
-        self.vgg = VGG19()
         self.set_downstream_head(output_mode, head_type, landscape_only, depth_mode, conf_mode, **croco_kwargs)
         self.set_freeze(freeze)
 
@@ -516,7 +515,7 @@ class AsymmetricCroCo3DStereo_VGG (
             return model
 
     def _set_patch_embed(self, img_size=224, patch_size=16, enc_embed_dim=768):
-        self.patch_embed = get_patch_embed(self.patch_embed_cls, img_size, patch_size, enc_embed_dim)
+        self.patch_embed = get_patch_embed(self.patch_embed_cls, img_size, patch_size, enc_embed_dim, cnn_type = 'resnet')
 
     def load_state_dict(self, ckpt, **kw):
         # duplicate all weights for the second decoder if not present
@@ -552,12 +551,12 @@ class AsymmetricCroCo3DStereo_VGG (
         self.downstream_head1 = head_factory(head_type, output_mode, self, has_conf=bool(conf_mode))
         self.downstream_head2 = head_factory(head_type, output_mode, self, has_conf=bool(conf_mode))
         # magic wrapper
-        self.head1 = transpose_to_landscape(self.downstream_head1, activate=landscape_only)
-        self.head2 = transpose_to_landscape(self.downstream_head2, activate=landscape_only)
+        self.head1 = transpose_to_landscape_cnn(self.downstream_head1, activate=landscape_only)
+        self.head2 = transpose_to_landscape_cnn(self.downstream_head2, activate=landscape_only)
 
     def _encode_image(self, image, true_shape):
         # embed the image into patches  (x has size B x Npatches x C)
-        x, pos = self.patch_embed(image, true_shape=true_shape)
+        x, pos, cnn_feats = self.patch_embed(image, true_shape=true_shape)
 
         # add positional embedding without cls token
         assert self.enc_pos_embed is None
@@ -567,18 +566,19 @@ class AsymmetricCroCo3DStereo_VGG (
             x = blk(x, pos)
 
         x = self.enc_norm(x)
-        return x, pos, None
+        return x, pos, cnn_feats, None
 
     def _encode_image_pairs(self, img1, img2, true_shape1, true_shape2):
         if img1.shape[-2:] == img2.shape[-2:]:
-            out, pos, _ = self._encode_image(torch.cat((img1, img2), dim=0),
+            out, pos, cnn_feats, _ = self._encode_image(torch.cat((img1, img2), dim=0),
                                              torch.cat((true_shape1, true_shape2), dim=0))
             out, out2 = out.chunk(2, dim=0)
             pos, pos2 = pos.chunk(2, dim=0)
+            cnn_feats, cnn_feats2 = cnn_feats.chunk(2, dim=0)
         else:
-            out, pos, _ = self._encode_image(img1, true_shape1)
-            out2, pos2, _ = self._encode_image(img2, true_shape2)
-        return out, out2, pos, pos2
+            out, pos, cnn_feats, _ = self._encode_image(img1, true_shape1)
+            out2, pos2, cnn_feats2, _ = self._encode_image(img2, true_shape2)
+        return out, out2, pos, pos2, cnn_feats, cnn_feats2
 
     def _encode_symmetrized(self, view1, view2):
         img1 = view1['img']
@@ -591,13 +591,14 @@ class AsymmetricCroCo3DStereo_VGG (
 
         if is_symmetrized(view1, view2):
             # computing half of forward pass!'
-            feat1, feat2, pos1, pos2 = self._encode_image_pairs(img1[::2], img2[::2], shape1[::2], shape2[::2])
+            feat1, feat2, pos1, pos2, cnn_feats, cnn_feats2 = self._encode_image_pairs(img1[::2], img2[::2], shape1[::2], shape2[::2])
             feat1, feat2 = interleave(feat1, feat2)
             pos1, pos2 = interleave(pos1, pos2)
+            cnn_feats, cnn_feats2 = interleave(cnn_feats, cnn_feats2)
         else:
-            feat1, feat2, pos1, pos2 = self._encode_image_pairs(img1, img2, shape1, shape2)
+            feat1, feat2, pos1, pos2, cnn_feats, cnn_feats2 = self._encode_image_pairs(img1, img2, shape1, shape2)
 
-        return (shape1, shape2), (feat1, feat2), (pos1, pos2)
+        return (shape1, shape2), (feat1, feat2), (pos1, pos2), (cnn_feats, cnn_feats2)
 
     def _decoder(self, f1, pos1, f2, pos2):
         final_output = [(f1, f2)]  # before projection
@@ -620,23 +621,22 @@ class AsymmetricCroCo3DStereo_VGG (
         final_output[-1] = tuple(map(self.dec_norm, final_output[-1]))
         return zip(*final_output)
 
-    def _downstream_head(self, head_num, decout, img_shape, mode ='default'):
+    def _downstream_head(self, head_num, decout, cnn_feats, img_shape):
         B, S, D = decout[-1].shape
         # img_shape = tuple(map(int, img_shape))
         head = getattr(self, f'head{head_num}')
-        return head(decout, img_shape, mode=mode)
+        return head(decout, cnn_feats, img_shape)
 
     def forward(self, view1, view2):
         # encode the two images --> B,S,D
-        (shape1, shape2), (feat1, feat2), (pos1, pos2) = self._encode_symmetrized(view1, view2)
+        (shape1, shape2), (feat1, feat2), (pos1, pos2), (cnn_feats1, cnn_feats2) = self._encode_symmetrized(view1, view2)
 
         # combine all ref images into object-centric representation
         dec1, dec2 = self._decoder(feat1, pos1, feat2, pos2)
-        vgg_feat1, vgg_feat2 = self.vgg(view1['img']), self.vgg(view2['img'])
 
         with torch.cuda.amp.autocast(enabled=False):
-            res1 = self._downstream_head(1, [tok.float() for tok in dec1], vgg_feat1, shape1)
-            res2 = self._downstream_head(2, [tok.float() for tok in dec2], vgg_feat2, shape2)
+            res1 = self._downstream_head(1, [tok.float() for tok in dec1], cnn_feats1, shape1)
+            res2 = self._downstream_head(2, [tok.float() for tok in dec2], cnn_feats2, shape2)
         res2['pts3d_in_other_view'] = res2.pop('pts3d')  # predict view2's pts3d in view1's frame
         return res1, res2
     
@@ -807,20 +807,6 @@ class AsymmetricCroCo3DStereo_ResNet (
             res2 = self._downstream_head(2, [tok.float() for tok in dec2], feat4_2, feat8_2, shape2)
         res2['pts3d_in_other_view'] = res2.pop('pts3d')  # predict view2's pts3d in view1's frame
         return res1, res2
-    
-class VGG19(nn.Module): #scale 8,4,2,1
-    def __init__(self, pretrained=False) -> None:
-        super().__init__()
-        self.layers = nn.ModuleList(tvm.vgg19_bn(pretrained=pretrained).features[:40])#40
 
-    def forward(self, x, **kwargs):
-        feats = []
-        scale = 1
-        for layer in self.layers:
-            if isinstance(layer, nn.MaxPool2d):
-                feats.append(x)
-                scale = scale*2
-            x = layer(x)
-        return feats
     
 
