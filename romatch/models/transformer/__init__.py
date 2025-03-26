@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 from romatch.utils.utils import get_grid, get_autocast_params
 from .layers.block import Block
-from .layers.attention import MemEffAttention
+from .layers.attention import MemEffAttention, Attention2
 from .dinov2 import vit_large
 
 class TransformerDecoder(nn.Module):

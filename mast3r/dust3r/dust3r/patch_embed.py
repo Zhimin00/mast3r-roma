@@ -133,7 +133,7 @@ class ResNet50_all(nn.Module):
         feats.append(x)
         x = net.layer2(x) #scale 8 
         feats.append(x)
-        return [feat.permute(0, 2, 3, 1).faltten(1, 2).float for feat in feats]
+        return [feat.permute(0, 2, 3, 1).flatten(1, 2).float for feat in feats]
 
 class VGG19_all(nn.Module): #scale 8,4,2,1
     def __init__(self, pretrained=False) -> None:
@@ -148,7 +148,7 @@ class VGG19_all(nn.Module): #scale 8,4,2,1
                 feats.append(x)
                 scale = scale*2
             x = layer(x)
-        return [feat.permute(0, 2, 3, 1).faltten(1, 2).float for feat in feats]
+        return [feat.permute(0, 2, 3, 1).flatten(1, 2).float for feat in feats]
     
 class ManyAR_PatchEmbed_ResNet (PatchEmbed):
     """ Handle images with non-square aspect ratio.

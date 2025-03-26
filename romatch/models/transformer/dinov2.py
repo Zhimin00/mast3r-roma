@@ -18,7 +18,7 @@ import torch.nn as nn
 import torch.utils.checkpoint
 from torch.nn.init import trunc_normal_
 
-from .layers import Mlp, PatchEmbed, SwiGLUFFNFused, MemEffAttention, NestedTensorBlock as Block
+from .layers import Mlp, PatchEmbed, SwiGLUFFNFused, MemEffAttention, Attention2, NestedTensorBlock as Block
 
 
 
@@ -366,6 +366,17 @@ def vit_large(patch_size=16, **kwargs):
     )
     return model
 
+def vit_large2(patch_size=16, **kwargs):
+    model = DinoVisionTransformer(
+        patch_size=patch_size,
+        embed_dim=1024,
+        depth=24,
+        num_heads=16,
+        mlp_ratio=4,
+        block_fn=partial(Block, attn_class=Attention2),
+        **kwargs,
+    )
+    return model
 
 def vit_giant2(patch_size=16, **kwargs):
     """
