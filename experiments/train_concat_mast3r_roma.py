@@ -255,7 +255,7 @@ def train(args):
     ddp_model = DDP(model, device_ids=[device_id], find_unused_parameters = False, gradient_as_bucket_view=True)
     grad_scaler = torch.cuda.amp.GradScaler(growth_interval=1_000_000)
     grad_clip_norm = 0.01
-    next_eval_step = (romatch.GLOBAL_STEP % 1000000 + 1) * 1000000
+    next_eval_step = (romatch.GLOBAL_STEP // 1000000 + 1) * 1000000
     for n in range(romatch.GLOBAL_STEP, N, k * romatch.STEP_SIZE):
         mega_sampler = torch.utils.data.WeightedRandomSampler(
             mega_ws, num_samples = batch_size * k, replacement=False
