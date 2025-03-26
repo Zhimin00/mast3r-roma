@@ -158,6 +158,7 @@ def train(args):
     param_groups = misc.get_parameter_groups(model_without_ddp, args.weight_decay)
     optimizer = torch.optim.AdamW(param_groups, lr=args.lr, betas=(0.9, 0.95))
     print(optimizer)
+    pdb.set_trace()
     loss_scaler = NativeScaler()
 
     def write_log_stats(epoch, train_stats, test_stats):
