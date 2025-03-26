@@ -473,7 +473,7 @@ class AsymmetricCroCo3DStereo_DINOv2 (
         return res1, res2
  
     
-class AsymmetricCroCo3DStereo_VGG (
+class AsymmetricCroCo3DStereo_cnn (
     CroCoNet,
     huggingface_hub.PyTorchModelHubMixin,
     library_name="dust3r",
