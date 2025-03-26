@@ -273,9 +273,9 @@ def train(args):
         )
         checkpointer.save(model, optimizer, lr_scheduler, romatch.GLOBAL_STEP)
         wandb.log(megadense_benchmark.benchmark(model), step = romatch.GLOBAL_STEP)
-        if romatch.GLOBAL_STEP >= next_eval_step:
-            next_eval_step += 1000000
-            wandb.log(mega1500_benchmark.benchmark(model), step = romatch.GLOBAL_STEP)
+        # if romatch.GLOBAL_STEP >= next_eval_step:
+        #     next_eval_step += 1000000
+        #     wandb.log(mega1500_benchmark.benchmark(model), step = romatch.GLOBAL_STEP)
         
 def test_mega_8_scenes(model, name):
     mega_8_scenes_benchmark = MegaDepthPoseEstimationBenchmark("/export/r24a/data/zshao/data/megadepth",
