@@ -574,7 +574,9 @@ class AsymmetricCroCo3DStereo_cnn (
                                              torch.cat((true_shape1, true_shape2), dim=0))
             out, out2 = out.chunk(2, dim=0)
             pos, pos2 = pos.chunk(2, dim=0)
-            cnn_feats, cnn_feats2 = cnn_feats.chunk(2, dim=0)
+            cnn_feats, cnn_feats2 = zip(*[feat.chunk(2, dim=0) for feat in cnn_feats])
+            cnn_feats = list(cnn_feats)
+            cnn_feats2 = list(cnn_feats2)
         else:
             out, pos, cnn_feats, _ = self._encode_image(img1, true_shape1)
             out2, pos2, cnn_feats2, _ = self._encode_image(img2, true_shape2)
