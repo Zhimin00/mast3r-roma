@@ -197,7 +197,7 @@ class AsymmetricCroCo3DStereo (
         B, S, D = decout[-1].shape
         # img_shape = tuple(map(int, img_shape))
         head = getattr(self, f'head{head_num}')
-        return head(decout, img_shape, mode=mode)
+        return head(decout, img_shape)
 
     def forward(self, view1, view2):
         # encode the two images --> B,S,D
