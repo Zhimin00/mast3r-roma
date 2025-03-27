@@ -674,7 +674,7 @@ class DPTOutputAdapter2(nn.Module):
         self.P_W = max(1, self.patch_size[1] // stride_level)
 
         self.scratch = make_scratch(layer_dims, feature_dim, groups=1, expand=False)
-        layer1_rn = nn.Conv2d(
+        self.layer1_rn = nn.Conv2d(
             cnn_feature_dims[0],
             feature_dim,
             kernel_size=3,
@@ -683,7 +683,7 @@ class DPTOutputAdapter2(nn.Module):
             bias=False,
             groups=1,
         )
-        layer2_rn = nn.Conv2d(
+        self.layer2_rn = nn.Conv2d(
             cnn_feature_dims[1],
             feature_dim,
             kernel_size=3,
@@ -692,7 +692,7 @@ class DPTOutputAdapter2(nn.Module):
             bias=False,
             groups=1,
         )
-        layer3_rn = nn.Conv2d(
+        self.layer3_rn = nn.Conv2d(
             cnn_feature_dims[2],
             feature_dim,
             kernel_size=3,
@@ -701,7 +701,7 @@ class DPTOutputAdapter2(nn.Module):
             bias=False,
             groups=1,
         )
-        layer4_rn = nn.Conv2d(
+        self.layer4_rn = nn.Conv2d(
             cnn_feature_dims[3],
             feature_dim,
             kernel_size=3,
@@ -711,10 +711,10 @@ class DPTOutputAdapter2(nn.Module):
             groups=1,
         )
         self.scratch.layer_rn2 = nn.ModuleList([
-            layer1_rn,
-            layer2_rn,
-            layer3_rn,
-            layer4_rn,
+            self.layer1_rn,
+            self.layer2_rn,
+            self.layer3_rn,
+            self.layer4_rn,
         ]
         )
 
