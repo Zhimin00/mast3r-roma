@@ -126,8 +126,7 @@ def train(args):
     # model
     print('Loading model: {:s}'.format(args.model))
     model = eval(args.model)
-    print(sum(p.numel() for p in model.parameters()))
-    pdb.set_trace()
+    print('Number of parameters: ', sum(p.numel() for p in model.parameters()))
     print(f'>> Creating train criterion = {args.train_criterion}')
     train_criterion = eval(args.train_criterion).to(device)
     print(f'>> Creating test criterion = {args.test_criterion or args.train_criterion}')
