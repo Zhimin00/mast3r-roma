@@ -87,7 +87,7 @@ class PixelwiseTaskWithDPT(nn.Module):
         dpt_init_args = {} if dim_tokens is None else {'dim_tokens_enc': dim_tokens}
         self.dpt.init(**dpt_init_args)
 
-    def forward(self, x, img_info):
+    def forward(self, x, img_info, mode = 'default'):
         out = self.dpt(x, image_size=(img_info[0], img_info[1]))
         if self.postprocess:
             out = self.postprocess(out, self.depth_mode, self.conf_mode)
