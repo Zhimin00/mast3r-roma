@@ -10,7 +10,7 @@ import os
 from packaging import version
 import huggingface_hub
 
-from .utils.misc import fill_default_args, freeze_all_params, is_symmetrized, interleave, transpose_to_landscape, transpose_to_landscape2, transpose_to_landscape_cnn
+from .utils.misc import fill_default_args, freeze_all_params, is_symmetrized, interleave, interleave_list, transpose_to_landscape, transpose_to_landscape2, transpose_to_landscape_cnn
 from .heads import head_factory
 from dust3r.patch_embed import get_patch_embed
 
@@ -593,14 +593,14 @@ class AsymmetricCroCo3DStereo_cnn (
 
         if is_symmetrized(view1, view2):
             # computing half of forward pass!'
-            feat1, feat2, pos1, pos2, cnn_feats, cnn_feats2 = self._encode_image_pairs(img1[::2], img2[::2], shape1[::2], shape2[::2])
+            feat1, feat2, pos1, pos2, cnn_feats1, cnn_feats2 = self._encode_image_pairs(img1[::2], img2[::2], shape1[::2], shape2[::2])
             feat1, feat2 = interleave(feat1, feat2)
             pos1, pos2 = interleave(pos1, pos2)
-            cnn_feats, cnn_feats2 = interleave(cnn_feats, cnn_feats2)
+            cnn_feats1, cnn_feats2 = interleave_list(cnn_feats1, cnn_feats2)
         else:
-            feat1, feat2, pos1, pos2, cnn_feats, cnn_feats2 = self._encode_image_pairs(img1, img2, shape1, shape2)
+            feat1, feat2, pos1, pos2, cnn_feats1, cnn_feats2 = self._encode_image_pairs(img1, img2, shape1, shape2)
 
-        return (shape1, shape2), (feat1, feat2), (pos1, pos2), (cnn_feats, cnn_feats2)
+        return (shape1, shape2), (feat1, feat2), (pos1, pos2), (cnn_feats1, cnn_feats2)
 
     def _decoder(self, f1, pos1, f2, pos2):
         final_output = [(f1, f2)]  # before projection

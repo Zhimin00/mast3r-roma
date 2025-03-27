@@ -50,6 +50,11 @@ def interleave(tensor1, tensor2):
     res2 = torch.stack((tensor2, tensor1), dim=1).flatten(0, 1)
     return res1, res2
 
+def interleave_list(list1, list2):
+    assert len(list1) == len(list2), 'cnn features have different length (scales)'
+    res1 = [torch.stack((list1[idx], list2[idx]), dim=1).flatten(0, 1) for idx in range(len(list1))]
+    res2 = [torch.stack((list2[idx], list2[idx]), dim=1).flatten(0, 1) for idx in range(len(list1))] 
+    return res1, res2
 
 def transpose_to_landscape(head, activate=True):
     """ Predict in the correct aspect-ratio,
