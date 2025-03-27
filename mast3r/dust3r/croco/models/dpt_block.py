@@ -288,10 +288,9 @@ class FeatureFusionBlock_custom2(nn.Module):
                 res = F.interpolate(res, size=(output.shape[2], output.shape[3]), mode='bilinear')
 
             output = self.skip_add.add(output, res)
-            # output += res
 
-        output = self.resConfUnit2(output)
-        if len(xs) == 3:
+            output = self.resConfUnit2(output)
+
             res = self.resConfUnit3(xs[2])
             if self.width_ratio != 1:
                 res = F.interpolate(res, size=(output.shape[2], output.shape[3]), mode='bilinear')
