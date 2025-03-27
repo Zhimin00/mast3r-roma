@@ -721,12 +721,15 @@ class DPTOutputAdapter2(nn.Module):
         self.scratch.refinenet2 = make_fusion_block2(feature_dim, use_bn, output_width_ratio)
         self.scratch.refinenet3 = make_fusion_block(feature_dim, use_bn, output_width_ratio)
         self.scratch.refinenet4 = make_fusion_block(feature_dim, use_bn, output_width_ratio)
-        self.scratch.refinenet0 = make_fusion_block(feature_dim, use_bn, output_width_ratio)
-        self.scratch.refinenet_1 = make_fusion_block3(feature_dim, use_bn, output_width_ratio)
+        # self.scratch.refinenet0 = make_fusion_block(feature_dim, use_bn, output_width_ratio)
+        # self.scratch.refinenet_1 = make_fusion_block3(feature_dim, use_bn, output_width_ratio)
+        
         if self.head_type == 'regression':
             # The "DPTDepthModel" head
             self.head = nn.Sequential(
-                nn.Conv2d(feature_dim, last_dim, kernel_size=3, stride=1, padding=1),
+                nn.Conv2d(feature_dim, feature_dim // 2, kernel_size=3, stride=1, padding=1),
+                Interpolate(scale_factor=2, mode="bilinear", align_corners=True),
+                nn.Conv2d(feature_dim // 2, last_dim, kernel_size=3, stride=1, padding=1),
                 nn.ReLU(True),
                 nn.Conv2d(last_dim, self.num_channels, kernel_size=1, stride=1, padding=0)
             )
@@ -738,9 +741,29 @@ class DPTOutputAdapter2(nn.Module):
                 nn.ReLU(True),
                 nn.Dropout(0.1, False),
                 nn.Conv2d(feature_dim, self.num_channels, kernel_size=1),
+                Interpolate(scale_factor=2, mode="bilinear", align_corners=True),
             )
         else:
             raise ValueError('DPT head_type must be "regression" or "semseg".')
+        
+        # if self.head_type == 'regression':
+        #     # The "DPTDepthModel" head
+        #     self.head = nn.Sequential(
+        #         nn.Conv2d(feature_dim, last_dim, kernel_size=3, stride=1, padding=1),
+        #         nn.ReLU(True),
+        #         nn.Conv2d(last_dim, self.num_channels, kernel_size=1, stride=1, padding=0)
+        #     )
+        # elif self.head_type == 'semseg':
+        #     # The "DPTSegmentationModel" head
+        #     self.head = nn.Sequential(
+        #         nn.Conv2d(feature_dim, feature_dim, kernel_size=3, padding=1, bias=False),
+        #         nn.BatchNorm2d(feature_dim) if use_bn else nn.Identity(),
+        #         nn.ReLU(True),
+        #         nn.Dropout(0.1, False),
+        #         nn.Conv2d(feature_dim, self.num_channels, kernel_size=1),
+        #     )
+        # else:
+        #     raise ValueError('DPT head_type must be "regression" or "semseg".')
 
         if self.dim_tokens_enc is not None:
             self.init(dim_tokens_enc=dim_tokens_enc)

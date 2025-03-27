@@ -265,12 +265,17 @@ class DPTOutputAdapter_fix_cnn(DPTOutputAdapter2):
         cnn_feats = [self.scratch.layer_rn2[idx](l) for idx, l in enumerate(cnn_feats)]
 
         # Fuse layers using refinement stages
+        # path_4 = self.scratch.refinenet4(layers[3])[:, :, :layers[2].shape[2], :layers[2].shape[3]] # 32 -> 16
+        # path_3 = self.scratch.refinenet3(path_4, layers[2]) # 16 -> 8
+        # path_2 = self.scratch.refinenet2(path_3, layers[1], cnn_feats[3]) # 8 -> 4
+        # path_1 = self.scratch.refinenet1(path_2, layers[0], cnn_feats[2]) # 4 -> 2
+        # path_0 = self.scratch.refinenet0(path_1, cnn_feats[1]) # 2 -> 1
+        # path = self.scratch.refinenet_1(path_0, cnn_feats[0]) # 1
         path_4 = self.scratch.refinenet4(layers[3])[:, :, :layers[2].shape[2], :layers[2].shape[3]] # 32 -> 16
         path_3 = self.scratch.refinenet3(path_4, layers[2]) # 16 -> 8
         path_2 = self.scratch.refinenet2(path_3, layers[1], cnn_feats[3]) # 8 -> 4
-        path_1 = self.scratch.refinenet1(path_2, layers[0], cnn_feats[2]) # 4 -> 2
-        path_0 = self.scratch.refinenet0(path_1, cnn_feats[1]) # 2 -> 1
-        path = self.scratch.refinenet_1(path_0, cnn_feats[0]) # 1
+        path = self.scratch.refinenet1(path_2, layers[0], cnn_feats[2]) # 4 -> 2
+        
         # Output head
         out = self.head(path)
 
