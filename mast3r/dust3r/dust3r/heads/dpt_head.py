@@ -8,6 +8,7 @@
 # the forward function also takes as input a dictionnary img_info with key "height" and "width"
 # for PixelwiseTask, the output will be of dimension B x num_channels x H x W
 # --------------------------------------------------------
+from ast import Continue
 from einops import rearrange
 from typing import List
 import torch
@@ -132,10 +133,6 @@ class DPTOutputAdapter_fix_resnet(DPTOutputAdapter):
         del self.act_2_postprocess
         del self.act_3_postprocess
         del self.act_4_postprocess
-        del self.layer1_rn
-        del self.layer2_rn
-        del self.layer3_rn
-        del self.layer4_rn
 
     def forward(self, encoder_tokens: List[torch.Tensor], feat4: torch.Tensor, feat8: torch.Tensor, image_size=None):
         assert self.dim_tokens_enc is not None, 'Need to call init(dim_tokens_enc) function first'

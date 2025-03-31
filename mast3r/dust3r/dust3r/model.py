@@ -46,6 +46,23 @@ def load_model(model_path, device, verbose=True):
         print(s)
     return net.to(device)
 
+def load_model_resnet(model_path, device, verbose=True):
+    if verbose:
+        print('... loading model from', model_path)
+    ckpt = torch.load(model_path, map_location='cpu')
+    args = ckpt['args'].model.replace("ManyAR_PatchEmbed_ResNet", "PatchEmbedDust3R_ResNet")
+    if 'landscape_only' not in args:
+        args = args[:-1] + ', landscape_only=False)'
+    else:
+        args = args.replace(" ", "").replace('landscape_only=True', 'landscape_only=False')
+    assert "landscape_only=False" in args
+    if verbose:
+        print(f"instantiating : {args}")
+    net = eval(args)
+    s = net.load_state_dict(ckpt['model'], strict=False)
+    if verbose:
+        print(s)
+    return net.to(device)
 
 class AsymmetricCroCo3DStereo (
     CroCoNet,
@@ -675,7 +692,7 @@ class AsymmetricCroCo3DStereo_ResNet (
     @classmethod
     def from_pretrained(cls, pretrained_model_name_or_path, **kw):
         if os.path.isfile(pretrained_model_name_or_path):
-            return load_model(pretrained_model_name_or_path, device='cpu')
+            return load_model_resnet(pretrained_model_name_or_path, device='cpu')
         else:
             try:
                 model = super(AsymmetricCroCo3DStereo, cls).from_pretrained(pretrained_model_name_or_path, **kw)

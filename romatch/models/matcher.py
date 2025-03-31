@@ -1774,9 +1774,9 @@ class RegressionMatcher_mast3r(nn.Module):
         x_s = batch["im_B"]
         feature_pyramid_q = self.encoder((x_q, x_s), upsample = upsample)
         feature_pyramid_s = self.encoder((x_s, x_q), upsample = upsample)
-        f_q_pyramid = {key: torch.cat([feature_pyramid_q[0][key], feature_pyramid_q[1][key]], dim=0) 
+        f_q_pyramid = {key: torch.cat([feature_pyramid_q[0][key], feature_pyramid_s[0][key]], dim=0) 
                    for key in feature_pyramid_q[0]}
-        f_s_pyramid = {key: torch.cat([feature_pyramid_s[0][key], feature_pyramid_s[1][key]], dim=0) 
+        f_s_pyramid = {key: torch.cat([feature_pyramid_q[1][key], feature_pyramid_s[1][key]], dim=0) 
                    for key in feature_pyramid_s[0]}
          
         corresps = self.decoder(f_q_pyramid, 
