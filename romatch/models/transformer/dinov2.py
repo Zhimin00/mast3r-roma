@@ -238,8 +238,6 @@ class DinoVisionTransformer(nn.Module):
         }
     
     def forward_features_flat(self, x, xpos, masks=None):
-        B, nc, w, h = x.shape
-
         for blk in self.blocks:
             x = blk(x, xpos)
 

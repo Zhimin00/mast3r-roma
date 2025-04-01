@@ -519,8 +519,8 @@ class AsymmetricCroCo3DStereo_DINOv2_rope (
         )
         dinov2_vitl14 = vit_large2(**vit_kwargs).eval()
         dinov2_vitl14.load_state_dict(dinov2_weights)
-        self.enc_blocks = None
-        self.enc_norm = None
+        self.enc_blocks = dinov2_vitl14.blocks
+        self.enc_norm = dinov2_vitl14.norm
         self.patch_embed.proj = dinov2_vitl14.patch_embed.proj
         self.patch_embed.norm = dinov2_vitl14.patch_embed.norm
         self.dinov2_vitl14 = dinov2_vitl14
@@ -591,7 +591,9 @@ class AsymmetricCroCo3DStereo_DINOv2_rope (
         # add positional embedding without cls token
         # assert self.enc_pos_embed is None
         #extract dinov2 features
-        x = self.dinov2_vitl14.forward_features_flat(x, pos)
+        for blk in self.enc_blocks:
+            x = blk(x, pos)
+        x = self.enc_norm(x)
         return x, pos, None
 
     def _encode_image_pairs(self, img1, img2, true_shape1, true_shape2):
