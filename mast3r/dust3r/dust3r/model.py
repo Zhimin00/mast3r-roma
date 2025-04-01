@@ -500,7 +500,7 @@ class AsymmetricCroCo3DStereo_DINOv2_rope (
                  head_type='linear',
                  depth_mode=('exp', -inf, inf),
                  conf_mode=('exp', 1, inf),
-                 freeze='encoder',
+                 freeze='None',
                  landscape_only=True,
                  patch_embed_cls='PatchEmbedDust3R',  # PatchEmbedDust3R or ManyAR_PatchEmbed
                  dinov2_weights=None,
@@ -525,7 +525,11 @@ class AsymmetricCroCo3DStereo_DINOv2_rope (
         self.patch_embed.norm = dinov2_vitl14.patch_embed.norm
         del dinov2_vitl14
         del dinov2_weights
-        
+
+        for n, param in self.enc_blocks.named_parameters():
+            param.requires_grad = True
+        for n, param in self.enc_norm.named_parameters():
+            param.requires_grad = True
         # dust3r specific initialization
         self.dec_blocks2 = deepcopy(self.dec_blocks)
         self.set_downstream_head(output_mode, head_type, landscape_only, depth_mode, conf_mode, **croco_kwargs)
