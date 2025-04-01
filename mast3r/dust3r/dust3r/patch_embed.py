@@ -316,10 +316,20 @@ class PatchEmbedDust3R2(PatchEmbed):
         B, C, H, W = x.shape
         assert H % self.patch_size[0] == 0, f"Input image height ({H}) is not a multiple of patch size ({self.patch_size[0]})."
         assert W % self.patch_size[1] == 0, f"Input image width ({W}) is not a multiple of patch size ({self.patch_size[1]})."
-        W //= self.patch_size[0]
-        H //= self.patch_size[1]
-        pos = self.position_getter(B, H, W, x.device)
-        return x, pos
+        x = self.proj(x)
+        pos = self.position_getter(B, x.size(2), x.size(3), x.device)
+        if self.flatten:
+            x = x.flatten(2).transpose(1, 2)  # BCHW -> BNC
+        x = self.norm(x)
+        return x, pos, H, W
+
+        # B, C, H, W = x.shape
+        # assert H % self.patch_size[0] == 0, f"Input image height ({H}) is not a multiple of patch size ({self.patch_size[0]})."
+        # assert W % self.patch_size[1] == 0, f"Input image width ({W}) is not a multiple of patch size ({self.patch_size[1]})."
+        # W //= self.patch_size[0]
+        # H //= self.patch_size[1]
+        # pos = self.position_getter(B, H, W, x.device)
+        # return x, pos
 
 
 class ManyAR_PatchEmbed2 (PatchEmbed):
