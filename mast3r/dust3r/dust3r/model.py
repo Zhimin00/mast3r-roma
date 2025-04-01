@@ -412,7 +412,7 @@ class AsymmetricCroCo3DStereo_DINOv2 (
         # add positional embedding without cls token
         # assert self.enc_pos_embed is None
         #extract dinov2 features
-        x = self.dinov2_vitl14.forward_features(x)
+        x = self.dinov2_vitl14.forward_features_flat(x)
         x = x['x_norm_patchtokens']
         return x, pos, None
 
