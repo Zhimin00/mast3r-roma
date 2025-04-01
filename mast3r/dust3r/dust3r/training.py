@@ -139,6 +139,7 @@ def train(args):
     if args.pretrained and not args.resume:
         print('Loading pretrained: ', args.pretrained)
         ckpt = torch.load(args.pretrained, map_location=device)['model']
+        del ckpt['patch_embed.proj.weights'], ckpt['patch_embed.proj.bias'], ckpt['patch_embed.norm']
         print(model.load_state_dict(ckpt, strict=False))
         del ckpt  # in case it occupies memory
 
