@@ -136,7 +136,8 @@ except ImportError:
             return tokens
         
 class Attention2(Attention):
-    def __init__(self, freq = 100):
+    def __init__(self, freq=100, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.rope = RoPE2D(freq=freq)
 
     def forward(self, x: Tensor, xpos: Tensor) -> Tensor:

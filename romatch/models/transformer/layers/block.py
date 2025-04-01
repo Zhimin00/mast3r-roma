@@ -128,7 +128,7 @@ class Block2(nn.Module):
         # print(f"biases: qkv: {qkv_bias}, proj: {proj_bias}, ffn: {ffn_bias}")
         self.norm1 = norm_layer(dim)
         self.attn = attn_class(
-            dim,
+            dim=dim,
             num_heads=num_heads,
             qkv_bias=qkv_bias,
             proj_bias=proj_bias,
