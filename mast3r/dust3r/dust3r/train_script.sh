@@ -114,7 +114,7 @@ torchrun --nproc_per_node 4 train.py \
     --pretrained="checkpoints/CroCo_V2_ViTLarge_BaseDecoder.pth" \
     --lr=0.0001 --min_lr=1e-06 --warmup_epochs=10 --epochs=100 --batch_size=64 --accum_iter=1 \
     --save_freq=5 --keep_freq=10 --eval_freq=1  --num_workers=16 \
-    --output_dir="/cis/net/r24a/data/zshao/checkpoints/dust3r/dinov2_decoder_dpt_224"
+    --output_dir="/home/cpeng26/scratchrchella4/checkpoints/dinov2_decoder_224"
 
 tmux 5 l06 check rope
 torchrun --nproc_per_node 4 train.py \

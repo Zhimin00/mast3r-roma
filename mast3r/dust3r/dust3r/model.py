@@ -298,7 +298,7 @@ class AsymmetricCroCo3DStereo (
         return res1, res2
 
 
-class AsymmetricCroCo3DStereo_DINOv2_frozen (
+class AsymmetricCroCo3DStereo_DINOv2 (
     CroCoNet,
     huggingface_hub.PyTorchModelHubMixin,
     library_name="dust3r",
@@ -361,7 +361,7 @@ class AsymmetricCroCo3DStereo_DINOv2_frozen (
             return load_model(pretrained_model_name_or_path, device='cpu')
         else:
             try:
-                model = super(AsymmetricCroCo3DStereo_DINOv2_frozen, cls).from_pretrained(pretrained_model_name_or_path, **kw)
+                model = super(AsymmetricCroCo3DStereo_DINOv2, cls).from_pretrained(pretrained_model_name_or_path, **kw)
             except TypeError as e:
                 raise Exception(f'tried to load {pretrained_model_name_or_path} from huggingface, but failed')
             return model
