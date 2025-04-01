@@ -402,11 +402,11 @@ class AsymmetricCroCo3DStereo_DINOv2 (
 
     def _encode_image(self, image, true_shape):
         # swap x to landscape if necessary and generate pos
-        x, pos = self.patch_embed(image, true_shape=true_shape)
+        x, pos, h, w = self.patch_embed(image, true_shape=true_shape)
         # add positional embedding without cls token
         # assert self.enc_pos_embed is None
         #extract dinov2 features
-        x = self.dinov2_vitl14.forward_features(x)
+        x = self.dinov2_vitl14.forward_features_withtokens(x, h, w)
         x = x['x_norm_patchtokens']
         return x, pos, None
 
