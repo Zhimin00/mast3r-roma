@@ -18,7 +18,7 @@ import torch.nn as nn
 import torch.utils.checkpoint
 from torch.nn.init import trunc_normal_
 
-from .layers import Mlp, PatchEmbed, SwiGLUFFNFused, MemEffAttention, Attention2, NestedTensorBlock as Block
+from .layers import Mlp, PatchEmbed, SwiGLUFFNFused, MemEffAttention, Attention2, NestedTensorBlock as Block, NestedTensorBlock2 as Block2
 
 
 
@@ -200,14 +200,6 @@ class DinoVisionTransformer(nn.Module):
 
         return x
     
-    def prepare_tokens_with_masks2(self, x, w, h, masks=None):
-        if masks is not None:
-            x = torch.where(masks.unsqueeze(-1), self.mask_token.to(x.dtype).unsqueeze(0), x)
-
-        x = torch.cat((self.cls_token.expand(x.shape[0], -1, -1), x), dim=1)
-        x = x + self.interpolate_pos_encoding(x, w, h)
-
-        return x
 
     def forward_features_list(self, x_list, masks_list):
         x = [self.prepare_tokens_with_masks(x, masks) for x, masks in zip(x_list, masks_list)]
@@ -245,20 +237,14 @@ class DinoVisionTransformer(nn.Module):
             "masks": masks,
         }
     
-    def forward_features_flat(self, x, masks=None):
+    def forward_features_flat(self, x, xpos, masks=None):
         B, nc, w, h = x.shape
-        x = self.prepare_tokens_with_masks2(x, masks, w, h)
 
         for blk in self.blocks:
-            x = blk(x)
+            x = blk(x, xpos)
 
         x_norm = self.norm(x)
-        return {
-            "x_norm_clstoken": x_norm[:, 0],
-            "x_norm_patchtokens": x_norm[:, 1:],
-            "x_prenorm": x,
-            "masks": masks,
-        }
+        return x_norm
 
     def _get_intermediate_layers_not_chunked(self, x, n=1):
         x = self.prepare_tokens_with_masks(x)
@@ -373,7 +359,7 @@ def vit_large2(patch_size=16, **kwargs):
         depth=24,
         num_heads=16,
         mlp_ratio=4,
-        block_fn=partial(Block, attn_class=Attention2),
+        block_fn=partial(Block2, attn_class=Attention2),
         **kwargs,
     )
     return model

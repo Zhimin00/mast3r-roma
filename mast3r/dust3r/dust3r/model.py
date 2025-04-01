@@ -323,12 +323,6 @@ class AsymmetricCroCo3DStereo_DINOv2 (
         self.patch_embed_cls = patch_embed_cls
         self.croco_args = fill_default_args(croco_kwargs, super().__init__)
         super().__init__(**croco_kwargs)
-        vit_kwargs = dict(img_size= 518,
-            patch_size= 14,
-            init_values = 1.0,
-            ffn_layer = "mlp",
-            block_chunks = 0,
-        )
         if dinov2_weights is None:
             dinov2_weights = torch.hub.load_state_dict_from_url("https://dl.fbaipublicfiles.com/dinov2/dinov2_vitl14/dinov2_vitl14_pretrain.pth", map_location="cpu")
         from romatch.models.transformer import vit_large
@@ -508,18 +502,12 @@ class AsymmetricCroCo3DStereo_DINOv2_rope (
                  conf_mode=('exp', 1, inf),
                  freeze='encoder',
                  landscape_only=True,
-                 patch_embed_cls='PatchEmbedDust3R2',  # PatchEmbedDust3R or ManyAR_PatchEmbed
+                 patch_embed_cls='PatchEmbedDust3R',  # PatchEmbedDust3R or ManyAR_PatchEmbed
                  dinov2_weights=None,
                  **croco_kwargs):
         self.patch_embed_cls = patch_embed_cls
         self.croco_args = fill_default_args(croco_kwargs, super().__init__)
         super().__init__(**croco_kwargs)
-        vit_kwargs = dict(img_size= 518,
-            patch_size= 14,
-            init_values = 1.0,
-            ffn_layer = "mlp",
-            block_chunks = 0,
-        )
         if dinov2_weights is None:
             dinov2_weights = torch.hub.load_state_dict_from_url("https://dl.fbaipublicfiles.com/dinov2/dinov2_vitl14/dinov2_vitl14_pretrain.pth", map_location="cpu")
         from romatch.models.transformer import vit_large2
@@ -552,7 +540,7 @@ class AsymmetricCroCo3DStereo_DINOv2_rope (
             return load_model(pretrained_model_name_or_path, device='cpu')
         else:
             try:
-                model = super(AsymmetricCroCo3DStereo_DINOv2, cls).from_pretrained(pretrained_model_name_or_path, **kw)
+                model = super(AsymmetricCroCo3DStereo_DINOv2_rope, cls).from_pretrained(pretrained_model_name_or_path, **kw)
             except TypeError as e:
                 raise Exception(f'tried to load {pretrained_model_name_or_path} from huggingface, but failed')
             return model
@@ -603,8 +591,7 @@ class AsymmetricCroCo3DStereo_DINOv2_rope (
         # add positional embedding without cls token
         # assert self.enc_pos_embed is None
         #extract dinov2 features
-        x = self.dinov2_vitl14.forward_features_flat(x)
-        x = x['x_norm_patchtokens']
+        x = self.dinov2_vitl14.forward_features_flat(x, pos)
         return x, pos, None
 
     def _encode_image_pairs(self, img1, img2, true_shape1, true_shape2):

@@ -392,8 +392,5 @@ class NestedTensorBlock2(Block2):
     def forward(self, x_or_x_list, xpos):
         if isinstance(x_or_x_list, Tensor):
             return super().forward(x_or_x_list, xpos)
-        elif isinstance(x_or_x_list, list):
-            assert XFORMERS_AVAILABLE, "Please install xFormers for nested tensors usage"
-            return self.forward_nested(x_or_x_list)
         else:
             raise AssertionError
