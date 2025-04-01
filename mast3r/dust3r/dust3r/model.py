@@ -559,7 +559,7 @@ class AsymmetricCroCo3DStereo_DINOv2_rope (
         to_be_frozen = {
             'none': [],
             'mask': [self.mask_token],
-            'encoder': [self.mask_token, self.patch_embed, self.dinov2_vitl14],
+            'encoder': [self.mask_token, self.patch_embed, self.enc_blocks],
         }
         freeze_all_params(to_be_frozen[freeze])
 
