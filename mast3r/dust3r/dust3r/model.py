@@ -523,11 +523,8 @@ class AsymmetricCroCo3DStereo_DINOv2_rope (
         self.enc_norm = dinov2_vitl14.norm
         self.patch_embed.proj = dinov2_vitl14.patch_embed.proj
         self.patch_embed.norm = dinov2_vitl14.patch_embed.norm
-        self.dinov2_vitl14 = dinov2_vitl14
         del dinov2_vitl14
         del dinov2_weights
-        for n, param in self.dinov2_vitl14.named_parameters():
-            param.requires_grad = True
         
         # dust3r specific initialization
         self.dec_blocks2 = deepcopy(self.dec_blocks)
