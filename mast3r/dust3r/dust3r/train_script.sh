@@ -65,7 +65,6 @@ torchrun --nproc_per_node 4 train.py \
     --output_dir="/cis/net/r24a/data/zshao/checkpoints/dust3r/dust3r_512dpt_resnet"
 
 
-tmux 1 c005
 torchrun --nproc_per_node 4 train.py \
     --train_dataset " + 100_000 @ Habitat(800_000, split='train', ROOT='/home/cpeng26/scratchrchella4/data/habitat_processed', aug_crop=16, resolution=224, transform=ColorJitter) + 100_000 @ BlendedMVS(split='train', ROOT='/home/cpeng26/scratchrchella4/data/blendedmvs_processed', aug_crop=16, resolution=224, transform=ColorJitter) + 100_000 @ MegaDepth(split='train', ROOT='/home/cpeng26/scratchrchella4/data/megadepth_dataset_processed', aug_crop=16, resolution=224, transform=ColorJitter) + 100_000 @ ARKitScenes(split='train', ROOT='/home/cpeng26/scratchrchella4/data/arkitscenes_processed', aug_crop=256, resolution=224, transform=ColorJitter) + 100_000 @ Co3d(split='train',ROOT='/home/cpeng26/scratchrchella4/data/co3d_subset_processed', aug_crop=16, mask_bg='rand', resolution=224, transform=ColorJitter) + 100_000 @ StaticThings3D('/home/cpeng26/scratchrchella4/data/static_3d_dataset_processed', aug_crop=256, mask_bg='rand', resolution=224, transform=ColorJitter) + 100_000 @ ScanNetpp(split='train',ROOT='/home/cpeng26/scratchrchella4/data/scannetpp_processed', aug_crop=256, resolution=224, transform=ColorJitter)" \
     --test_dataset " Habitat(1_000, ROOT='/home/cpeng26/scratchrchella4/data/habitat_processed', split='val', resolution=224, seed=777) + 1_000 @ BlendedMVS(split='val', ROOT='/home/cpeng26/scratchrchella4/data/blendedmvs_processed', resolution=224, seed=777) + 1_000 @ MegaDepth(split='val', ROOT='/home/cpeng26/scratchrchella4/data/megadepth_dataset_processed', resolution=224, seed=777) + 1_000 @ Co3d(split='test', ROOT='/home/cpeng26/scratchrchella4/data/co3d_subset_processed', mask_bg='rand', resolution=224, seed=777)" \
@@ -88,10 +87,11 @@ torchrun --nproc_per_node 4 train.py \
     --save_freq=5 --keep_freq=10 --eval_freq=1 --num_workers=16 \
     --output_dir "/home/cpeng26/scratchrchella4/checkpoints/dinov2_vitl_224"
 
-tmux 3 c008 
-torchrun --nproc_per_node 4 train_concat_mast3r_roma.py --gpu_batch_size 8
+tmux 3 c003
 
-tmux 4 l08 running
+
+
+tmux 4 l03 running
 torchrun --nproc_per_node 4 train.py \
     --train_dataset " + 100_000 @ Habitat(800_000, split='train', ROOT='/home/cpeng26/scratchrchella4/data/habitat_processed', aug_crop=16, resolution=224, transform=ColorJitter) + 100_000 @ BlendedMVS(split='train', ROOT='/home/cpeng26/scratchrchella4/data/blendedmvs_processed', aug_crop=16, resolution=224, transform=ColorJitter) + 100_000 @ ARKitScenes(split='train', ROOT='/home/cpeng26/scratchrchella4/data/arkitscenes_processed', aug_crop=256, resolution=224, transform=ColorJitter) + 100_000 @ Co3d(split='train',ROOT='/home/cpeng26/scratchrchella4/data/co3d_subset_processed', aug_crop=16, mask_bg='rand', resolution=224, transform=ColorJitter) + 100_000 @ StaticThings3D('/home/cpeng26/scratchrchella4/data/static_3d_dataset_processed', aug_crop=256, mask_bg='rand', resolution=224, transform=ColorJitter) + 100_000 @ ScanNetpp(split='train',ROOT='/home/cpeng26/scratchrchella4/data/scannetpp_processed', aug_crop=256, resolution=224, transform=ColorJitter) + 200_000 @ MegaDepth_all(split='train', ROOT='/home/cpeng26/scratchrchella4/data/megadepth', min_overlap=0.01, aug_crop=16, resolution=224, transform=ColorJitter) + 200_000 @ MegaDepth_all(split='train', ROOT='/home/cpeng26/scratchrchella4/data/megadepth', min_overlap=0.35, aug_crop=16, resolution=224, transform=ColorJitter)" \
     --test_dataset " Habitat(1_000, ROOT='/home/cpeng26/scratchrchella4/data/habitat_processed', split='val', resolution=224, seed=777) + 1_000 @ BlendedMVS(split='val', ROOT='/home/cpeng26/scratchrchella4/data/blendedmvs_processed', resolution=224, seed=777) + 1_000 @ MegaDepth(split='val', ROOT='/home/cpeng26/scratchrchella4/data/megadepth_dataset_processed', resolution=224, seed=777) + 1_000 @ Co3d(split='test', ROOT='/home/cpeng26/scratchrchella4/data/co3d_subset_processed', mask_bg='rand', resolution=224, seed=777)" \
@@ -104,6 +104,17 @@ torchrun --nproc_per_node 4 train.py \
     --output_dir "/home/cpeng26/scratchrchella4/checkpoints/dust3r_224_megadepth_all"
 
 
+tmux 5 l05
+torchrun --nproc_per_node 4 train.py \
+    --train_dataset " + 100_000 @ Habitat(800_000, split='train', ROOT='/home/cpeng26/scratchrchella4/data/habitat_processed', aug_crop=16, resolution=224, transform=ColorJitter) + 100_000 @ BlendedMVS(split='train', ROOT='/home/cpeng26/scratchrchella4/data/blendedmvs_processed', aug_crop=16, resolution=224, transform=ColorJitter) + 100_000 @ MegaDepth(split='train', ROOT='/home/cpeng26/scratchrchella4/data/megadepth_dataset_processed', aug_crop=16, resolution=224, transform=ColorJitter) + 100_000 @ ARKitScenes(split='train', ROOT='/home/cpeng26/scratchrchella4/data/arkitscenes_processed', aug_crop=256, resolution=224, transform=ColorJitter) + 100_000 @ Co3d(split='train',ROOT='/home/cpeng26/scratchrchella4/data/co3d_subset_processed', aug_crop=16, mask_bg='rand', resolution=224, transform=ColorJitter) + 100_000 @ StaticThings3D(ROOT='/home/cpeng26/scratchrchella4/data/static_3d_dataset_processed', aug_crop=256, mask_bg='rand', resolution=224, transform=ColorJitter) + 100_000 @ ScanNetpp(split='train',ROOT='/home/cpeng26/scratchrchella4/data/scannetpp_processed', aug_crop=256, resolution=224, transform=ColorJitter)" \
+    --test_dataset "Habitat(80_000, ROOT='/home/cpeng26/scratchrchella4/data/habitat_processed', split='val', resolution=224, seed=777) + 1_000 @ BlendedMVS(split='val', ROOT='/home/cpeng26/scratchrchella4/data/blendedmvs_processed', resolution=224, seed=777) + 1_000 @ MegaDepth(split='val', ROOT='/home/cpeng26/scratchrchella4/data/megadepth_dataset_processed', resolution=224, seed=777) + 1_000 @ Co3d(split='test', ROOT='/home/cpeng26/scratchrchella4/data/co3d_subset_processed', mask_bg='rand', resolution=224, seed=777)" \
+    --train_criterion="ConfLoss(Regr3D(L21, norm_mode='avg_dis'), alpha=0.2)" \
+    --test_criterion="Regr3D_ScaleShiftInv(L21, gt_scale=True)" \
+    --model="AsymmetricCroCo3DStereo_DINOv2_frozen(pos_embed='RoPE100', img_size=(224, 224), patch_size=14, head_type='linear', output_mode='pts3d', depth_mode=('exp', -inf, inf), conf_mode=('exp', 1, inf), enc_embed_dim=1024, enc_depth=24, enc_num_heads=16, dec_embed_dim=768, dec_depth=12, dec_num_heads=12)" \
+    --pretrained="checkpoints/CroCo_V2_ViTLarge_BaseDecoder.pth" \
+    --lr=0.0001 --min_lr=1e-06 --warmup_epochs=10 --epochs=100 --batch_size=64 --accum_iter=1 \
+    --save_freq=5 --keep_freq=10 --eval_freq=1  --num_workers=16 \
+    --output_dir="/cis/net/r24a/data/zshao/checkpoints/dust3r/dinov2_decoder_dpt_224"
 
 tmux 5 l06 check rope
 torchrun --nproc_per_node 4 train.py \
@@ -118,7 +129,7 @@ torchrun --nproc_per_node 4 train.py \
     --output_dir "/home/cpeng26/scratchrchella4/checkpoints/dinov2train_rope_decoder_224"
 
 
-tmux 1 c002 
+
 torchrun --nproc_per_node 4 train.py \
     --train_dataset=" + 10_000 @ Habitat(800_000, split='train', ROOT='/home/cpeng26/scratchrchella4/data/habitat_processed', aug_crop=16, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], transform=ColorJitter) + 10_000 @ BlendedMVS(split='train', ROOT='/home/cpeng26/scratchrchella4/data/blendedmvs_processed', aug_crop=16, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], transform=ColorJitter) + 10_000 @ MegaDepth(split='train',  ROOT='/home/cpeng26/scratchrchella4/data/megadepth_dataset_processed', aug_crop=16, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], transform=ColorJitter) + 10_000 @ ARKitScenes(split='train', ROOT='/home/cpeng26/scratchrchella4/data/arkitscenes_processed', aug_crop=256, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], transform=ColorJitter) + 10_000 @ Co3d(split='train', ROOT='/home/cpeng26/scratchrchella4/data/co3d_subset_processed', aug_crop=16, mask_bg='rand', resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], transform=ColorJitter) + 10_000 @ StaticThings3D('/home/cpeng26/scratchrchella4/data/static_3d_dataset_processed', aug_crop=256, mask_bg='rand', resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], transform=ColorJitter) + 10_000 @ ScanNetpp(split='train', ROOT='/home/cpeng26/scratchrchella4/data/scannetpp_processed', aug_crop=256, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], transform=ColorJitter)" \
     --test_dataset="1_000 @ BlendedMVS(split='val', ROOT='/home/cpeng26/scratchrchella4/data/blendedmvs_processed', resolution=(512,384), seed=777) + 1_000 @ MegaDepth(split='val', ROOT='/home/cpeng26/scratchrchella4/data/megadepth_dataset_processed', resolution=(512,336), seed=777) + 1_000 @ Co3d(split='test', ROOT='/home/cpeng26/scratchrchella4/data/co3d_subset_processed', resolution=(512,384), seed=777) " \
@@ -130,8 +141,21 @@ torchrun --nproc_per_node 4 train.py \
     --save_freq=5 --keep_freq=10 --eval_freq=1 --print_freq=10 --disable_cudnn_benchmark \
     --output_dir="/home/cpeng26/scratchrchella4/checkpoints/dust3r_512dpt_vgg"
 
-tmux 6 n02 cuda error ##train stage 3 from pretrained stage 2
-torchrun --nproc_per_node 2 train.py \
+tmux 7 c008 running ##conv-add with resnet 8, 4 features
+torchrun --nproc_per_node 4 train.py \
+    --train_dataset=" + 10_000 @ Habitat(800_000, split='train', ROOT='/home/cpeng26/scratchrchella4/data/habitat_processed', aug_crop=16, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], transform=ColorJitter) + 10_000 @ BlendedMVS(split='train', ROOT='/home/cpeng26/scratchrchella4/data/blendedmvs_processed', aug_crop=16, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], transform=ColorJitter) + 10_000 @ MegaDepth(split='train',  ROOT='/home/cpeng26/scratchrchella4/data/megadepth_dataset_processed', aug_crop=16, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], transform=ColorJitter) + 10_000 @ ARKitScenes(split='train', ROOT='/home/cpeng26/scratchrchella4/data/arkitscenes_processed', aug_crop=256, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], transform=ColorJitter) + 10_000 @ Co3d(split='train', ROOT='/home/cpeng26/scratchrchella4/data/co3d_subset_processed', aug_crop=16, mask_bg='rand', resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], transform=ColorJitter) + 10_000 @ StaticThings3D('/home/cpeng26/scratchrchella4/data/static_3d_dataset_processed', aug_crop=256, mask_bg='rand', resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], transform=ColorJitter) + 10_000 @ ScanNetpp(split='train', ROOT='/home/cpeng26/scratchrchella4/data/scannetpp_processed', aug_crop=256, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], transform=ColorJitter)" \
+    --test_dataset="1_000 @ BlendedMVS(split='val', ROOT='/home/cpeng26/scratchrchella4/data/blendedmvs_processed', resolution=(512,384), seed=777) + 1_000 @ MegaDepth(split='val', ROOT='/home/cpeng26/scratchrchella4/data/megadepth_dataset_processed', resolution=(512,336), seed=777) + 1_000 @ Co3d(split='test', ROOT='/home/cpeng26/scratchrchella4/data/co3d_subset_processed', resolution=(512,384), seed=777) " \
+    --train_criterion="ConfLoss(Regr3D(L21, norm_mode='avg_dis'), alpha=0.2)" \
+    --test_criterion="Regr3D_ScaleShiftInv(L21, gt_scale=True)" \
+    --model="AsymmetricCroCo3DStereo_cnn(pos_embed='RoPE100', patch_embed_cls='ManyAR_PatchEmbed_cnn', img_size=(512, 512), head_type='dpt_resnetrefine', output_mode='pts3d', depth_mode=('exp', -inf, inf), conf_mode=('exp', 1, inf), enc_embed_dim=1024, enc_depth=24, enc_num_heads=16, dec_embed_dim=768, dec_depth=12, dec_num_heads=12)" \
+    --pretrained="/home/cpeng26/scratchrchella4/checkpoints/DUSt3R_ViTLarge_BaseDecoder_512_linear.pth" \
+    --lr=0.0001 --min_lr=1e-06 --warmup_epochs=15 --epochs=90 --batch_size=4 --accum_iter=2 \
+    --save_freq=5 --keep_freq=10 --eval_freq=1 --print_freq=10 --num_workers=16 --disable_cudnn_benchmark \
+    --output_dir="/home/cpeng26/scratchrchella4/checkpoints/dust3r_512dpt_resnetrefine"
+
+
+ ##train stage 3 from pretrained stage 2
+torchrun --nproc_per_node 4 train.py \
     --train_dataset=" + 10_000 @ Habitat(800_000, split='train', ROOT='/home/cpeng26/scratchrchella4/data/habitat_processed', aug_crop=16, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], transform=ColorJitter) + 10_000 @ BlendedMVS(split='train', ROOT='/home/cpeng26/scratchrchella4/data/blendedmvs_processed', aug_crop=16, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], transform=ColorJitter) + 10_000 @ MegaDepth(split='train',  ROOT='/home/cpeng26/scratchrchella4/data/megadepth_dataset_processed', aug_crop=16, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], transform=ColorJitter) + 10_000 @ ARKitScenes(split='train', ROOT='/home/cpeng26/scratchrchella4/data/arkitscenes_processed', aug_crop=256, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], transform=ColorJitter) + 10_000 @ Co3d(split='train', ROOT='/home/cpeng26/scratchrchella4/data/co3d_subset_processed', aug_crop=16, mask_bg='rand', resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], transform=ColorJitter) + 10_000 @ StaticThings3D('/home/cpeng26/scratchrchella4/data/static_3d_dataset_processed', aug_crop=256, mask_bg='rand', resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], transform=ColorJitter) + 10_000 @ ScanNetpp(split='train', ROOT='/home/cpeng26/scratchrchella4/data/scannetpp_processed', aug_crop=256, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], transform=ColorJitter)" \
     --test_dataset="1_000 @ BlendedMVS(split='val', ROOT='/home/cpeng26/scratchrchella4/data/blendedmvs_processed', resolution=(512,384), seed=777) + 1_000 @ MegaDepth(split='val', ROOT='/home/cpeng26/scratchrchella4/data/megadepth_dataset_processed', resolution=(512,336), seed=777) + 1_000 @ Co3d(split='test', ROOT='/home/cpeng26/scratchrchella4/data/co3d_subset_processed', resolution=(512,384), seed=777) " \
     --train_criterion="ConfLoss(Regr3D(L21, norm_mode='avg_dis'), alpha=0.2)" \
@@ -142,17 +166,11 @@ torchrun --nproc_per_node 2 train.py \
     --save_freq=5 --keep_freq=10 --eval_freq=1 --print_freq=10 --disable_cudnn_benchmark \
     --output_dir="/home/cpeng26/scratchrchella4/checkpoints/dust3r_512dpt_pretrained"
 
-tmux 7 n06 cuda error ##conv-add with resnet 8, 4 features
-torchrun --nproc_per_node 2 train.py \
-    --train_dataset=" + 10_000 @ Habitat(800_000, split='train', ROOT='/home/cpeng26/scratchrchella4/data/habitat_processed', aug_crop=16, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], transform=ColorJitter) + 10_000 @ BlendedMVS(split='train', ROOT='/home/cpeng26/scratchrchella4/data/blendedmvs_processed', aug_crop=16, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], transform=ColorJitter) + 10_000 @ MegaDepth(split='train',  ROOT='/home/cpeng26/scratchrchella4/data/megadepth_dataset_processed', aug_crop=16, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], transform=ColorJitter) + 10_000 @ ARKitScenes(split='train', ROOT='/home/cpeng26/scratchrchella4/data/arkitscenes_processed', aug_crop=256, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], transform=ColorJitter) + 10_000 @ Co3d(split='train', ROOT='/home/cpeng26/scratchrchella4/data/co3d_subset_processed', aug_crop=16, mask_bg='rand', resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], transform=ColorJitter) + 10_000 @ StaticThings3D('/home/cpeng26/scratchrchella4/data/static_3d_dataset_processed', aug_crop=256, mask_bg='rand', resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], transform=ColorJitter) + 10_000 @ ScanNetpp(split='train', ROOT='/home/cpeng26/scratchrchella4/data/scannetpp_processed', aug_crop=256, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], transform=ColorJitter)" \
-    --test_dataset="1_000 @ BlendedMVS(split='val', ROOT='/home/cpeng26/scratchrchella4/data/blendedmvs_processed', resolution=(512,384), seed=777) + 1_000 @ MegaDepth(split='val', ROOT='/home/cpeng26/scratchrchella4/data/megadepth_dataset_processed', resolution=(512,336), seed=777) + 1_000 @ Co3d(split='test', ROOT='/home/cpeng26/scratchrchella4/data/co3d_subset_processed', resolution=(512,384), seed=777) " \
-    --train_criterion="ConfLoss(Regr3D(L21, norm_mode='avg_dis'), alpha=0.2)" \
-    --test_criterion="Regr3D_ScaleShiftInv(L21, gt_scale=True)" \
-    --model="AsymmetricCroCo3DStereo_cnn(pos_embed='RoPE100', patch_embed_cls='ManyAR_PatchEmbed_cnn', img_size=(512, 512), head_type='dpt_resnetrefine', output_mode='pts3d', depth_mode=('exp', -inf, inf), conf_mode=('exp', 1, inf), enc_embed_dim=1024, enc_depth=24, enc_num_heads=16, dec_embed_dim=768, dec_depth=12, dec_num_heads=12)" \
-    --pretrained="/home/cpeng26/scratchrchella4/checkpoints/DUSt3R_ViTLarge_BaseDecoder_512_linear.pth" \
-    --lr=0.0001 --min_lr=1e-06 --warmup_epochs=15 --epochs=90 --batch_size=4 --accum_iter=2 \
-    --save_freq=5 --keep_freq=10 --eval_freq=1 --print_freq=10 --num_workers=16 --disable_cudnn_benchmark \
-    --output_dir="/home/cpeng26/scratchrchella4/checkpoints/dust3r_512dpt_resnetrefine"
+
+visualize:
+cd mast3r/dust3r
+python demo_myresnet.py --weights /cis/net/r24a/data/zshao/checkpoints/dust3r/dust3r_512dpt_resnet/checkpoint-best.pth --local_network --server_port 7861
+
 
 
 torchrun --nproc_per_node=8 train.py \
