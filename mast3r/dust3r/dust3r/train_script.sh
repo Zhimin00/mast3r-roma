@@ -91,7 +91,7 @@ tmux 3 c003
 
 
 
-tmux 4 l03 running
+tmux 2 l running 48
 torchrun --nproc_per_node 4 train.py \
     --train_dataset " + 100_000 @ Habitat(800_000, split='train', ROOT='/home/cpeng26/scratchrchella4/data/habitat_processed', aug_crop=16, resolution=224, transform=ColorJitter) + 100_000 @ BlendedMVS(split='train', ROOT='/home/cpeng26/scratchrchella4/data/blendedmvs_processed', aug_crop=16, resolution=224, transform=ColorJitter) + 100_000 @ ARKitScenes(split='train', ROOT='/home/cpeng26/scratchrchella4/data/arkitscenes_processed', aug_crop=256, resolution=224, transform=ColorJitter) + 100_000 @ Co3d(split='train',ROOT='/home/cpeng26/scratchrchella4/data/co3d_subset_processed', aug_crop=16, mask_bg='rand', resolution=224, transform=ColorJitter) + 100_000 @ StaticThings3D('/home/cpeng26/scratchrchella4/data/static_3d_dataset_processed', aug_crop=256, mask_bg='rand', resolution=224, transform=ColorJitter) + 100_000 @ ScanNetpp(split='train',ROOT='/home/cpeng26/scratchrchella4/data/scannetpp_processed', aug_crop=256, resolution=224, transform=ColorJitter) + 200_000 @ MegaDepth_all(split='train', ROOT='/home/cpeng26/scratchrchella4/data/megadepth', min_overlap=0.01, aug_crop=16, resolution=224, transform=ColorJitter) + 200_000 @ MegaDepth_all(split='train', ROOT='/home/cpeng26/scratchrchella4/data/megadepth', min_overlap=0.35, aug_crop=16, resolution=224, transform=ColorJitter)" \
     --test_dataset " Habitat(1_000, ROOT='/home/cpeng26/scratchrchella4/data/habitat_processed', split='val', resolution=224, seed=777) + 1_000 @ BlendedMVS(split='val', ROOT='/home/cpeng26/scratchrchella4/data/blendedmvs_processed', resolution=224, seed=777) + 1_000 @ MegaDepth(split='val', ROOT='/home/cpeng26/scratchrchella4/data/megadepth_dataset_processed', resolution=224, seed=777) + 1_000 @ Co3d(split='test', ROOT='/home/cpeng26/scratchrchella4/data/co3d_subset_processed', mask_bg='rand', resolution=224, seed=777)" \
@@ -116,7 +116,7 @@ torchrun --nproc_per_node 4 train.py \
     --save_freq=5 --keep_freq=10 --eval_freq=1 --num_workers=16\
     --output_dir "/home/cpeng26/scratchrchella4/checkpoints/dinov2train_decoder_224"
 
-tmux 8  check rope
+tmux 6  c002 check rope running
 torchrun --nproc_per_node 4 train.py \
     --train_dataset " + 100_000 @ Habitat(800_000, split='train', ROOT='/home/cpeng26/scratchrchella4/data/habitat_processed', aug_crop=16, resolution=224, transform=ColorJitter) + 100_000 @ BlendedMVS(split='train', ROOT='/home/cpeng26/scratchrchella4/data/blendedmvs_processed', aug_crop=16, resolution=224, transform=ColorJitter) + 100_000 @ MegaDepth(split='train', ROOT='/home/cpeng26/scratchrchella4/data/megadepth_dataset_processed', aug_crop=16, resolution=224, transform=ColorJitter) + 100_000 @ ARKitScenes(split='train', ROOT='/home/cpeng26/scratchrchella4/data/arkitscenes_processed', aug_crop=256, resolution=224, transform=ColorJitter) + 100_000 @ Co3d(split='train',ROOT='/home/cpeng26/scratchrchella4/data/co3d_subset_processed', aug_crop=16, mask_bg='rand', resolution=224, transform=ColorJitter) + 100_000 @ StaticThings3D('/home/cpeng26/scratchrchella4/data/static_3d_dataset_processed', aug_crop=256, mask_bg='rand', resolution=224, transform=ColorJitter) + 100_000 @ ScanNetpp(split='train',ROOT='/home/cpeng26/scratchrchella4/data/scannetpp_processed', aug_crop=256, resolution=224, transform=ColorJitter)" \
     --test_dataset " Habitat(1_000, ROOT='/home/cpeng26/scratchrchella4/data/habitat_processed', split='val', resolution=224, seed=777) + 1_000 @ BlendedMVS(split='val', ROOT='/home/cpeng26/scratchrchella4/data/blendedmvs_processed', resolution=224, seed=777) + 1_000 @ MegaDepth(split='val', ROOT='/home/cpeng26/scratchrchella4/data/megadepth_dataset_processed', resolution=224, seed=777) + 1_000 @ Co3d(split='test', ROOT='/home/cpeng26/scratchrchella4/data/co3d_subset_processed', mask_bg='rand', resolution=224, seed=777)" \
@@ -124,7 +124,7 @@ torchrun --nproc_per_node 4 train.py \
     --test_criterion="Regr3D_ScaleShiftInv(L21, gt_scale=True)" \
     --model="AsymmetricCroCo3DStereo_DINOv2_rope(pos_embed='RoPE100', img_size=(224, 224), patch_size=14, head_type='linear', output_mode='pts3d', depth_mode=('exp', -inf, inf), conf_mode=('exp', 1, inf), freeze='none', enc_embed_dim=1024, enc_depth=24, enc_num_heads=16, dec_embed_dim=768, dec_depth=12, dec_num_heads=12)" \
     --pretrained="/home/cpeng26/scratchrchella4/checkpoints/CroCo_V2_ViTLarge_BaseDecoder.pth" \
-    --lr=0.0001 --min_lr=1e-06 --warmup_epochs=10 --epochs=100 --batch_size=16 --accum_iter=1 \
+    --lr=0.0001 --min_lr=1e-06 --warmup_epochs=10 --epochs=100 --batch_size=24 --accum_iter=1 \
     --save_freq=5 --keep_freq=10 --eval_freq=1 --num_workers=16\
     --output_dir "/home/cpeng26/scratchrchella4/checkpoints/dinov2train_rope_decoder_224"
 
