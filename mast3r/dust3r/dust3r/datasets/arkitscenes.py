@@ -20,7 +20,7 @@ class ARKitScenes(BaseStereoViewDataset):
         if split == "train":
             self.split = "Training"
         elif split == "test":
-            self.split = "Test"
+            self.split = "Validation"
         else:
             raise ValueError("")
 
