@@ -420,6 +420,153 @@ class Decoder(nn.Module):
             #torch.cuda.empty_cache()        
         return corresps
 
+
+class Warp_Decoder(nn.Module):
+    def __init__(
+        self, embedding_decoder, proj, conv_refiner, detach=False, scales="all", pos_embeddings = None,
+        num_refinement_steps_per_scale = 1, warp_noise_std = 0.0, displacement_dropout_p = 0.0, gm_warp_dropout_p = 0.0,
+        flow_upsample_mode = "bilinear", amp_dtype = torch.float16,
+    ):
+        super().__init__()
+        self.embedding_decoder = embedding_decoder
+        self.num_refinement_steps_per_scale = num_refinement_steps_per_scale
+        self.proj = proj
+        self.conv_refiner = conv_refiner
+        self.detach = detach
+        if pos_embeddings is None:
+            self.pos_embeddings = {}
+        else:
+            self.pos_embeddings = pos_embeddings
+        if scales == "all":
+            self.scales = ["32", "16", "8", "4", "2", "1"]
+        else:
+            self.scales = scales
+        self.warp_noise_std = warp_noise_std
+        self.refine_init = 4
+        self.displacement_dropout_p = displacement_dropout_p
+        self.gm_warp_dropout_p = gm_warp_dropout_p
+        self.flow_upsample_mode = flow_upsample_mode
+        self.amp_dtype = amp_dtype
+        
+    def get_placeholder_flow(self, b, h, w, device):
+        coarse_coords = torch.meshgrid(
+            (
+                torch.linspace(-1 + 1 / h, 1 - 1 / h, h, device=device),
+                torch.linspace(-1 + 1 / w, 1 - 1 / w, w, device=device),
+            ),
+            indexing = 'ij'
+        )
+        coarse_coords = torch.stack((coarse_coords[1], coarse_coords[0]), dim=-1)[
+            None
+        ].expand(b, h, w, 2)
+        coarse_coords = rearrange(coarse_coords, "b h w d -> b d h w")
+        return coarse_coords
+    
+    def get_positional_embedding(self, b, h ,w, device):
+        coarse_coords = torch.meshgrid(
+            (
+                torch.linspace(-1 + 1 / h, 1 - 1 / h, h, device=device),
+                torch.linspace(-1 + 1 / w, 1 - 1 / w, w, device=device),
+            ),
+            indexing = 'ij'
+        )
+
+        coarse_coords = torch.stack((coarse_coords[1], coarse_coords[0]), dim=-1)[
+            None
+        ].expand(b, h, w, 2)
+        coarse_coords = rearrange(coarse_coords, "b h w d -> b d h w")
+        coarse_embedded_coords = self.pos_embedding(coarse_coords)
+        return coarse_embedded_coords
+
+    def forward(self, f1, f2, gt_warp = None, gt_prob = None, upsample = False, flow = None, certainty = None, scale_factor = 1):
+        coarse_scales = self.embedding_decoder.scales()
+        all_scales = self.scales if not upsample else ["8", "4", "2", "1"] 
+        sizes = {scale: f1[scale].shape[-2:] for scale in f1}
+        h, w = sizes[1]
+        b = f1[1].shape[0]
+        device = f1[1].device
+        coarsest_scale = int(all_scales[0])
+        old_stuff = torch.zeros(
+            b, self.embedding_decoder.hidden_dim, *sizes[coarsest_scale], device=f1[coarsest_scale].device
+        )
+        corresps = {}
+        if not upsample:
+            flow = self.get_placeholder_flow(b, *sizes[coarsest_scale], device)
+            certainty = 0.0
+        else:
+            flow = F.interpolate(
+                    flow,
+                    size=sizes[coarsest_scale],
+                    align_corners=False,
+                    mode="bilinear",
+                )
+            certainty = F.interpolate(
+                    certainty,
+                    size=sizes[coarsest_scale],
+                    align_corners=False,
+                    mode="bilinear",
+                )
+        displacement = 0.0
+        for new_scale in all_scales:
+            ins = int(new_scale)
+            corresps[ins] = {}
+            f1_s, f2_s = f1[ins], f2[ins]
+            if new_scale in self.proj:
+                autocast_device, autocast_enabled, autocast_dtype = get_autocast_params(f1_s.device, str(f1_s)=='cuda', self.amp_dtype)
+                with torch.autocast(autocast_device, enabled=autocast_enabled, dtype = autocast_dtype):
+                    if not autocast_enabled:
+                        f1_s, f2_s = f1_s.to(torch.float32), f2_s.to(torch.float32)
+                    f1_s, f2_s = self.proj[new_scale](f1_s), self.proj[new_scale](f2_s)
+
+            if ins in coarse_scales:
+                old_stuff = F.interpolate(
+                    old_stuff, size=sizes[ins], mode="bilinear", align_corners=False
+                )
+                gm_warp_or_cls, certainty, old_stuff = self.embedding_decoder(
+                    f1_s, f2_s, old_stuff, new_scale
+                )
+                if self.embedding_decoder.is_classifier:
+                    flow = cls_to_flow_refine(
+                        gm_warp_or_cls,
+                    ).permute(0,3,1,2)#gm_warp_or_cls: [B,C,H,W]
+                    corresps[ins].update({"gm_cls": gm_warp_or_cls,"gm_certainty": certainty,}) if self.training else None
+                else:
+                    corresps[ins].update({"gm_flow": gm_warp_or_cls,"gm_certainty": certainty,}) if self.training else None
+                    flow = gm_warp_or_cls.detach()
+            if new_scale in self.conv_refiner:
+                corresps[ins].update({"flow_pre_delta": flow}) if self.training else None
+                delta_flow, delta_certainty = self.conv_refiner[new_scale](
+                    f1_s, f2_s, flow, scale_factor = scale_factor, logits = certainty,
+                )                    
+                corresps[ins].update({"delta_flow": delta_flow,}) if self.training else None
+                displacement = ins*torch.stack((delta_flow[:, 0].float() / (self.refine_init * w),
+                                                delta_flow[:, 1].float() / (self.refine_init * h),),dim=1,)
+                flow = flow + displacement
+                certainty = (
+                    certainty + delta_certainty
+                )  # predict both certainty and displacement
+            corresps[ins].update({
+                "certainty": certainty,
+                "flow": flow,             
+            })
+            if new_scale != "1":
+                flow = F.interpolate(
+                    flow,
+                    size=sizes[ins // 2],
+                    mode=self.flow_upsample_mode,
+                )
+                certainty = F.interpolate(
+                    certainty,
+                    size=sizes[ins // 2],
+                    mode=self.flow_upsample_mode,
+                )
+                if self.detach:
+                    flow = flow.detach()
+                    certainty = certainty.detach()
+            #torch.cuda.empty_cache()        
+        return corresps
+
+
 class DPT(nn.Module):
     def __init__(
         self,

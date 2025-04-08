@@ -300,6 +300,29 @@ class AsymmetricCroCo3DStereo (
         
         return feat1, feat2
     
+    def decoder_only_forward(self, image1, image2):
+        # encode the two images --> B,S,D
+         
+        feat1, pos1, _ = self._encode_image(image1, true_shape = image1.shape[2:])
+        feat2, pos2, _ = self._encode_image(image2, true_shape = image2.shape[2:])
+        dec1, dec2 = self._decoder(feat1, pos1, feat2, pos2)
+
+        dec_output1, dec_output2 = dec1[-1].float(), dec2[-1].float()
+        B, S, D = dec_output1.shape
+        H1, W1 = image1.shape[2:]
+        patch_size = self.patch_embed.patch_size
+        if isinstance(patch_size, tuple):
+            assert len(patch_size) == 2 and isinstance(patch_size[0], int) and isinstance(
+                patch_size[1], int), "What is your patchsize format? Expected a single int or a tuple of two ints."
+            assert patch_size[0] == patch_size[1], "Error, non square patches not managed"
+            patch_size = patch_size[0]
+
+        feat1 = dec_output1.transpose(-1, -2).view(B, -1, H1 // patch_size, W1 // patch_size)
+        H2, W2 = image2.shape[2:]
+        feat2 = dec_output2.transpose(-1, -2).view(B, -1, H2 // patch_size, W2 // patch_size)
+        
+        return feat1, feat2
+    
     def mlp_forward(self, image1, image2, mode='mlp_with_conf'):
         # encode the two images --> B,S,D
         B = image2.shape[0]

@@ -1327,6 +1327,43 @@ class CNNandMast3r(nn.Module):
                 feature_s_pyramid[16] = feat2
         return feature_q_pyramid, feature_s_pyramid
 
+class CNNandMast3r_decoder(nn.Module):
+    def __init__(self, cnn_kwargs = None, amp = False, use_vgg = False, 
+                amp_dtype = torch.float16):
+        super().__init__()
+        mast3r_model_name = "naver/MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric"
+                # you can put the path to a local checkpoint in model_name if needed
+        model = AsymmetricMASt3R.from_pretrained(mast3r_model_name)
+        #self.backbone = model
+        #feature_dim = 1024 + 768
+        cnn_kwargs = cnn_kwargs if cnn_kwargs is not None else {}
+        if not use_vgg:
+            self.cnn = ResNet50(**cnn_kwargs)
+        else:
+            self.cnn = VGG19(**cnn_kwargs)
+        self.amp = amp
+        self.amp_dtype = amp_dtype
+        if self.amp:
+            model = model.to("cuda", self.amp_dtype)
+        self.pipe = [model] # ugly hack to not show parameters to DDP
+        
+    def train(self, mode: bool = True):
+        return self.cnn.train(mode)
+    
+    def forward(self, x, upsample = False):
+        img1, img2 = x
+        B,C,H,W = img1.shape
+        feature_q_pyramid = self.cnn(img1)
+        feature_s_pyramid = self.cnn(img2)
+
+        if not upsample:
+            with torch.no_grad():
+                self.pipe[0] = self.pipe[0].to(img1.device, self.amp_dtype)
+                feat1, feat2 = self.pipe[0].decoder_only_forward(img1.to(self.amp_dtype), img2.to(self.amp_dtype))
+                feature_q_pyramid[16] = feat1
+                feature_s_pyramid[16] = feat2
+        return feature_q_pyramid, feature_s_pyramid
+    
 class CNNandDinov2_Mast3r(nn.Module):
     def __init__(self, cnn_kwargs = None, amp = False, use_vgg = False, 
                 dinov2_weights = None, 
