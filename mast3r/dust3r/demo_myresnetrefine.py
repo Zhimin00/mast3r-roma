@@ -9,7 +9,7 @@ import os
 import torch
 import tempfile
 
-from dust3r.model import AsymmetricCroCo3DStereo_ResNet
+from dust3r.model import AsymmetricCroCo3DStereo_cnn
 from dust3r.demo import get_args_parser, main_demo, set_print_with_timestamp
 
 import matplotlib.pyplot as pl
@@ -36,10 +36,10 @@ if __name__ == '__main__':
         weights_path = args.weights
     else:
         weights_path = "naver/" + args.model_name
-    model = AsymmetricCroCo3DStereo_ResNet.from_pretrained(weights_path).to(args.device)
+    model = AsymmetricCroCo3DStereo_cnn.from_pretrained(weights_path).to(args.device)
 
     # dust3r will write the 3D model inside tmpdirname
-    with tempfile.TemporaryDirectory(suffix='dust3r_resnet_gradio_demo') as tmpdirname:
+    with tempfile.TemporaryDirectory(suffix='dust3r_resnetrefine_gradio_demo') as tmpdirname:
         if not args.silent:
             print('Outputing stuff in', tmpdirname)
         main_demo(tmpdirname, model, args.device, args.image_size, server_name, args.server_port, silent=args.silent)

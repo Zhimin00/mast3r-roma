@@ -12,7 +12,7 @@ import torchvision.models as tvm
 import torch.nn as nn
 
 def get_patch_embed(patch_embed_cls, img_size, patch_size, enc_embed_dim, **kwargs):
-    assert patch_embed_cls in ['PatchEmbedDust3R', 'ManyAR_PatchEmbed','PatchEmbedDust3R2', 'ManyAR_PatchEmbed2','PatchEmbedDust3R_ResNet', 'ManyAR_PatchEmbed_ResNet', 'ManyAR_PatchEmbed_VGG', 'ManyAR_PatchEmbed_cnn']
+    assert patch_embed_cls in ['PatchEmbedDust3R', 'ManyAR_PatchEmbed','PatchEmbedDust3R2', 'ManyAR_PatchEmbed2','PatchEmbedDust3R_ResNet', 'ManyAR_PatchEmbed_ResNet', 'ManyAR_PatchEmbed_VGG', 'PatchEmbedDust3R_cnn','ManyAR_PatchEmbed_cnn']
     patch_embed = eval(patch_embed_cls)(img_size, patch_size, 3, enc_embed_dim, **kwargs)
     return patch_embed
 
@@ -261,6 +261,32 @@ class ManyAR_PatchEmbed_VGG (PatchEmbed):
         feat4[is_portrait], feat8[is_portrait] = self.cnn(img[is_portrait].swapaxes(-1, -2))
               
         return x, pos, feat4, feat8
+    
+
+class PatchEmbedDust3R_cnn (PatchEmbed):
+    def __init__(self, img_size=224, patch_size=16, in_chans=3, embed_dim=768, cnn_type = 'resnet', norm_layer=None, flatten=True):
+        self.embed_dim = embed_dim
+        super().__init__(img_size, patch_size, in_chans, embed_dim, norm_layer, flatten)
+        if cnn_type == 'resnet':
+            self.cnn = ResNet50_all()
+            self.cnn_feature_dims = [3, 64, 256, 512]
+        elif cnn_type == 'vgg':
+            self.cnn = VGG19_all()
+            self.cnn_feature_dims = [64, 128, 256, 512]
+        
+    def forward(self, x, **kw):
+        B, C, H, W = x.shape
+        assert H % self.patch_size[0] == 0, f"Input image height ({H}) is not a multiple of patch size ({self.patch_size[0]})."
+        assert W % self.patch_size[1] == 0, f"Input image width ({W}) is not a multiple of patch size ({self.patch_size[1]})."
+
+        feat1, feat2, feat4, feat8 = self.cnn(x)
+        x = self.proj(x)
+        pos = self.position_getter(B, x.size(2), x.size(3), x.device)
+        if self.flatten:
+            x = x.flatten(2).transpose(1, 2)  # BCHW -> BNC
+        x = self.norm(x)
+        cnn_feats = [feat1, feat2, feat4, feat8]
+        return x, pos, cnn_feats
     
 class ManyAR_PatchEmbed_cnn (PatchEmbed):
     """ Handle images with non-square aspect ratio.

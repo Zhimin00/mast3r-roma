@@ -64,6 +64,24 @@ def load_model_resnet(model_path, device, verbose=True):
         print(s)
     return net.to(device)
 
+def load_model_resnet_refine(model_path, device, verbose=True):
+    if verbose:
+        print('... loading model from', model_path)
+    ckpt = torch.load(model_path, map_location='cpu')
+    args = ckpt['args'].model.replace("ManyAR_PatchEmbed_cnn", "PatchEmbedDust3R_cnn")
+    if 'landscape_only' not in args:
+        args = args[:-1] + ', landscape_only=False)'
+    else:
+        args = args.replace(" ", "").replace('landscape_only=True', 'landscape_only=False')
+    assert "landscape_only=False" in args
+    if verbose:
+        print(f"instantiating : {args}")
+    net = eval(args)
+    s = net.load_state_dict(ckpt['model'], strict=False)
+    if verbose:
+        print(s)
+    return net.to(device)
+
 class AsymmetricCroCo3DStereo (
     CroCoNet,
     huggingface_hub.PyTorchModelHubMixin,

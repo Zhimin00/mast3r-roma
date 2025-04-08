@@ -31,7 +31,7 @@ dust3r.datasets.Waymo = Waymo
 dust3r.datasets.WildRGBD = WildRGBD
 
 from dust3r.training import get_args_parser as dust3r_get_args_parser  # noqa
-from dust3r.training import train  # noqa
+from dust3r.mast3r_training import train  # noqa
 
 
 def get_args_parser():
