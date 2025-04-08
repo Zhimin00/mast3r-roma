@@ -307,7 +307,7 @@ if __name__ == "__main__":
     parser.add_argument("--dont_log_wandb", action='store_true')
     parser.add_argument("--train_resolution", default='medium')
     parser.add_argument("--gpu_batch_size", default=4, type=int)
-    parser.add_argument("--num_works", default=4, type=int)
+    parser.add_argument("--num_workers", default=4, type=int)
     parser.add_argument("--wandb_entity", required = False)
 
     args, _ = parser.parse_known_args()
