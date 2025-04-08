@@ -180,7 +180,7 @@ def train(args):
     experiment_name = os.path.splitext(os.path.basename(__file__))[0]
     wandb_mode = "online" if wandb_log and rank == 0 else "disabled"
     wandb.init(project="romatch", entity=args.wandb_entity, name=experiment_name, reinit=False, mode = wandb_mode)
-    checkpoint_dir = "/home/joyvan/workspace/checkpoints/"
+    checkpoint_dir = "/home/jovyan/workspace/checkpoints/"
     h,w = resolutions[resolution]
     model = get_model(pretrained_backbone=True, resolution=resolution, attenuate_cert = False).to(device_id)
     for name,module in model.named_children():
@@ -198,7 +198,7 @@ def train(args):
     N = (32 * 250000)  # 250k steps of batch size 32
     # checkpoint every
     k = 25000 // romatch.STEP_SIZE
-    dataset_path = '/home/joyvan/workspace/data/megadepth'
+    dataset_path = '/home/jovyan/workspace/data/megadepth'
     # Data
     mega = MegadepthBuilder(data_root=dataset_path, loftr_ignore=True, imc21_ignore = True)
     use_horizontal_flip_aug = True
