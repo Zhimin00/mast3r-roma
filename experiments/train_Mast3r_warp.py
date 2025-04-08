@@ -245,7 +245,7 @@ def train(args):
                 megadepth_train,
                 batch_size = batch_size,
                 sampler = mega_sampler,
-                num_workers = 8,
+                num_workers = 16,
             )
         )
         train_k_steps(
