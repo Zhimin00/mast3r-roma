@@ -245,7 +245,7 @@ def train(args):
                 megadepth_train,
                 batch_size = batch_size,
                 sampler = mega_sampler,
-                num_workers = 16,
+                num_workers = args.num_workers,
             )
         )
         train_k_steps(
@@ -307,6 +307,7 @@ if __name__ == "__main__":
     parser.add_argument("--dont_log_wandb", action='store_true')
     parser.add_argument("--train_resolution", default='medium')
     parser.add_argument("--gpu_batch_size", default=4, type=int)
+    parser.add_argument("--num_works", default=4, type=int)
     parser.add_argument("--wandb_entity", required = False)
 
     args, _ = parser.parse_known_args()
