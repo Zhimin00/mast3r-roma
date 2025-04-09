@@ -603,6 +603,7 @@ class PixelwiseTaskWithDPT_cat_cnn(PixelwiseTaskWithDPT_resnet):
         N_Hs1 = [H // 1, H // 2, H // 4, H // 8]
         N_Ws1 = [W // 1, W // 2, W // 4, W // 8]
         cnn_feats = [rearrange(cnn_feats[i], 'b (nh nw) c -> b nh nw c', nh = N_Hs1[i], nw=N_Ws1[i]) for i in range(len(N_Hs1))]
+        feat1, feat2, feat4, feat8 = cnn_feats
         feat16 = torch.cat([enc_output1, dec_output1], dim=-1)
         B, S, D = feat16.shape
         feat16 = feat16.view(B, H // self.patch_size, W // self.patch_size, D)
