@@ -92,7 +92,7 @@ class ResNet50(nn.Module):
         return feat4.permute(0, 2, 3, 1).flatten(1, 2).float(), feat8.permute(0, 2, 3, 1).flatten(1, 2).float()
 
 class VGG19(nn.Module): #scale 8,4
-    def __init__(self, pretrained=False) -> None:
+    def __init__(self, pretrained=True) -> None:
         super().__init__()
         self.layers = nn.ModuleList(tvm.vgg19_bn(pretrained=pretrained).features[:40])#40
 
@@ -170,7 +170,7 @@ class PatchEmbedDust3R_ResNet (PatchEmbed):
         
         return x, pos, feat4, feat8
 
-class PatchEmbedDust3R_ResNet (PatchEmbed):
+class PatchEmbedDust3R_VGG (PatchEmbed):
     def __init__(self, img_size=224, patch_size=16, in_chans=3, embed_dim=768, norm_layer=None, flatten=True):
         self.embed_dim = embed_dim
         super().__init__(img_size, patch_size, in_chans, embed_dim, norm_layer, flatten)
@@ -288,10 +288,10 @@ class PatchEmbedDust3R_cnn (PatchEmbed):
         self.embed_dim = embed_dim
         super().__init__(img_size, patch_size, in_chans, embed_dim, norm_layer, flatten)
         if cnn_type == 'resnet':
-            self.cnn = ResNet50_all()
+            self.cnn = ResNet50_all(pretrained=True)
             self.cnn_feature_dims = [3, 64, 256, 512]
         elif cnn_type == 'vgg':
-            self.cnn = VGG19_all()
+            self.cnn = VGG19_all(pretrained=True)
             self.cnn_feature_dims = [64, 128, 256, 512]
         
     def forward(self, x, **kw):

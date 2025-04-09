@@ -344,6 +344,13 @@ def train_warp(args):
 
     # following timm: set wd as 0 for bias and norm layers
     param_groups = misc.get_parameter_groups(model_without_ddp, args.weight_decay)
+    # for group in param_groups:
+    #     # Check if downstream3 parameters are in this group
+    #     if any(param in model_without_ddp.downstream_head3.parameters() for param in group['params']):
+    #         # Set the new learning rate for downstream3
+    #         group['lr'] = 1e-3  # Set the desired learning rate for downstream3
+    #         break
+
     optimizer = torch.optim.AdamW(param_groups, lr=args.lr, betas=(0.9, 0.95))
     print(optimizer)
     loss_scaler = NativeScaler()
