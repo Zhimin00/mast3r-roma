@@ -119,7 +119,7 @@ class AsymmetricMASt3R_cnn_warp(AsymmetricCroCo3DStereo_cnn):
         # allocate heads
         self.downstream_head1 = mast3r_head_factory(head_type, output_mode, self, has_conf=bool(conf_mode))
         self.downstream_head2 = mast3r_head_factory(head_type, output_mode, self, has_conf=bool(conf_mode))
-        self.downstream_head3 = mast3r_head_factory('warp')
+        self.downstream_head3 = mast3r_head_factory('warp', output_mode, self, has_conf=bool(conf_mode))
         # magic wrapper
         self.head1 = transpose_to_landscape_cnn(self.downstream_head1, activate=landscape_only)
         self.head2 = transpose_to_landscape_cnn(self.downstream_head2, activate=landscape_only)

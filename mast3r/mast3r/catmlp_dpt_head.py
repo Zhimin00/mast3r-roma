@@ -15,6 +15,7 @@ from models.blocks import Mlp  # noqa
 import pdb
 from romatch.models.transformer import Block, TransformerDecoder, MemEffAttention
 from romatch.utils.utils import cls_to_flow_refine, get_autocast_params, cls_to_flow
+from romatch.utils.local_correlation import local_correlation
 from romatch.utils.kde import kde
 from einops import rearrange
 import torch.nn as nn
