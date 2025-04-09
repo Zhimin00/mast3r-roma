@@ -162,7 +162,7 @@ def train(args):
 
     if args.distributed:
         model = torch.nn.parallel.DistributedDataParallel(
-            model, device_ids=[args.gpu], find_unused_parameters=True)#, static_graph=True)
+            model, device_ids=[args.gpu], find_unused_parameters=True, static_graph=True)
         model_without_ddp = model.module
 
     # following timm: set wd as 0 for bias and norm layers
@@ -339,7 +339,7 @@ def train_warp(args):
 
     if args.distributed:
         model = torch.nn.parallel.DistributedDataParallel(
-            model, device_ids=[args.gpu], find_unused_parameters=True, static_graph=True)
+            model, device_ids=[args.gpu], find_unused_parameters=True)#, static_graph=True)
         model_without_ddp = model.module
 
     # following timm: set wd as 0 for bias and norm layers
