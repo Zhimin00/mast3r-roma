@@ -137,8 +137,7 @@ class AsymmetricMASt3R_cnn_warp(AsymmetricCroCo3DStereo_cnn):
         res2['pts3d_in_other_view'] = res2.pop('pts3d')  # predict view2's pts3d in view1's frame
         feat1_pyramid = {1: res1['feat1'].permute(0,3,1,2), 2: res1['feat2'].permute(0,3,1,2), 4: res1['feat4'].permute(0,3,1,2), 8: res1['feat8'].permute(0,3,1,2), 16: res1['feat16'].permute(0,3,1,2)}
         feat2_pyramid = {1: res2['feat1'].permute(0,3,1,2), 2: res2['feat2'].permute(0,3,1,2), 4: res2['feat4'].permute(0,3,1,2), 8: res2['feat8'].permute(0,3,1,2), 16: res2['feat16'].permute(0,3,1,2)}
-        pdb.set_trace()
-        correps = self.downstream3(feat1_pyramid, feat2_pyramid)
+        correps = self.downstream_head3(feat1_pyramid, feat2_pyramid)
         return res1, res2, correps
 
 def freeze_model(model):
