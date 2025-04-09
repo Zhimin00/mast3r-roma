@@ -13,7 +13,7 @@ import torchvision.models as tvm
 from dust3r.heads import head_factory
 import mast3r.utils.path_to_dust3r  # noqa
 from dust3r.model import AsymmetricCroCo3DStereo, AsymmetricCroCo3DStereo_DINOv2, AsymmetricCroCo3DStereo_cnn # noqa
-from dust3r.utils.misc import transpose_to_landscape, transpose_to_landscape_cnn, transpose_to_landscape_warp  # noqa
+from dust3r.utils.misc import transpose_to_landscape, transpose_to_landscape_cnn  # noqa
 
 
 inf = float('inf')
