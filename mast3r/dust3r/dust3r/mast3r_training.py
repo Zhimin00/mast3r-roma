@@ -288,8 +288,8 @@ def train_warp(args):
     train_criterion = eval(args.train_criterion).to(device)
     warp_criterion = RobustLosses(
         ce_weight=0.01,
-        local_Dist = {1:4, 2:4, 4:8, 8:8},
-        local_largest_Scale=8,
+        local_dist = {1:4, 2:4, 4:8, 8:8},
+        local_largest_scale=8,
         depth_interpolation_mode=" bilinear",
         alpha=0.5,
         c = 1e-4,
