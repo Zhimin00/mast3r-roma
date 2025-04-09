@@ -599,7 +599,7 @@ class PixelwiseTaskWithDPT_cat_cnn(PixelwiseTaskWithDPT_resnet):
             out = self.postprocess(out, self.depth_mode, self.conf_mode)
         enc_output1, dec_output1 = decout[0], decout[-1]
         
-        H, W = img_shape[2:]
+        H, W = img_shape[-2:]
         N_Hs1 = [H // 1, H // 2, H // 4, H // 8]
         N_Ws1 = [W // 1, W // 2, W // 4, W // 8]
         cnn_feats = [rearrange(cnn_feats[i], 'b (nh nw) c -> b nh nw c', nh = N_Hs1[i], nw=N_Ws1[i]) for i in range(len(N_Hs1))]
