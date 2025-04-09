@@ -99,10 +99,7 @@ class AsymmetricMASt3R_DINOv2(AsymmetricCroCo3DStereo_DINOv2):
         self.head2 = transpose_to_landscape(self.downstream_head2, activate=landscape_only)
 
 class AsymmetricMASt3R_cnn_warp(AsymmetricCroCo3DStereo_cnn):
-    def __init__(self, desc_mode=('norm'), two_confs=False, desc_conf_mode=None, **kwargs):
-        self.desc_mode = desc_mode
-        self.two_confs = two_confs
-        self.desc_conf_mode = desc_conf_mode
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
     @classmethod

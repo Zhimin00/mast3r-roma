@@ -217,7 +217,7 @@ def mast3r_head_factory(head_type, output_mode, net, has_conf=False):
                                                depth_mode=net.depth_mode,
                                                conf_mode=net.conf_mode,
                                                head_type='regression')
-    elif head_type =='warp+dpt' and output_mode.startwith('pts3d+desc'):
+    elif head_type =='warp+dpt' and output_mode.startwith('pts3d'):
         assert net.dec_depth > 9
         l2 = net.dec_depth
         feature_dim = 256
