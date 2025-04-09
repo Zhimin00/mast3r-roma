@@ -304,17 +304,30 @@ def train_warp(args):
     if args.pretrained and not args.resume:
         print('Loading pretrained: ', args.pretrained)
         ckpt = torch.load(args.pretrained, map_location=device)['model']
+
         # filtered_ckpt = {k: v for k, v in ckpt.items() if not (
         #     k.startswith("patch_embed") or
         #     k.startswith("enc_blocks") or
         #     k.startswith("enc_norm")
         # )}
-        # print(model.load_state_dict(filtered_ckpt, strict=False))
+        filtered_ckpt = {k: v for k, v in ckpt.items() if not (
+            k.startswith("downstream_head1.dpt.scratch.layer1_rn") or
+            k.startswith("downstream_head1.dpt.scratch.layer2_rn") or
+            k.startswith("downstream_head1.dpt.scratch.layer_rn.0") or
+            k.startswith("downstream_head1.dpt.scratch.layer_rn.1") or 
+            k.startswith("downstream_head1.dpt.act_postprocess") or 
+            k.startswith("downstream_head2.dpt.scratch.layer1_rn") or
+            k.startswith("downstream_head2.dpt.scratch.layer2_rn") or
+            k.startswith("downstream_head2.dpt.scratch.layer_rn.0") or
+            k.startswith("downstream_head2.dpt.scratch.layer_rn.1") or 
+            k.startswith("downstream_head2.dpt.act_postprocess")
+        )}
+        print(model.load_state_dict(filtered_ckpt, strict=False))
         # del ckpt
         # del filtered_ckpt  # in case it occupies memory
 
-        print(model.load_state_dict(ckpt, strict=False))
-        del ckpt  # in case it occupies memory
+        # print(model.load_state_dict(ckpt, strict=False))
+        # del ckpt  # in case it occupies memory
 
     eff_batch_size = args.batch_size * args.accum_iter * misc.get_world_size()
     if args.lr is None:  # only base_lr is specified
