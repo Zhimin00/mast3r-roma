@@ -566,6 +566,151 @@ class Warp_Decoder(nn.Module):
             #torch.cuda.empty_cache()        
         return corresps
 
+class WarpHead(nn.Module):
+    def __init__(
+            self,
+            decoder,
+            sample_mode = "threshold_balanced",
+    ):
+        super().__init__()
+        self.decoder = decoder
+        self.sample_mode = sample_mode
+
+    def forward(self, f_q_pyramid, f_s_pyramid, upsample = False, scale_factor = 1):
+        corresps = self.decoder(f_q_pyramid, 
+                                f_s_pyramid, 
+                                upsample = upsample, 
+                                scale_factor=scale_factor)
+        return corresps
+    
+    @torch.inference_mode()
+    def match(
+        self,
+        f_A_pyramid,
+        f_B_pyramid,
+        *args,
+        batched=False,
+        device=None,
+    ):
+        if device is None:
+            device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+        self.train(False)
+        with torch.no_grad():
+            hs, ws = self.h_resized, self.w_resized
+            finest_scale = 1
+            # Run matcher
+            corresps = self.forward(f_A_pyramid, f_B_pyramid)
+            
+            im_A_to_im_B = corresps[finest_scale]["flow"]
+            certainty = corresps[finest_scale]["certainty"]
+            b, h, w = certainty.shape[:2]
+            im_A_to_im_B = im_A_to_im_B.permute(
+                0, 2, 3, 1
+            )
+            # Create im_A meshgrid
+            im_A_coords = torch.meshgrid(
+                (
+                    torch.linspace(-1 + 1 / h, 1 - 1 / h, h, device=device),
+                    torch.linspace(-1 + 1 / w, 1 - 1 / w, w, device=device),
+                ),
+                indexing='ij'
+            )
+            im_A_coords = torch.stack((im_A_coords[1], im_A_coords[0]))
+            im_A_coords = im_A_coords[None].expand(b, 2, h, w)
+            certainty = certainty.sigmoid()  # logits -> probs
+            im_A_coords = im_A_coords.permute(0, 2, 3, 1)
+            if (im_A_to_im_B.abs() > 1).any() and True:
+                wrong = (im_A_to_im_B.abs() > 1).sum(dim=-1) > 0
+                certainty[wrong[:, None]] = 0
+            im_A_to_im_B = torch.clamp(im_A_to_im_B, -1, 1)
+            warp = torch.cat((im_A_coords, im_A_to_im_B), dim=-1)
+            return (
+                warp,
+                certainty[:, 0]
+            )
+
+    def sample(
+        self,
+        matches,
+        certainty,
+        num=10000,
+    ):
+        if "threshold" in self.sample_mode:
+            upper_thresh = self.sample_thresh
+            certainty = certainty.clone()
+            certainty[certainty > upper_thresh] = 1
+        matches, certainty = (
+            matches.reshape(-1, 4),
+            certainty.reshape(-1),
+        )
+        expansion_factor = 4 if "balanced" in self.sample_mode else 1
+        good_samples = torch.multinomial(certainty, 
+                          num_samples = min(expansion_factor*num, len(certainty)), 
+                          replacement=False)
+        good_matches, good_certainty = matches[good_samples], certainty[good_samples]
+        if "balanced" not in self.sample_mode:
+            return good_matches, good_certainty
+        density = kde(good_matches, std=0.1)
+        p = 1 / (density+1)
+        p[density < 10] = 1e-7 # Basically should have at least 10 perfect neighbours, or around 100 ok ones
+        balanced_samples = torch.multinomial(p, 
+                          num_samples = min(num,len(good_certainty)), 
+                          replacement=False)
+        return good_matches[balanced_samples], good_certainty[balanced_samples]
+    
+    def to_pixel_coordinates(self, coords, H_A, W_A, H_B = None, W_B = None):
+        if coords.shape[-1] == 2:
+            return self._to_pixel_coordinates(coords, H_A, W_A) 
+        
+        if isinstance(coords, (list, tuple)):
+            kpts_A, kpts_B = coords[0], coords[1]
+        else:
+            kpts_A, kpts_B = coords[...,:2], coords[...,2:]
+        return self._to_pixel_coordinates(kpts_A, H_A, W_A), self._to_pixel_coordinates(kpts_B, H_B, W_B)
+
+    def _to_pixel_coordinates(self, coords, H, W):
+        kpts = torch.stack((W/2 * (coords[...,0]+1), H/2 * (coords[...,1]+1)),axis=-1)
+        return kpts
+ 
+    def to_normalized_coordinates(self, coords, H_A, W_A, H_B, W_B):
+        if isinstance(coords, (list, tuple)):
+            kpts_A, kpts_B = coords[0], coords[1]
+        else:
+            kpts_A, kpts_B = coords[...,:2], coords[...,2:]
+        kpts_A = torch.stack((2/W_A * kpts_A[...,0] - 1, 2/H_A * kpts_A[...,1] - 1),axis=-1)
+        kpts_B = torch.stack((2/W_B * kpts_B[...,0] - 1, 2/H_B * kpts_B[...,1] - 1),axis=-1)
+        return kpts_A, kpts_B
+
+    def match_keypoints(self, x_A, x_B, warp, certainty, return_tuple = True, return_inds = False):
+        x_A_to_B = F.grid_sample(warp[...,-2:].permute(2,0,1)[None], x_A[None,None], align_corners = False, mode = "bilinear")[0,:,0].mT
+        cert_A_to_B = F.grid_sample(certainty[None,None,...], x_A[None,None], align_corners = False, mode = "bilinear")[0,0,0]
+        D = torch.cdist(x_A_to_B, x_B)
+        inds_A, inds_B = torch.nonzero((D == D.min(dim=-1, keepdim = True).values) * (D == D.min(dim=-2, keepdim = True).values) * (cert_A_to_B[:,None] > self.sample_thresh), as_tuple = True)
+        
+        if return_tuple:
+            if return_inds:
+                return inds_A, inds_B
+            else:
+                return x_A[inds_A], x_B[inds_B]
+        else:
+            if return_inds:
+                return torch.cat((inds_A, inds_B),dim=-1)
+            else:
+                return torch.cat((x_A[inds_A], x_B[inds_B]),dim=-1)
+
+    def match_keypoints2(self, x_A, x_B, warp, certainty): 
+        assert len(warp.shape) == 3 and int(warp.shape[2]) == 4, str(warp.shape)
+        H,W2,_ = warp.shape
+        print(H, W2)
+        W = W2//2
+        
+        x_A_from_B = F.grid_sample(warp[:, W:, :2].permute(2,0,1)[None], x_B[None,None], align_corners = False, mode = "bilinear")[0,:,0].mT
+        cert_A_from_B = F.grid_sample(certainty[None, None, :, W:], x_B[None,None], align_corners = False, mode = "bilinear")[0,0,0]
+        # match in the coordinate system of A
+        D = torch.cdist(x_A, x_A_from_B)
+        inds_A, inds_B = torch.nonzero((D == D.min(dim=-1, keepdim = True).values) * (D == D.min(dim=-2, keepdim = True).values) * (cert_A_from_B[None,:] > 0.01), as_tuple = True)
+        return inds_A, inds_B, cert_A_from_B[inds_B]
 
 class DPT(nn.Module):
     def __init__(

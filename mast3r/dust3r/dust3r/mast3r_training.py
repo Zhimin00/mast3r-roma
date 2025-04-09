@@ -29,7 +29,7 @@ from mast3r.model import AsymmetricMASt3R, AsymmetricMASt3R_DINOv2
 from dust3r.model import AsymmetricCroCo3DStereo, AsymmetricCroCo3DStereo_DINOv2,AsymmetricCroCo3DStereo_DINOv2_rope, AsymmetricCroCo3DStereo_ResNet, AsymmetricCroCo3DStereo_cnn, inf  # noqa: F401, needed when loading the model
 from mast3r.datasets import get_data_loader  # noqa
 from dust3r.losses import ConfLoss, L21  # noqa: F401, needed when loading the model
-from dust3r.inference import loss_of_one_batch  # noqa
+from dust3r.inference import loss_of_one_batch, loss_of_one_batch_warp  # noqa
 from mast3r.losses import *
 
 import dust3r.utils.path_to_croco  # noqa: F401
@@ -246,6 +246,170 @@ def train(args):
 
     save_final_model(args, args.epochs, model_without_ddp, best_so_far=best_so_far)
 
+def train_warp(args):
+    misc.init_distributed_mode(args)
+    global_rank = misc.get_rank()
+    world_size = misc.get_world_size()
+
+    print("output_dir: " + args.output_dir)
+    if args.output_dir:
+        Path(args.output_dir).mkdir(parents=True, exist_ok=True)
+
+    # auto resume
+    last_ckpt_fname = os.path.join(args.output_dir, f'checkpoint-last.pth')
+    args.resume = last_ckpt_fname if os.path.isfile(last_ckpt_fname) else None
+
+    print('job dir: {}'.format(os.path.dirname(os.path.realpath(__file__))))
+    print("{}".format(args).replace(', ', ',\n'))
+
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = torch.device(device)
+
+    # fix the seed
+    seed = args.seed + misc.get_rank()
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+
+    cudnn.benchmark = not args.disable_cudnn_benchmark
+
+    # training dataset and loader
+    print('Building train dataset {:s}'.format(args.train_dataset))
+    #  dataset and loader
+    data_loader_train = build_dataset(args.train_dataset, args.batch_size, args.num_workers, test=False)
+    print('Building test dataset {:s}'.format(args.test_dataset))
+    data_loader_test = {dataset.split('(')[0]: build_dataset(dataset, args.batch_size, args.num_workers, test=True)
+                        for dataset in args.test_dataset.split('+')}
+
+    # model
+    print('Loading model: {:s}'.format(args.model))
+    model = eval(args.model)
+    print('Number of parameters: ', sum(p.numel() for p in model.parameters()))
+    print(f'>> Creating train criterion = {args.train_criterion}')
+    train_criterion = eval(args.train_criterion).to(device)
+    warp_criterion = RobustLosses(
+        ce_weight=0.01,
+        local_Dist = {1:4, 2:4, 4:8, 8:8},
+        local_largest_Scale=8,
+        depth_interpolation_mode=" bilinear",
+        alpha=0.5,
+        c = 1e-4,
+    )
+    print(f'>> Creating test criterion = {args.test_criterion or args.train_criterion}')
+    test_criterion = eval(args.test_criterion or args.criterion).to(device)
+    test_warp_criterion = warp_criterion
+    model.to(device)
+    model_without_ddp = model
+    print("Model = %s" % str(model_without_ddp))
+
+    if args.pretrained and not args.resume:
+        print('Loading pretrained: ', args.pretrained)
+        ckpt = torch.load(args.pretrained, map_location=device)['model']
+        # filtered_ckpt = {k: v for k, v in ckpt.items() if not (
+        #     k.startswith("patch_embed") or
+        #     k.startswith("enc_blocks") or
+        #     k.startswith("enc_norm")
+        # )}
+        # print(model.load_state_dict(filtered_ckpt, strict=False))
+        # del ckpt
+        # del filtered_ckpt  # in case it occupies memory
+
+        print(model.load_state_dict(ckpt, strict=False))
+        del ckpt  # in case it occupies memory
+
+    eff_batch_size = args.batch_size * args.accum_iter * misc.get_world_size()
+    if args.lr is None:  # only base_lr is specified
+        args.lr = args.blr * eff_batch_size / 256
+    print("base lr: %.2e" % (args.lr * 256 / eff_batch_size))
+    print("actual lr: %.2e" % args.lr)
+    print("accumulate grad iterations: %d" % args.accum_iter)
+    print("effective batch size: %d" % eff_batch_size)
+
+    if args.distributed:
+        model = torch.nn.parallel.DistributedDataParallel(
+            model, device_ids=[args.gpu], find_unused_parameters=True, static_graph=True)
+        model_without_ddp = model.module
+
+    # following timm: set wd as 0 for bias and norm layers
+    param_groups = misc.get_parameter_groups(model_without_ddp, args.weight_decay)
+    optimizer = torch.optim.AdamW(param_groups, lr=args.lr, betas=(0.9, 0.95))
+    print(optimizer)
+    loss_scaler = NativeScaler()
+
+    def write_log_stats(epoch, train_stats, test_stats):
+        if misc.is_main_process():
+            if log_writer is not None:
+                log_writer.flush()
+
+            log_stats = dict(epoch=epoch, **{f'train_{k}': v for k, v in train_stats.items()})
+            for test_name in data_loader_test:
+                if test_name not in test_stats:
+                    continue
+                log_stats.update({test_name + '_' + k: v for k, v in test_stats[test_name].items()})
+
+            with open(os.path.join(args.output_dir, "log.txt"), mode="a", encoding="utf-8") as f:
+                f.write(json.dumps(log_stats) + "\n")
+
+    def save_model(epoch, fname, best_so_far):
+        misc.save_model(args=args, model_without_ddp=model_without_ddp, optimizer=optimizer,
+                        loss_scaler=loss_scaler, epoch=epoch, fname=fname, best_so_far=best_so_far)
+
+    best_so_far = misc.load_model(args=args, model_without_ddp=model_without_ddp,
+                                  optimizer=optimizer, loss_scaler=loss_scaler)
+    if best_so_far is None:
+        best_so_far = float('inf')
+    if global_rank == 0 and args.output_dir is not None:
+        log_writer = SummaryWriter(log_dir=args.output_dir)
+    else:
+        log_writer = None
+
+    print(f"Start training for {args.epochs} epochs")
+    start_time = time.time()
+    train_stats = test_stats = {}
+    for epoch in range(args.start_epoch, args.epochs + 1):
+
+        # Save immediately the last checkpoint
+        if epoch > args.start_epoch:
+            if args.save_freq and epoch % args.save_freq == 0 or epoch == args.epochs:
+                save_model(epoch - 1, 'last', best_so_far)
+
+        # Test on multiple datasets
+        new_best = False
+        if (epoch > 0 and args.eval_freq > 0 and epoch % args.eval_freq == 0):
+            test_stats = {}
+            for test_name, testset in data_loader_test.items():
+                stats = test_one_epoch_warp(model, test_criterion, test_warp_criterion, testset,
+                                       device, epoch, log_writer=log_writer, args=args, prefix=test_name)
+                test_stats[test_name] = stats
+
+                # Save best of all
+                if stats['loss_med'] < best_so_far:
+                    best_so_far = stats['loss_med']
+                    new_best = True
+
+        # Save more stuff
+        write_log_stats(epoch, train_stats, test_stats)
+
+        if epoch > args.start_epoch:
+            if args.keep_freq and epoch % args.keep_freq == 0:
+                save_model(epoch - 1, str(epoch), best_so_far)
+            if new_best:
+                save_model(epoch - 1, 'best', best_so_far)
+        if epoch >= args.epochs:
+            break  # exit after writing last test to disk
+
+        # Train
+        train_stats = train_one_epoch_warp(
+            model, train_criterion, warp_criterion, data_loader_train,
+            optimizer, device, epoch, loss_scaler,
+            log_writer=log_writer,
+            args=args)
+
+    total_time = time.time() - start_time
+    total_time_str = str(datetime.timedelta(seconds=int(total_time)))
+    print('Training time {}'.format(total_time_str))
+
+    save_final_model(args, args.epochs, model_without_ddp, best_so_far=best_so_far)
+
 
 def save_final_model(args, epoch, model_without_ddp, best_so_far=None):
     output_dir = Path(args.output_dir)
@@ -348,6 +512,79 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
     print("Averaged stats:", metric_logger)
     return {k: meter.global_avg for k, meter in metric_logger.meters.items()}
 
+def train_one_epoch_warp(model: torch.nn.Module, criterion: torch.nn.Module, warp_criterion: torch.nn.Module,
+                    data_loader: Sized, optimizer: torch.optim.Optimizer,
+                    device: torch.device, epoch: int, loss_scaler,
+                    args,
+                    log_writer=None):
+    assert torch.backends.cuda.matmul.allow_tf32 == True
+
+    model.train(True)
+    metric_logger = misc.MetricLogger(delimiter="  ")
+    metric_logger.add_meter('lr', misc.SmoothedValue(window_size=1, fmt='{value:.6f}'))
+    header = 'Epoch: [{}]'.format(epoch)
+    accum_iter = args.accum_iter
+
+    if log_writer is not None:
+        print('log_dir: {}'.format(log_writer.log_dir))
+
+    if hasattr(data_loader, 'dataset') and hasattr(data_loader.dataset, 'set_epoch'):
+        data_loader.dataset.set_epoch(epoch)
+    if hasattr(data_loader, 'sampler') and hasattr(data_loader.sampler, 'set_epoch'):
+        data_loader.sampler.set_epoch(epoch)
+
+    optimizer.zero_grad()
+
+    for data_iter_step, batch in enumerate(metric_logger.log_every(data_loader, args.print_freq, header)):
+        epoch_f = epoch + data_iter_step / len(data_loader)
+
+        # we use a per iteration (instead of per epoch) lr scheduler
+        if data_iter_step % accum_iter == 0:
+            misc.adjust_learning_rate(optimizer, epoch_f, args)
+
+        loss_tuple = loss_of_one_batch_warp(batch, model, criterion, warp_criterion, device,
+                                       symmetrize_batch=True,
+                                       use_amp=bool(args.amp), ret='loss')
+        loss, loss_details = loss_tuple  # criterion returns two values
+        loss_value = float(loss)
+
+        if not math.isfinite(loss_value):
+            print("Loss is {}, stopping training".format(loss_value), force=True)
+            sys.exit(1)
+
+        loss /= accum_iter
+        loss_scaler(loss, optimizer, parameters=model.parameters(),
+                    update_grad=(data_iter_step + 1) % accum_iter == 0)
+        if (data_iter_step + 1) % accum_iter == 0:
+            optimizer.zero_grad()
+
+        del loss
+        del batch
+
+        lr = optimizer.param_groups[0]["lr"]
+        metric_logger.update(epoch=epoch_f)
+        metric_logger.update(lr=lr)
+        metric_logger.update(loss=loss_value, **loss_details)
+
+        if (data_iter_step + 1) % accum_iter == 0 and ((data_iter_step + 1) % (accum_iter * args.print_freq)) == 0:
+            loss_value_reduce = misc.all_reduce_mean(loss_value)  # MUST BE EXECUTED BY ALL NODES
+            if log_writer is None:
+                continue
+            """ We use epoch_1000x as the x-axis in tensorboard.
+            This calibrates different curves when batch size changes.
+            """
+            epoch_1000x = int(epoch_f * 1000)
+            log_writer.add_scalar('train_loss', loss_value_reduce, epoch_1000x)
+            log_writer.add_scalar('train_lr', lr, epoch_1000x)
+            log_writer.add_scalar('train_iter', epoch_1000x, epoch_1000x)
+            for name, val in loss_details.items():
+                log_writer.add_scalar('train_' + name, val, epoch_1000x)
+
+    # gather the stats from all processes
+    metric_logger.synchronize_between_processes()
+    print("Averaged stats:", metric_logger)
+    return {k: meter.global_avg for k, meter in metric_logger.meters.items()}
+
 
 @torch.no_grad()
 def test_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
@@ -369,6 +606,44 @@ def test_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
 
     for _, batch in enumerate(metric_logger.log_every(data_loader, args.print_freq, header)):
         loss_tuple = loss_of_one_batch(batch, model, criterion, device,
+                                       symmetrize_batch=True,
+                                       use_amp=bool(args.amp), ret='loss')
+        loss_value, loss_details = loss_tuple  # criterion returns two values
+        metric_logger.update(loss=float(loss_value), **loss_details)
+
+    # gather the stats from all processes
+    metric_logger.synchronize_between_processes()
+    print("Averaged stats:", metric_logger)
+
+    aggs = [('avg', 'global_avg'), ('med', 'median')]
+    results = {f'{k}_{tag}': getattr(meter, attr) for k, meter in metric_logger.meters.items() for tag, attr in aggs}
+
+    if log_writer is not None:
+        for name, val in results.items():
+            log_writer.add_scalar(prefix + '_' + name, val, 1000 * epoch)
+
+    return results
+
+@torch.no_grad()
+def test_one_epoch_warp(model: torch.nn.Module, criterion: torch.nn.Module, warp_criterion: torch.nn.Module,
+                   data_loader: Sized, device: torch.device, epoch: int,
+                   args, log_writer=None, prefix='test'):
+
+    model.eval()
+    metric_logger = misc.MetricLogger(delimiter="  ")
+    metric_logger.meters = defaultdict(lambda: misc.SmoothedValue(window_size=9**9))
+    header = 'Test Epoch: [{}]'.format(epoch)
+
+    if log_writer is not None:
+        print('log_dir: {}'.format(log_writer.log_dir))
+
+    if hasattr(data_loader, 'dataset') and hasattr(data_loader.dataset, 'set_epoch'):
+        data_loader.dataset.set_epoch(epoch)
+    if hasattr(data_loader, 'sampler') and hasattr(data_loader.sampler, 'set_epoch'):
+        data_loader.sampler.set_epoch(epoch)
+
+    for _, batch in enumerate(metric_logger.log_every(data_loader, args.print_freq, header)):
+        loss_tuple = loss_of_one_batch_warp(batch, model, criterion, warp_criterion, device,
                                        symmetrize_batch=True,
                                        use_amp=bool(args.amp), ret='loss')
         loss_value, loss_details = loss_tuple  # criterion returns two values

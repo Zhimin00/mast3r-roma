@@ -159,17 +159,13 @@ class Cat_MLP_LocalFeatures_DPT_Pts3d(PixelwiseTaskWithDPT):
                                     desc_conf_mode=self.desc_conf_mode)
             return out
 
-class Cat_Warp_LocalFeatures_DPT_Pts3d_resnet(PixelwiseTaskWithDPT_resnet):
-    """ Mixture between MLP and DPT head that outputs 3d points and local features (with MLP).
+class PixelwiseTaskWithDPT_cat_cnn(PixelwiseTaskWithDPT_resnet):
+    """ cat cnn features to DPT head that outputs 3d points
     The input for both heads is a concatenation of Encoder and Decoder outputs
     """
 
-    def __init__(self, net, has_conf=False, local_feat_dim=16, hidden_dim_factor=4., hooks_idx=None, dim_tokens=None,
-                 num_channels=1, postprocess=None, feature_dim=256, last_dim=32, depth_mode=None, conf_mode=None, head_type="regression", layer_dims = [256, 512, 384, 768], **kwargs):
-        super().__init__(num_channels=num_channels, feature_dim=feature_dim, last_dim=last_dim, hooks_idx=hooks_idx,
-                         dim_tokens=dim_tokens, depth_mode=depth_mode, postprocess=postprocess, conf_mode=conf_mode, head_type=head_type, layer_dims = layer_dims)
-        self.local_feat_dim = local_feat_dim
-
+    def __init__(self, net, **kwargs):
+        super().__init__(**kwargs)
         patch_size = net.patch_embed.patch_size
         if isinstance(patch_size, tuple):
             assert len(patch_size) == 2 and isinstance(patch_size[0], int) and isinstance(
@@ -178,12 +174,68 @@ class Cat_Warp_LocalFeatures_DPT_Pts3d_resnet(PixelwiseTaskWithDPT_resnet):
             patch_size = patch_size[0]
         self.patch_size = patch_size
 
-        self.desc_mode = net.desc_mode
-        self.has_conf = has_conf
-        self.two_confs = net.two_confs  # independent confs for 3D regr and descs
-        self.desc_conf_mode = net.desc_conf_mode
-        idim = net.enc_embed_dim + net.dec_embed_dim
+    def forward(self, decout, cnn_feats, img_shape):
+        feat1, feat2, feat4, feat8 = cnn_feats
+        out = self.dpt(decout, feat4, feat8, image_size=(img_shape[0], img_shape[1]))
+        if self.postprocess:
+            out = self.postprocess(out, self.depth_mode, self.conf_mode)
+        enc_output1, dec_output1 = decout[0], decout[-1]
         
+        H, W = img_shape[2:]
+        N_Hs1 = [H // 1, H // 2, H // 4, H // 8]
+        N_Ws1 = [W // 1, W // 2, W // 4, W // 8]
+        cnn_feats = [rearrange(cnn_feats[i], 'b (nh nw) c -> b nh nw c', nh = N_Hs1[i], nw=N_Ws1[i]) for i in range(len(N_Hs1))]
+        feat16 = torch.cat([enc_output1, dec_output1], dim=-1)
+        B, S, D = feat16.shape[0]
+        feat16 = feat16.view(B, H // self.patch_size, W // self.patch_size, D)
+        out['feat1'] = feat1
+        out['feat2'] = feat2
+        out['feat4'] = feat4
+        out['feat8'] = feat8
+        out['feat16'] = feat16
+        return out
+
+def mast3r_head_factory(head_type, output_mode, net, has_conf=False):
+    """" build a prediction head for the decoder 
+    """
+    if head_type == 'catmlp+dpt' and output_mode.startswith('pts3d+desc'):
+        local_feat_dim = int(output_mode[10:])
+        assert net.dec_depth > 9
+        l2 = net.dec_depth
+        feature_dim = 256
+        last_dim = feature_dim // 2
+        out_nchan = 3
+        ed = net.enc_embed_dim
+        dd = net.dec_embed_dim
+        return Cat_MLP_LocalFeatures_DPT_Pts3d(net, local_feat_dim=local_feat_dim, has_conf=has_conf,
+                                               num_channels=out_nchan + has_conf,
+                                               feature_dim=feature_dim,
+                                               last_dim=last_dim,
+                                               hooks_idx=[0, l2 * 2 // 4, l2 * 3 // 4, l2],
+                                               dim_tokens=[ed, dd, dd, dd],
+                                               postprocess=postprocess,
+                                               depth_mode=net.depth_mode,
+                                               conf_mode=net.conf_mode,
+                                               head_type='regression')
+    elif head_type =='warp+dpt' and output_mode.startwith('pts3d+desc'):
+        assert net.dec_depth > 9
+        l2 = net.dec_depth
+        feature_dim = 256
+        last_dim = feature_dim // 2
+        out_nchan = 3
+        ed = net.enc_embed_dim
+        dd = net.dec_embed_dim
+        return  PixelwiseTaskWithDPT_cat_cnn(net, num_channels=out_nchan + has_conf,
+                                            feature_dim=feature_dim,
+                                            last_dim=last_dim,
+                                            hooks_idx=[l2 * 3 // 4, l2],
+                                            dim_tokens=dd,
+                                            postprocess=postprocess,
+                                            depth_mode=net.depth_mode,
+                                            conf_mode=net.conf_mode,
+                                            head_type='regression',
+                                            layer_dims = [256, 512, 384, 768])
+    elif head_type == 'warp':       
         gp_dim = 512
         feat_dim = 512
         decoder_dim = gp_dim + feat_dim
@@ -312,84 +364,10 @@ class Cat_Warp_LocalFeatures_DPT_Pts3d_resnet(PixelwiseTaskWithDPT_resnet):
                         proj, 
                         conv_refiner, 
                         detach=True, 
-                        scales=["16", "8"],#, "4", "2", "1"], 
+                        scales=["16", "8", "4", "2", "1"], 
                         displacement_dropout_p = displacement_dropout_p,
                         gm_warp_dropout_p = gm_warp_dropout_p)
-        
-        
-
-        self.head_local_features = Mlp(in_features=idim,
-                                       hidden_features=int(hidden_dim_factor * idim),
-                                       out_features=(self.local_feat_dim + self.two_confs) * self.patch_size**2)
-
-    def forward(self, decout, vgg_features, img_shape, mode = 'default'):
-        pts3d = self.dpt(decout, vgg_features, image_size=(img_shape[0], img_shape[1]))
-        # recover encoder and decoder outputs
-        enc_output, dec_output = decout[0], decout[-1]
-        cat_output = torch.cat([enc_output, dec_output], dim=-1)  # concatenate
-        H, W = img_shape
-        B, S, D = cat_output.shape
-
-        # extract local_features
-        local_features = self.head_local_features(cat_output)  # B,S,D
-        local_features = local_features.transpose(-1, -2).view(B, -1, H // self.patch_size, W // self.patch_size)
-        local_features = F.pixel_shuffle(local_features, self.patch_size)  # B,d,H,W
-
-        # post process 3D pts, descriptors and confidences
-        out = torch.cat([pts3d, local_features], dim=1)
-        if self.postprocess:
-            out = self.postprocess(out,
-                                depth_mode=self.depth_mode,
-                                conf_mode=self.conf_mode,
-                                desc_dim=self.local_feat_dim,
-                                desc_mode=self.desc_mode,
-                                two_confs=self.two_confs,
-                                desc_conf_mode=self.desc_conf_mode)
-        return out
-
-
-def mast3r_head_factory(head_type, output_mode, net, has_conf=False):
-    """" build a prediction head for the decoder 
-    """
-    if head_type == 'catmlp+dpt' and output_mode.startswith('pts3d+desc'):
-        local_feat_dim = int(output_mode[10:])
-        assert net.dec_depth > 9
-        l2 = net.dec_depth
-        feature_dim = 256
-        last_dim = feature_dim // 2
-        out_nchan = 3
-        ed = net.enc_embed_dim
-        dd = net.dec_embed_dim
-        return Cat_MLP_LocalFeatures_DPT_Pts3d(net, local_feat_dim=local_feat_dim, has_conf=has_conf,
-                                               num_channels=out_nchan + has_conf,
-                                               feature_dim=feature_dim,
-                                               last_dim=last_dim,
-                                               hooks_idx=[0, l2 * 2 // 4, l2 * 3 // 4, l2],
-                                               dim_tokens=[ed, dd, dd, dd],
-                                               postprocess=postprocess,
-                                               depth_mode=net.depth_mode,
-                                               conf_mode=net.conf_mode,
-                                               head_type='regression')
-    elif head_type =='catmlp+dpt_resnet' and output_mode.startwith('pts3d+desc'):
-        local_feat_dim = int(output_mode[10:])
-        assert net.dec_depth > 9
-        l2 = net.dec_depth
-        feature_dim = 256
-        last_dim = feature_dim // 2
-        out_nchan = 3
-        ed = net.enc_embed_dim
-        dd = net.dec_embed_dim
-        return Cat_MLP_LocalFeatures_DPT_Pts3d_resnet(net, local_feat_dim=local_feat_dim, has_conf=has_conf,
-                                               num_channels=out_nchan + has_conf,
-                                               feature_dim=feature_dim,
-                                               last_dim=last_dim,
-                                               hooks_idx=[l2 * 3 // 4, l2],
-                                               dim_tokens=dd,
-                                               postprocess=postprocess,
-                                               depth_mode=net.depth_mode,
-                                               conf_mode=net.conf_mode,
-                                               head_type='regression',
-                                               layer_dims = [256, 512, 384, 768])
+        return WarpHead(decoder)
     else:
         raise NotImplementedError(
             f"unexpected {head_type=} and {output_mode=}")
