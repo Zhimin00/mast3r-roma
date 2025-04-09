@@ -19,6 +19,134 @@ from romatch.utils.kde import kde
 from einops import rearrange
 import torch.nn as nn
 
+class ConvRefiner(nn.Module):
+    def __init__(
+        self,
+        in_dim=6,
+        hidden_dim=16,
+        out_dim=2,
+        dw=False,
+        kernel_size=5,
+        hidden_blocks=3,
+        displacement_emb = None,
+        displacement_emb_dim = None,
+        local_corr_radius = None,
+        corr_in_other = None,
+        no_im_B_fm = False,
+        amp = False,
+        concat_logits = False,
+        use_bias_block_1 = True,
+        use_cosine_corr = False,
+        disable_local_corr_grad = False,
+        is_classifier = False,
+        sample_mode = "bilinear",
+        norm_type = nn.BatchNorm2d,
+        bn_momentum = 0.1,
+        amp_dtype = torch.float16,
+    ):
+        super().__init__()
+        self.bn_momentum = bn_momentum
+        self.block1 = self.create_block(
+            in_dim, hidden_dim, dw=dw, kernel_size=kernel_size, bias = use_bias_block_1,
+        )
+        self.hidden_blocks = nn.Sequential(
+            *[
+                self.create_block(
+                    hidden_dim,
+                    hidden_dim,
+                    dw=dw,
+                    kernel_size=kernel_size,
+                    norm_type=norm_type,
+                )
+                for hb in range(hidden_blocks)
+            ]
+        )
+        self.hidden_blocks = self.hidden_blocks
+        self.out_conv = nn.Conv2d(hidden_dim, out_dim, 1, 1, 0)
+        if displacement_emb:
+            self.has_displacement_emb = True
+            self.disp_emb = nn.Conv2d(2,displacement_emb_dim,1,1,0)
+        else:
+            self.has_displacement_emb = False
+        self.local_corr_radius = local_corr_radius
+        self.corr_in_other = corr_in_other
+        self.no_im_B_fm = no_im_B_fm
+        self.amp = amp
+        self.concat_logits = concat_logits
+        self.use_cosine_corr = use_cosine_corr
+        self.disable_local_corr_grad = disable_local_corr_grad
+        self.is_classifier = is_classifier
+        self.sample_mode = sample_mode
+        self.amp_dtype = amp_dtype
+        
+    def create_block(
+        self,
+        in_dim,
+        out_dim,
+        dw=False,
+        kernel_size=5,
+        bias = True,
+        norm_type = nn.BatchNorm2d,
+    ):
+        num_groups = 1 if not dw else in_dim
+        if dw:
+            assert (
+                out_dim % in_dim == 0
+            ), "outdim must be divisible by indim for depthwise"
+        conv1 = nn.Conv2d(
+            in_dim,
+            out_dim,
+            kernel_size=kernel_size,
+            stride=1,
+            padding=kernel_size // 2,
+            groups=num_groups,
+            bias=bias,
+        )
+        norm = norm_type(out_dim, momentum = self.bn_momentum) if norm_type is nn.BatchNorm2d else norm_type(num_channels = out_dim)
+        relu = nn.ReLU(inplace=True)
+        conv2 = nn.Conv2d(out_dim, out_dim, 1, 1, 0)
+        return nn.Sequential(conv1, norm, relu, conv2)
+        
+    def forward(self, x, y, flow, scale_factor = 1, logits = None):
+        b,c,hs,ws = x.shape
+        autocast_device, autocast_enabled, autocast_dtype = get_autocast_params(x.device, enabled=self.amp, dtype=self.amp_dtype)
+        with torch.autocast(autocast_device, enabled=autocast_enabled, dtype = autocast_dtype):            
+            x_hat = F.grid_sample(y, flow.permute(0, 2, 3, 1), align_corners=False, mode = self.sample_mode)
+            if self.has_displacement_emb:
+                im_A_coords = torch.meshgrid(
+                (
+                    torch.linspace(-1 + 1 / hs, 1 - 1 / hs, hs, device=x.device),
+                    torch.linspace(-1 + 1 / ws, 1 - 1 / ws, ws, device=x.device),
+                ), indexing='ij'
+                )
+                im_A_coords = torch.stack((im_A_coords[1], im_A_coords[0]))
+                im_A_coords = im_A_coords[None].expand(b, 2, hs, ws)
+                in_displacement = flow-im_A_coords
+                emb_in_displacement = self.disp_emb(40/32 * scale_factor * in_displacement)
+                if self.local_corr_radius:
+                    if self.corr_in_other:
+                        # Corr in other means take a kxk grid around the predicted coordinate in other image
+                        local_corr = local_correlation(x,y,local_radius=self.local_corr_radius,flow = flow, 
+                                                       sample_mode = self.sample_mode)
+                    else:
+                        raise NotImplementedError("Local corr in own frame should not be used.")
+                    if self.no_im_B_fm:
+                        x_hat = torch.zeros_like(x)
+                    d = torch.cat((x, x_hat, emb_in_displacement, local_corr), dim=1)
+                else:    
+                    d = torch.cat((x, x_hat, emb_in_displacement), dim=1)
+            else:
+                if self.no_im_B_fm:
+                    x_hat = torch.zeros_like(x)
+                d = torch.cat((x, x_hat), dim=1)
+            if self.concat_logits:
+                d = torch.cat((d, logits), dim=1)
+            d = self.block1(d)
+            d = self.hidden_blocks(d)
+        d = self.out_conv(d.float())
+        displacement, certainty = d[:, :-1], d[:, -1:]
+        return displacement, certainty
+
 class Warp_Decoder(nn.Module):
     def __init__(
         self, embedding_decoder, proj, conv_refiner, detach=False, scales="all", pos_embeddings = None,
@@ -506,7 +634,7 @@ def mast3r_head_factory(head_type, output_mode, net, has_conf=False):
                                                depth_mode=net.depth_mode,
                                                conf_mode=net.conf_mode,
                                                head_type='regression')
-    elif head_type =='warp+dpt' and output_mode.startwith('pts3d'):
+    elif head_type =='warp+dpt' and output_mode.startswith('pts3d'):
         assert net.dec_depth > 9
         l2 = net.dec_depth
         feature_dim = 256
@@ -618,22 +746,7 @@ def mast3r_head_factory(head_type, output_mode, net, has_conf=False):
             ),
         }
     )
-        kernel_temperature = 0.2
-        learn_temperature = False
-        no_cov = True
-        kernel = CosKernel
-        only_attention = False
-        basis = "fourier"
-        gp16 = GP(
-            kernel,
-            T=kernel_temperature,
-            learn_temperature=learn_temperature,
-            only_attention=only_attention,
-            gp_dim=gp_dim,
-            basis=basis,
-            no_cov=no_cov,
-        )
-        gps = nn.ModuleDict({"16": gp16})
+
         proj16 = nn.Sequential(nn.Conv2d(768, 512, 1, 1), nn.BatchNorm2d(512))
         proj8 = nn.Sequential(nn.Conv2d(512, 512, 1, 1), nn.BatchNorm2d(512))
         proj4 = nn.Sequential(nn.Conv2d(256, 256, 1, 1), nn.BatchNorm2d(256))
@@ -648,8 +761,7 @@ def mast3r_head_factory(head_type, output_mode, net, has_conf=False):
             })
         displacement_dropout_p = 0.0
         gm_warp_dropout_p = 0.0
-        decoder = Decoder(coordinate_decoder, 
-                        gps, 
+        decoder = Warp_Decoder(coordinate_decoder, 
                         proj, 
                         conv_refiner, 
                         detach=True, 
