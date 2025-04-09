@@ -749,7 +749,7 @@ def mast3r_head_factory(head_type, output_mode, net, has_conf=False):
         }
     )
 
-        proj16 = nn.Sequential(nn.Conv2d(768, 512, 1, 1), nn.BatchNorm2d(512))
+        proj16 = nn.Sequential(nn.Conv2d(1024+768, 512, 1, 1), nn.BatchNorm2d(512))
         proj8 = nn.Sequential(nn.Conv2d(512, 512, 1, 1), nn.BatchNorm2d(512))
         proj4 = nn.Sequential(nn.Conv2d(256, 256, 1, 1), nn.BatchNorm2d(256))
         proj2 = nn.Sequential(nn.Conv2d(128, 64, 1, 1), nn.BatchNorm2d(64))
