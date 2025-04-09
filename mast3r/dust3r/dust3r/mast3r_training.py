@@ -25,7 +25,7 @@ import torch
 import torch.backends.cudnn as cudnn
 from torch.utils.tensorboard import SummaryWriter
 torch.backends.cuda.matmul.allow_tf32 = True  # for gpu >= Ampere and pytorch >= 1.12
-from mast3r.model import AsymmetricMASt3R, AsymmetricMASt3R_DINOv2
+from mast3r.model import AsymmetricMASt3R, AsymmetricMASt3R_DINOv2, AsymmetricMASt3R_cnn_warp
 from dust3r.model import AsymmetricCroCo3DStereo, AsymmetricCroCo3DStereo_DINOv2,AsymmetricCroCo3DStereo_DINOv2_rope, AsymmetricCroCo3DStereo_ResNet, AsymmetricCroCo3DStereo_cnn, inf  # noqa: F401, needed when loading the model
 from mast3r.datasets import get_data_loader  # noqa
 from dust3r.losses import ConfLoss, L21  # noqa: F401, needed when loading the model
