@@ -98,48 +98,6 @@ class AsymmetricMASt3R_DINOv2(AsymmetricCroCo3DStereo_DINOv2):
         self.head1 = transpose_to_landscape(self.downstream_head1, activate=landscape_only)
         self.head2 = transpose_to_landscape(self.downstream_head2, activate=landscape_only)
 
-class AsymmetricMASt3R_cnn_warp(AsymmetricCroCo3DStereo_cnn):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    @classmethod
-    def from_pretrained(cls, pretrained_model_name_or_path, **kw):
-        if os.path.isfile(pretrained_model_name_or_path):
-            return load_model(pretrained_model_name_or_path, device='cpu')
-        else:
-            return super(AsymmetricMASt3R_cnn_warp, cls).from_pretrained(pretrained_model_name_or_path, **kw)
-
-    def set_downstream_head(self, output_mode, head_type, landscape_only, depth_mode, conf_mode, patch_size, img_size, **kw):
-        assert img_size[0] % patch_size == 0 and img_size[
-            1] % patch_size == 0, f'{img_size=} must be multiple of {patch_size=}'
-        self.output_mode = output_mode
-        self.head_type = head_type
-        self.depth_mode = depth_mode
-        self.conf_mode = conf_mode
-        # allocate heads
-        self.downstream_head1 = mast3r_head_factory(head_type, output_mode, self, has_conf=bool(conf_mode))
-        self.downstream_head2 = mast3r_head_factory(head_type, output_mode, self, has_conf=bool(conf_mode))
-        self.downstream_head3 = mast3r_head_factory('warp', output_mode, self, has_conf=bool(conf_mode))
-        # magic wrapper
-        self.head1 = transpose_to_landscape_cnn(self.downstream_head1, activate=landscape_only)
-        self.head2 = transpose_to_landscape_cnn(self.downstream_head2, activate=landscape_only)
-    
-    def forward(self, view1, view2):
-        # encode the two images --> B,S,D
-        (shape1, shape2), (feat1, feat2), (pos1, pos2), (cnn_feats1, cnn_feats2) = self._encode_symmetrized(view1, view2)
-
-        # combine all ref images into object-centric representation
-        dec1, dec2 = self._decoder(feat1, pos1, feat2, pos2)
-
-        with torch.cuda.amp.autocast(enabled=False):
-            res1 = self._downstream_head(1, [tok.float() for tok in dec1], cnn_feats1, shape1)
-            res2 = self._downstream_head(2, [tok.float() for tok in dec2], cnn_feats2, shape2)
-        res2['pts3d_in_other_view'] = res2.pop('pts3d')  # predict view2's pts3d in view1's frame
-        feat1_pyramid = {1: res1['feat1'].permute(0,3,1,2), 2: res1['feat2'].permute(0,3,1,2), 4: res1['feat4'].permute(0,3,1,2), 8: res1['feat8'].permute(0,3,1,2), 16: res1['feat16'].permute(0,3,1,2)}
-        feat2_pyramid = {1: res2['feat1'].permute(0,3,1,2), 2: res2['feat2'].permute(0,3,1,2), 4: res2['feat4'].permute(0,3,1,2), 8: res2['feat8'].permute(0,3,1,2), 16: res2['feat16'].permute(0,3,1,2)}
-        correps = self.downstream_head3(feat1_pyramid, feat2_pyramid)
-        return res1, res2, correps
-
 class AsymmetricMASt3R_warp(AsymmetricCroCo3DStereo_cnn):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
