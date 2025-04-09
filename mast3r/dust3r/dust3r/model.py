@@ -730,9 +730,11 @@ class AsymmetricCroCo3DStereo_cnn (
                  conf_mode=('exp', 1, inf),
                  freeze='none',
                  landscape_only=True,
-                 patch_embed_cls='PatchEmbedDust3R',  # PatchEmbedDust3R or ManyAR_PatchEmbed
+                 patch_embed_cls='PatchEmbedDust3R',# PatchEmbedDust3R or ManyAR_PatchEmbed
+                 cnn_type = 'resnet',  
                  **croco_kwargs):
         self.patch_embed_cls = patch_embed_cls
+        self.cnn_type = cnn_type
         self.croco_args = fill_default_args(croco_kwargs, super().__init__)
         super().__init__(**croco_kwargs)
 
@@ -753,7 +755,7 @@ class AsymmetricCroCo3DStereo_cnn (
             return model
 
     def _set_patch_embed(self, img_size=224, patch_size=16, enc_embed_dim=768):
-        self.patch_embed = get_patch_embed(self.patch_embed_cls, img_size, patch_size, enc_embed_dim, cnn_type = 'resnet')
+        self.patch_embed = get_patch_embed(self.patch_embed_cls, img_size, patch_size, enc_embed_dim, cnn_type = self.cnn_type)
 
     def load_state_dict(self, ckpt, **kw):
         # duplicate all weights for the second decoder if not present
