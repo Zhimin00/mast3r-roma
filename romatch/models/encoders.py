@@ -18,9 +18,6 @@ import sys
 mast3r_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../mast3r"))
 sys.path.insert(0, mast3r_path)
 
-from mast3r.model import AsymmetricMASt3R
-from dust3r.model import AsymmetricCroCo3DStereo
-
 class FeatureExtractor_woProj(nn.Module):
     def __init__(self, model_name='resnet50', pretrained=True, 
                  amp=True, amp_dtype=torch.float16, 
@@ -141,6 +138,7 @@ class FeatureExtractor_woProj(nn.Module):
             feature_dim = 1024 + 1280
         
         elif model_name == 'mast3r':
+            from mast3r.model import AsymmetricMASt3R
             mast3r_model_name = "naver/MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric"
                 # you can put the path to a local checkpoint in model_name if needed
             model = AsymmetricMASt3R.from_pretrained(mast3r_model_name)
@@ -148,30 +146,35 @@ class FeatureExtractor_woProj(nn.Module):
             feature_dim = 1024
             #backbone = AsymmetricMASt3R.from_pretrained(ckpt_args.pretrained)
         elif model_name == 'dust3r':
+            from dust3r.model import AsymmetricCroCo3DStereo
             dust3r_model_name = "naver/DUSt3R_ViTLarge_BaseDecoder_512_dpt"
             model = AsymmetricCroCo3DStereo.from_pretrained(dust3r_model_name)
             self.backbone = model
             feature_dim = 1024
 
         elif model_name == 'mast3r_decoder':
+            from mast3r.model import AsymmetricMASt3R
             mast3r_model_name = "naver/MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric"
                 # you can put the path to a local checkpoint in model_name if needed
             model = AsymmetricMASt3R.from_pretrained(mast3r_model_name)
             self.backbone = model
             feature_dim = 1024 + 768
         elif model_name == 'mast3r_decoder_mlp_without_conf':
+            from mast3r.model import AsymmetricMASt3R
             mast3r_model_name = "naver/MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric"
                 # you can put the path to a local checkpoint in model_name if needed
             model = AsymmetricMASt3R.from_pretrained(mast3r_model_name)
             self.backbone = model
             feature_dim = 24*16*16
         elif model_name == 'mast3r_decoder_mlp_with_conf':
+            from mast3r.model import AsymmetricMASt3R
             mast3r_model_name = "naver/MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric"
                 # you can put the path to a local checkpoint in model_name if needed
             model = AsymmetricMASt3R.from_pretrained(mast3r_model_name)
             self.backbone = model
             feature_dim = 25*16*16
         elif model_name == 'dust3r_decoder':
+            from dust3r.model import AsymmetricCroCo3DStereo
             dust3r_model_name = "naver/DUSt3R_ViTLarge_BaseDecoder_512_dpt"
             model = AsymmetricCroCo3DStereo.from_pretrained(dust3r_model_name)
             self.backbone = model
@@ -429,6 +432,7 @@ class FeatureExtractor_s16(nn.Module):
             feature_dim = 1024 + 1280
         
         elif model_name == 'mast3r':
+            from mast3r.model import AsymmetricMASt3R
             mast3r_model_name = "naver/MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric"
                 # you can put the path to a local checkpoint in model_name if needed
             model = AsymmetricMASt3R.from_pretrained(mast3r_model_name)
@@ -436,29 +440,34 @@ class FeatureExtractor_s16(nn.Module):
             feature_dim = 1024
             #backbone = AsymmetricMASt3R.from_pretrained(ckpt_args.pretrained)
         elif model_name == 'dust3r':
+            from dust3r.model import AsymmetricCroCo3DStereo
             dust3r_model_name = "naver/DUSt3R_ViTLarge_BaseDecoder_512_dpt"
             model = AsymmetricCroCo3DStereo.from_pretrained(dust3r_model_name)
             self.backbone = model
             feature_dim = 1024
         elif model_name == 'mast3r_decoder':
+            from mast3r.model import AsymmetricMASt3R
             mast3r_model_name = "naver/MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric"
                 # you can put the path to a local checkpoint in model_name if needed
             model = AsymmetricMASt3R.from_pretrained(mast3r_model_name)
             self.backbone = model
             feature_dim = 1024+768
         elif model_name == 'mast3r_decoder_mlp_without_conf':
+            from mast3r.model import AsymmetricMASt3R
             mast3r_model_name = "naver/MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric"
                 # you can put the path to a local checkpoint in model_name if needed
             model = AsymmetricMASt3R.from_pretrained(mast3r_model_name)
             self.backbone = model
             feature_dim = 24*16*16
         elif model_name == 'mast3r_decoder_mlp_with_conf':
+            from mast3r.model import AsymmetricMASt3R
             mast3r_model_name = "naver/MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric"
                 # you can put the path to a local checkpoint in model_name if needed
             model = AsymmetricMASt3R.from_pretrained(mast3r_model_name)
             self.backbone = model
             feature_dim = 25*16*16
         elif model_name == 'dust3r_decoder':
+            from dust3r.model import AsymmetricCroCo3DStereo
             dust3r_model_name = "naver/DUSt3R_ViTLarge_BaseDecoder_512_dpt"
             model = AsymmetricCroCo3DStereo.from_pretrained(dust3r_model_name)
             self.backbone = model
@@ -1294,6 +1303,7 @@ class CNNandMast3r(nn.Module):
                 ensemble_size=1,
                 alpha = 0.5):
         super().__init__()
+        from mast3r.model import AsymmetricMASt3R
         mast3r_model_name = "naver/MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric"
                 # you can put the path to a local checkpoint in model_name if needed
         model = AsymmetricMASt3R.from_pretrained(mast3r_model_name)
@@ -1331,6 +1341,7 @@ class CNNandMast3r_decoder(nn.Module):
     def __init__(self, cnn_kwargs = None, amp = False, use_vgg = False, 
                 amp_dtype = torch.float16):
         super().__init__()
+        from mast3r.model import AsymmetricMASt3R
         mast3r_model_name = "naver/MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric"
                 # you can put the path to a local checkpoint in model_name if needed
         model = AsymmetricMASt3R.from_pretrained(mast3r_model_name)
@@ -1381,7 +1392,7 @@ class CNNandDinov2_Mast3r(nn.Module):
         )
         dinov2_vitl14 = vit_large(**vit_kwargs).eval()
         dinov2_vitl14.load_state_dict(dinov2_weights)
-
+        from mast3r.model import AsymmetricMASt3R
         mast3r_model_name = "naver/MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric"
                 # you can put the path to a local checkpoint in model_name if needed
         mast3r_model = AsymmetricMASt3R.from_pretrained(mast3r_model_name)
@@ -1437,6 +1448,7 @@ class CNNandMast3r_trainable(nn.Module): #concatenate dinov2 and SD at scale 16
     def __init__(self, cnn_kwargs = None, amp = False, use_vgg = False, 
                 amp_dtype = torch.float16):
         super().__init__()
+        from mast3r.model import AsymmetricMASt3R
         mast3r_model_name = "naver/MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric"
                 # you can put the path to a local checkpoint in model_name if needed
         model = AsymmetricMASt3R.from_pretrained(mast3r_model_name)
@@ -1478,6 +1490,7 @@ class CNNandMast3r_s16(nn.Module): #only coarse scale
                 ensemble_size=1,
                 alpha = 0.5):
         super().__init__()
+        from mast3r.model import AsymmetricMASt3R
         mast3r_model_name = "naver/MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric"
                 # you can put the path to a local checkpoint in model_name if needed
         model = AsymmetricMASt3R.from_pretrained(mast3r_model_name)
