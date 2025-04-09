@@ -632,20 +632,22 @@ class PixelwiseTaskWithDPT_catwarp(PixelwiseTaskWithDPT):
         self.patch_size = patch_size
 
     def forward(self, decout, cnn_feats, img_shape):
-        feat1, feat2, feat4, feat8 = cnn_feats
-        out = self.dpt(decout, feat4, feat8, image_size=(img_shape[0], img_shape[1]))
+        out = self.dpt(decout, image_size=(img_shape[0], img_shape[1]))
         if self.postprocess:
             out = self.postprocess(out, self.depth_mode, self.conf_mode)
-        enc_output1, dec_output1 = decout[0], decout[-1]
+        
         
         H, W = img_shape[-2:]
         N_Hs1 = [H // 1, H // 2, H // 4, H // 8]
         N_Ws1 = [W // 1, W // 2, W // 4, W // 8]
         cnn_feats = [rearrange(cnn_feats[i], 'b (nh nw) c -> b nh nw c', nh = N_Hs1[i], nw=N_Ws1[i]) for i in range(len(N_Hs1))]
         feat1, feat2, feat4, feat8 = cnn_feats
+
+        enc_output1, dec_output1 = decout[0], decout[-1]
         feat16 = torch.cat([enc_output1, dec_output1], dim=-1)
         B, S, D = feat16.shape
         feat16 = feat16.view(B, H // self.patch_size, W // self.patch_size, D)
+        
         out['feat1'] = feat1
         out['feat2'] = feat2
         out['feat4'] = feat4
