@@ -496,6 +496,7 @@ def train_only_warp(args):
                 ckpt[new_key] = value
             elif key.startswith('encoder.cnn'):
                 new_key = key.replace('encoder', 'patch_embed')
+                ckpt[new_key] = value
         # filtered_ckpt = {k: v for k, v in ckpt.items() if not (
         #     k.startswith("patch_embed") or
         #     k.startswith("enc_blocks") or
