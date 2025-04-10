@@ -94,7 +94,6 @@ def loss_of_one_batch_only_warp(batch, model, warp_criterion, device, symmetrize
         # loss is supposed to be symmetric
         with torch.cuda.amp.autocast(enabled=False):
             loss_warp = warp_criterion(view1, view2, correps) if warp_criterion is not None else None
-            loss['Warploss'] = loss_warp
             loss = (loss_warp, dict(Warploss = loss_warp))
     result = dict(view1=view1, view2=view2, pred1=pred1, pred2=pred2, loss=loss, correps=correps)
     return result[ret] if ret else result
