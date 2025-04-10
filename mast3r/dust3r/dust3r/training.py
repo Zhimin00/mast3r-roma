@@ -42,6 +42,7 @@ def get_args_parser():
     parser.add_argument('--model', default="AsymmetricCroCo3DStereo(patch_embed_cls='ManyAR_PatchEmbed')",
                         type=str, help="string containing the model to build")
     parser.add_argument('--pretrained', default=None, help='path of a starting checkpoint')
+    parser.add_argument('--pretrained_warp', default=None, help='path of a starting warp checkpoint')
     parser.add_argument('--train_criterion', default="ConfLoss(Regr3D(L21, norm_mode='avg_dis'), alpha=0.2)",
                         type=str, help="train criterion")
     parser.add_argument('--test_criterion', default=None, type=str, help="test criterion")
