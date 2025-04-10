@@ -643,11 +643,12 @@ class PixelwiseTaskWithDPT_catwarp(PixelwiseTaskWithDPT):
         cnn_feats = [rearrange(cnn_feats[i], 'b (nh nw) c -> b nh nw c', nh = N_Hs1[i], nw=N_Ws1[i]) for i in range(len(N_Hs1))]
         feat1, feat2, feat4, feat8 = cnn_feats
 
-        enc_output1, dec_output1 = decout[0], decout[-1]
-        feat16 = torch.cat([enc_output1, dec_output1], dim=-1)
+        # enc_output1, dec_output1 = decout[0], decout[-1]
+        # feat16 = torch.cat([enc_output1, dec_output1], dim=-1)
+        feat16 = decout[-1]
         B, S, D = feat16.shape
         feat16 = feat16.view(B, H // self.patch_size, W // self.patch_size, D)
-        
+
         out['feat1'] = feat1
         out['feat2'] = feat2
         out['feat4'] = feat4
@@ -809,7 +810,7 @@ def mast3r_head_factory(head_type, output_mode, net, has_conf=False):
         }
     )
 
-        proj16 = nn.Sequential(nn.Conv2d(1024+768, 512, 1, 1), nn.BatchNorm2d(512))
+        proj16 = nn.Sequential(nn.Conv2d(768, 512, 1, 1), nn.BatchNorm2d(512))
         proj8 = nn.Sequential(nn.Conv2d(512, 512, 1, 1), nn.BatchNorm2d(512))
         proj4 = nn.Sequential(nn.Conv2d(256, 256, 1, 1), nn.BatchNorm2d(256))
         proj2 = nn.Sequential(nn.Conv2d(128, 64, 1, 1), nn.BatchNorm2d(64))

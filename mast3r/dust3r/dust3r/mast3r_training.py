@@ -43,6 +43,7 @@ def get_args_parser():
     parser.add_argument('--model', default="AsymmetricCroCo3DStereo(patch_embed_cls='ManyAR_PatchEmbed')",
                         type=str, help="string containing the model to build")
     parser.add_argument('--pretrained', default=None, help='path of a starting checkpoint')
+    parser.add_argument('--pretrained_warp', default=None, help='path of a starting warp checkpoint')
     parser.add_argument('--train_criterion', default="ConfLoss(Regr3D(L21, norm_mode='avg_dis'), alpha=0.2)",
                         type=str, help="train criterion")
     parser.add_argument('--test_criterion', default=None, type=str, help="test criterion")
@@ -488,7 +489,13 @@ def train_only_warp(args):
     if args.pretrained and not args.resume:
         print('Loading pretrained: ', args.pretrained)
         ckpt = torch.load(args.pretrained, map_location=device)['model']
-
+        ckpt_warp = torch.load(args.pretrained_warp, map_location=device)['model']
+        for key, value in ckpt_warp.items():
+            if key.startswith('decoder'):
+                new_key = 'downstream_head3.' + key 
+                ckpt[new_key] = value
+            elif key.startswith('encoder.cnn'):
+                new_key = key.replace('encoder', 'patch_embed')
         # filtered_ckpt = {k: v for k, v in ckpt.items() if not (
         #     k.startswith("patch_embed") or
         #     k.startswith("enc_blocks") or
@@ -512,7 +519,7 @@ def train_only_warp(args):
 
         print(model.load_state_dict(ckpt, strict=False))
         del ckpt  # in case it occupies memory
-
+    time.sleep(5)
     eff_batch_size = args.batch_size * args.accum_iter * misc.get_world_size()
     if args.lr is None:  # only base_lr is specified
         args.lr = args.blr * eff_batch_size / 256
