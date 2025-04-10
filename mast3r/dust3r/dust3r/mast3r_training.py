@@ -468,7 +468,8 @@ def train_only_warp(args):
     print('Loading model: {:s}'.format(args.model))
     model = eval(args.model)
     print('Number of parameters: ', sum(p.numel() for p in model.parameters()))
-    
+    print(f'>> Creating train criterion = {args.train_criterion}')
+    train_criterion = eval(args.train_criterion).to(device)
     warp_criterion = RobustLosses(
         ce_weight=0.01,
         local_dist = {1:4, 2:4, 4:8, 8:8},
@@ -477,7 +478,9 @@ def train_only_warp(args):
         alpha=0.5,
         c = 1e-4,
     )
-    test_warp_criterion =  warp_criterion
+    print(f'>> Creating test criterion = {args.test_criterion or args.train_criterion}')
+    test_criterion = eval(args.test_criterion or args.criterion).to(device)
+    test_warp_criterion = warp_criterion
     model.to(device)
     model_without_ddp = model
     print("Model = %s" % str(model_without_ddp))
@@ -578,7 +581,7 @@ def train_only_warp(args):
         if (epoch > 0 and args.eval_freq > 0 and epoch % args.eval_freq == 0):
             test_stats = {}
             for test_name, testset in data_loader_test.items():
-                stats = test_one_epoch_only_warp(model, test_warp_criterion, testset,
+                stats = test_one_epoch_warp(model, test_criterion, test_warp_criterion, testset,
                                        device, epoch, log_writer=log_writer, args=args, prefix=test_name)
                 test_stats[test_name] = stats
 
