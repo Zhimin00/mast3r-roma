@@ -489,6 +489,16 @@ def train_cnn_warp(args):
     if args.pretrained and not args.resume:
         print('Loading pretrained: ', args.pretrained)
         ckpt = torch.load(args.pretrained, map_location=device)['model']
+
+        ckpt_warp = torch.load(args.pretrained_warp, map_location=device)['model']
+        for key, value in ckpt_warp.items():
+            if key.startswith('decoder'):
+                new_key = 'downstream_head3.' + key 
+                ckpt[new_key] = value
+            elif key.startswith('encoder.cnn'):
+                new_key = key.replace('encoder', 'patch_embed')
+                ckpt[new_key] = value
+                
         filtered_ckpt = {k: v for k, v in ckpt.items() if not (
             k.startswith("downstream_head1.dpt.scratch.layer1_rn") or
             k.startswith("downstream_head1.dpt.scratch.layer2_rn") or
