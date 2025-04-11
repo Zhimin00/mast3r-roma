@@ -431,6 +431,200 @@ def train_warp(args):
 
     save_final_model(args, args.epochs, model_without_ddp, best_so_far=best_so_far)
 
+def train_cnn_warp(args):
+    misc.init_distributed_mode(args)
+    global_rank = misc.get_rank()
+    world_size = misc.get_world_size()
+
+    print("output_dir: " + args.output_dir)
+    if args.output_dir:
+        Path(args.output_dir).mkdir(parents=True, exist_ok=True)
+
+    # auto resume
+    last_ckpt_fname = os.path.join(args.output_dir, f'checkpoint-last.pth')
+    args.resume = last_ckpt_fname if os.path.isfile(last_ckpt_fname) else None
+
+    print('job dir: {}'.format(os.path.dirname(os.path.realpath(__file__))))
+    print("{}".format(args).replace(', ', ',\n'))
+
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = torch.device(device)
+
+    # fix the seed
+    seed = args.seed + misc.get_rank()
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+
+    cudnn.benchmark = not args.disable_cudnn_benchmark
+
+    # training dataset and loader
+    print('Building train dataset {:s}'.format(args.train_dataset))
+    #  dataset and loader
+    data_loader_train = build_dataset(args.train_dataset, args.batch_size, args.num_workers, test=False)
+    print('Building test dataset {:s}'.format(args.test_dataset))
+    data_loader_test = {dataset.split('(')[0]: build_dataset(dataset, args.batch_size, args.num_workers, test=True)
+                        for dataset in args.test_dataset.split('+')}
+
+    # model
+    print('Loading model: {:s}'.format(args.model))
+    model = eval(args.model)
+    print('Number of parameters: ', sum(p.numel() for p in model.parameters()))
+    print(f'>> Creating train criterion = {args.train_criterion}')
+    train_criterion = eval(args.train_criterion).to(device)
+    warp_criterion = RobustLosses(
+        ce_weight=0.01,
+        local_dist = {1:4, 2:4, 4:8, 8:8},
+        local_largest_scale=8,
+        depth_interpolation_mode=" bilinear",
+        alpha=0.5,
+        c = 1e-4,
+    )
+    print(f'>> Creating test criterion = {args.test_criterion or args.train_criterion}')
+    test_criterion = eval(args.test_criterion or args.criterion).to(device)
+    test_warp_criterion = warp_criterion
+    model.to(device)
+    model_without_ddp = model
+    print("Model = %s" % str(model_without_ddp))
+
+    if args.pretrained and not args.resume:
+        print('Loading pretrained: ', args.pretrained)
+        ckpt = torch.load(args.pretrained, map_location=device)['model']
+
+        # filtered_ckpt = {k: v for k, v in ckpt.items() if not (
+        #     k.startswith("patch_embed") or
+        #     k.startswith("enc_blocks") or
+        #     k.startswith("enc_norm")
+        # )}
+        ckpt_warp = torch.load(args.pretrained_warp, map_location=device)['model']
+        for key, value in ckpt_warp.items():
+            if key.startswith('decoder'):
+                new_key = 'downstream_head3.' + key 
+                ckpt[new_key] = value
+            elif key.startswith('encoder.cnn'):
+                new_key = key.replace('encoder', 'patch_embed')
+                ckpt[new_key] = value
+                
+        filtered_ckpt = {k: v for k, v in ckpt.items() if not (
+            k.startswith("downstream_head1.dpt.scratch.layer1_rn") or
+            k.startswith("downstream_head1.dpt.scratch.layer2_rn") or
+            k.startswith("downstream_head1.dpt.scratch.layer_rn.0") or
+            k.startswith("downstream_head1.dpt.scratch.layer_rn.1") or 
+            k.startswith("downstream_head1.dpt.act_postprocess") or 
+            k.startswith("downstream_head2.dpt.scratch.layer1_rn") or
+            k.startswith("downstream_head2.dpt.scratch.layer2_rn") or
+            k.startswith("downstream_head2.dpt.scratch.layer_rn.0") or
+            k.startswith("downstream_head2.dpt.scratch.layer_rn.1") or 
+            k.startswith("downstream_head2.dpt.act_postprocess")
+        )}
+        print(model.load_state_dict(filtered_ckpt, strict=False))
+        del ckpt
+        del filtered_ckpt  # in case it occupies memory
+
+        # print(model.load_state_dict(ckpt, strict=False))
+        # del ckpt  # in case it occupies memory
+
+    eff_batch_size = args.batch_size * args.accum_iter * misc.get_world_size()
+    if args.lr is None:  # only base_lr is specified
+        args.lr = args.blr * eff_batch_size / 256
+    print("base lr: %.2e" % (args.lr * 256 / eff_batch_size))
+    print("actual lr: %.2e" % args.lr)
+    print("accumulate grad iterations: %d" % args.accum_iter)
+    print("effective batch size: %d" % eff_batch_size)
+
+    if args.distributed:
+        model = torch.nn.parallel.DistributedDataParallel(
+            model, device_ids=[args.gpu], find_unused_parameters=True)#, static_graph=True)
+        model_without_ddp = model.module
+
+    # following timm: set wd as 0 for bias and norm layers
+    param_groups = misc.get_parameter_groups(model_without_ddp, args.weight_decay)
+    # for group in param_groups:
+    #     # Check if downstream3 parameters are in this group
+    #     if any(param in model_without_ddp.downstream_head3.parameters() for param in group['params']):
+    #         # Set the new learning rate for downstream3
+    #         group['lr'] = 1e-3  # Set the desired learning rate for downstream3
+    #         break
+
+    optimizer = torch.optim.AdamW(param_groups, lr=args.lr, betas=(0.9, 0.95))
+    print(optimizer)
+    loss_scaler = NativeScaler()
+
+    def write_log_stats(epoch, train_stats, test_stats):
+        if misc.is_main_process():
+            if log_writer is not None:
+                log_writer.flush()
+
+            log_stats = dict(epoch=epoch, **{f'train_{k}': v for k, v in train_stats.items()})
+            for test_name in data_loader_test:
+                if test_name not in test_stats:
+                    continue
+                log_stats.update({test_name + '_' + k: v for k, v in test_stats[test_name].items()})
+
+            with open(os.path.join(args.output_dir, "log.txt"), mode="a", encoding="utf-8") as f:
+                f.write(json.dumps(log_stats) + "\n")
+
+    def save_model(epoch, fname, best_so_far):
+        misc.save_model(args=args, model_without_ddp=model_without_ddp, optimizer=optimizer,
+                        loss_scaler=loss_scaler, epoch=epoch, fname=fname, best_so_far=best_so_far)
+
+    best_so_far = misc.load_model(args=args, model_without_ddp=model_without_ddp,
+                                  optimizer=optimizer, loss_scaler=loss_scaler)
+    if best_so_far is None:
+        best_so_far = float('inf')
+    if global_rank == 0 and args.output_dir is not None:
+        log_writer = SummaryWriter(log_dir=args.output_dir)
+    else:
+        log_writer = None
+
+    print(f"Start training for {args.epochs} epochs")
+    start_time = time.time()
+    train_stats = test_stats = {}
+    for epoch in range(args.start_epoch, args.epochs + 1):
+
+        # Save immediately the last checkpoint
+        if epoch > args.start_epoch:
+            if args.save_freq and epoch % args.save_freq == 0 or epoch == args.epochs:
+                save_model(epoch - 1, 'last', best_so_far)
+
+        # Test on multiple datasets
+        new_best = False
+        if (epoch > 0 and args.eval_freq > 0 and epoch % args.eval_freq == 0):
+            test_stats = {}
+            for test_name, testset in data_loader_test.items():
+                stats = test_one_epoch_warp(model, test_criterion, test_warp_criterion, testset,
+                                       device, epoch, log_writer=log_writer, args=args, prefix=test_name)
+                test_stats[test_name] = stats
+
+                # Save best of all
+                if stats['loss_med'] < best_so_far:
+                    best_so_far = stats['loss_med']
+                    new_best = True
+
+        # Save more stuff
+        write_log_stats(epoch, train_stats, test_stats)
+
+        if epoch > args.start_epoch:
+            if args.keep_freq and epoch % args.keep_freq == 0:
+                save_model(epoch - 1, str(epoch), best_so_far)
+            if new_best:
+                save_model(epoch - 1, 'best', best_so_far)
+        if epoch >= args.epochs:
+            break  # exit after writing last test to disk
+
+        # Train
+        train_stats = train_one_epoch_warp(
+            model, train_criterion, warp_criterion, data_loader_train,
+            optimizer, device, epoch, loss_scaler,
+            log_writer=log_writer,
+            args=args)
+
+    total_time = time.time() - start_time
+    total_time_str = str(datetime.timedelta(seconds=int(total_time)))
+    print('Training time {}'.format(total_time_str))
+
+    save_final_model(args, args.epochs, model_without_ddp, best_so_far=best_so_far)
+
+
 def train_only_warp(args):
     misc.init_distributed_mode(args)
     global_rank = misc.get_rank()
