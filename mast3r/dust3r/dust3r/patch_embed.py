@@ -307,7 +307,7 @@ class PatchEmbedDust3R_cnn (PatchEmbed):
         x = self.norm(x)
         cnn_feats = [feat1, feat2, feat4, feat8]
         return x, pos, cnn_feats
-    
+
 class ManyAR_PatchEmbed_cnn (PatchEmbed):
     """ Handle images with non-square aspect ratio.
         All images in the same batch have the same aspect ratio.
@@ -354,6 +354,66 @@ class ManyAR_PatchEmbed_cnn (PatchEmbed):
         
         feat1[is_landscape], feat2[is_landscape], feat4[is_landscape], feat8[is_landscape] = self.cnn(img[is_landscape])
         feat1[is_portrait], feat2[is_portrait], feat4[is_portrait], feat8[is_portrait] = self.cnn(img[is_portrait].swapaxes(-1, -2))
+        cnn_feats = [feat1, feat2, feat4, feat8]
+        return x, pos, cnn_feats
+    
+class ManyAR_PatchEmbed_cnn2 (PatchEmbed):
+    """ Handle images with non-square aspect ratio.
+        All images in the same batch have the same aspect ratio.
+        true_shape = [(height, width) ...] indicates the actual shape of each image.
+    """
+
+    def __init__(self, img_size=224, patch_size=16, in_chans=3, embed_dim=768, cnn_type1 = 'vgg', cnn_type2 = 'vgg', norm_layer=None, flatten=True):
+        self.embed_dim = embed_dim
+        super().__init__(img_size, patch_size, in_chans, embed_dim, norm_layer, flatten)
+        if cnn_type1 == 'resnet':
+            self.cnn1 = ResNet50_all()
+            self.cnn_feature_dims = [3, 64, 256, 512]
+        elif cnn_type1 == 'vgg':
+            self.cnn1 = VGG19_all()
+            self.cnn_feature_dims = [64, 128, 256, 512]
+        if cnn_type2 == 'resnet':
+            self.cnn2 = ResNet50_all()
+            self.cnn_feature_dims2 = [3, 64, 256, 512]
+        elif cnn_type2 == 'vgg':
+            self.cnn2 = VGG19_all()
+            self.cnn_feature_dims2 = [64, 128, 256, 512]
+
+    def forward(self, img, true_shape):
+        B, C, H, W = img.shape
+        assert W >= H, f'img should be in landscape mode, but got {W=} {H=}'
+        assert H % self.patch_size[0] == 0, f"Input image height ({H}) is not a multiple of patch size ({self.patch_size[0]})."
+        assert W % self.patch_size[1] == 0, f"Input image width ({W}) is not a multiple of patch size ({self.patch_size[1]})."
+        assert true_shape.shape == (B, 2), f"true_shape has the wrong shape={true_shape.shape}"
+        ns = [W * H, (W//2) * (H//2), (W//4) * (H//4), (W//8) * (H//8)]
+        # size expressed in tokens
+        W //= self.patch_size[0]
+        H //= self.patch_size[1]
+        n_tokens = H * W
+
+        height, width = true_shape.T
+        is_landscape = (width >= height)
+        is_portrait = ~is_landscape
+
+        # allocate result
+        x = img.new_zeros((B, n_tokens, self.embed_dim))
+        pos = img.new_zeros((B, n_tokens, 2), dtype=torch.int64)
+        feats = [img.new_zeros((B, ns[idx], self.cnn_feature_dims[idx])) for idx in range(len(self.cnn_feature_dims))]
+        feat1, feat2, feat4, feat8 = feats
+        cnn2_feats = [img.new_zeros((B, ns[idx], self.cnn_feature_dims[idx])) for idx in range(len(self.cnn_feature_dims))]
+        cnn2_feat1, cnn2_feat2, cnn2_feat4, cnn2_feat8 = cnn2_feats
+
+        # linear projection, transposed if necessary
+        x[is_landscape] = self.proj(img[is_landscape]).permute(0, 2, 3, 1).flatten(1, 2).float()
+        x[is_portrait] = self.proj(img[is_portrait].swapaxes(-1, -2)).permute(0, 2, 3, 1).flatten(1, 2).float()
+        pos[is_landscape] = self.position_getter(1, H, W, pos.device)
+        pos[is_portrait] = self.position_getter(1, W, H, pos.device)
+        x = self.norm(x)
+        
+        feat1[is_landscape], feat2[is_landscape], feat4[is_landscape], feat8[is_landscape] = self.cnn1(img[is_landscape])
+        feat1[is_portrait], feat2[is_portrait], feat4[is_portrait], feat8[is_portrait] = self.cnn1(img[is_portrait].swapaxes(-1, -2))
+        cnn2_feat1[is_landscape], cnn2_feat2[is_landscape], cnn2_feat4[is_landscape], cnn2_feat8[is_landscape] = self.cnn1(img[is_landscape])
+        feat1[is_portrait], feat2[is_portrait], feat4[is_portrait], feat8[is_portrait] = self.cnn1(img[is_portrait].swapaxes(-1, -2))
         cnn_feats = [feat1, feat2, feat4, feat8]
         return x, pos, cnn_feats
     
