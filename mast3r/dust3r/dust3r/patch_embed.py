@@ -284,7 +284,7 @@ class ManyAR_PatchEmbed_VGG (PatchEmbed):
     
 
 class PatchEmbedDust3R_cnn (PatchEmbed):
-    def __init__(self, img_size=224, patch_size=16, in_chans=3, embed_dim=768, cnn_type = 'resnet', norm_layer=None, flatten=True):
+    def __init__(self, img_size=224, patch_size=16, in_chans=3, embed_dim=768, cnn_type = 'vgg', norm_layer=None, flatten=True):
         self.embed_dim = embed_dim
         super().__init__(img_size, patch_size, in_chans, embed_dim, norm_layer, flatten)
         if cnn_type == 'resnet':

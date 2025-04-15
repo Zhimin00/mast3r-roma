@@ -678,14 +678,14 @@ def train_only_warp(args):
     if args.pretrained and not args.resume:
         print('Loading pretrained: ', args.pretrained)
         ckpt = torch.load(args.pretrained, map_location=device)['model']
-        ckpt_warp = torch.load(args.pretrained_warp, map_location=device)['model']
-        for key, value in ckpt_warp.items():
-            if key.startswith('decoder'):
-                new_key = 'downstream_head3.' + key 
-                ckpt[new_key] = value
-            elif key.startswith('encoder.cnn'):
-                new_key = key.replace('encoder', 'patch_embed')
-                ckpt[new_key] = value
+        # ckpt_warp = torch.load(args.pretrained_warp, map_location=device)['model']
+        # for key, value in ckpt_warp.items():
+        #     if key.startswith('decoder'):
+        #         new_key = 'downstream_head3.' + key 
+        #         ckpt[new_key] = value
+        #     elif key.startswith('encoder.cnn'):
+        #         new_key = key.replace('encoder', 'patch_embed')
+        #         ckpt[new_key] = value
         # filtered_ckpt = {k: v for k, v in ckpt.items() if not (
         #     k.startswith("patch_embed") or
         #     k.startswith("enc_blocks") or
@@ -704,7 +704,6 @@ def train_only_warp(args):
         #     k.startswith("downstream_head2.dpt.act_postprocess")
         # )}
         # print(model.load_state_dict(filtered_ckpt, strict=False))
-        # del ckpt
         # del filtered_ckpt  # in case it occupies memory
 
         print(model.load_state_dict(ckpt, strict=False))

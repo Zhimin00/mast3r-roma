@@ -37,6 +37,24 @@ def load_model(model_path, device, verbose=True):
         print(s)
     return net.to(device)
 
+def load_model_cnn(model_path, device, verbose=True):
+    if verbose:
+        print('... loading model from', model_path)
+    ckpt = torch.load(model_path, map_location='cpu')
+    args = ckpt['args'].model.replace("ManyAR_PatchEmbed_cnn", "PatchEmbedDust3R_cnn")
+    if 'landscape_only' not in args:
+        args = args[:-1] + ', landscape_only=False)'
+    else:
+        args = args.replace(" ", "").replace('landscape_only=True', 'landscape_only=False')
+    assert "landscape_only=False" in args
+    if verbose:
+        print(f"instantiating : {args}")
+    net = eval(args)
+    s = net.load_state_dict(ckpt['model'], strict=False)
+    if verbose:
+        print(s)
+    return net.to(device)
+
 
 class AsymmetricMASt3R(AsymmetricCroCo3DStereo):
     def __init__(self, desc_mode=('norm'), two_confs=False, desc_conf_mode=None, **kwargs):
@@ -105,7 +123,7 @@ class AsymmetricMASt3R_warp(AsymmetricCroCo3DStereo_cnn):
     @classmethod
     def from_pretrained(cls, pretrained_model_name_or_path, **kw):
         if os.path.isfile(pretrained_model_name_or_path):
-            return load_model(pretrained_model_name_or_path, device='cpu')
+            return load_model_cnn(pretrained_model_name_or_path, device='cpu')
         else:
             return super(AsymmetricMASt3R_warp, cls).from_pretrained(pretrained_model_name_or_path, **kw)
 
@@ -147,9 +165,9 @@ class AsymmetricMASt3R_only_warp(AsymmetricCroCo3DStereo_cnn):
     @classmethod
     def from_pretrained(cls, pretrained_model_name_or_path, **kw):
         if os.path.isfile(pretrained_model_name_or_path):
-            return load_model(pretrained_model_name_or_path, device='cpu')
+            return load_model_cnn(pretrained_model_name_or_path, device='cpu')
         else:
-            return super(AsymmetricMASt3R_warp, cls).from_pretrained(pretrained_model_name_or_path, **kw)
+            return super(AsymmetricMASt3R_only_warp, cls).from_pretrained(pretrained_model_name_or_path, **kw)
 
     def set_downstream_head(self, output_mode, head_type, landscape_only, depth_mode, conf_mode, patch_size, img_size, **kw):
         assert img_size[0] % patch_size == 0 and img_size[
