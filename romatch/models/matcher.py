@@ -1353,7 +1353,6 @@ class RegressionMatcher(nn.Module):
         return good_matches[balanced_samples], good_certainty[balanced_samples]
 
     def forward(self, batch, batched = True, upsample = False, scale_factor = 1):
-        
         feature_pyramid = self.extract_backbone_features(batch, batched=batched, upsample = upsample)
         if batched:
             f_q_pyramid = {
@@ -1371,7 +1370,21 @@ class RegressionMatcher(nn.Module):
                                 scale_factor=scale_factor)
         
         return corresps
-
+    
+    def forward_symmetric(self, batch, batched = True, upsample = False, scale_factor = 1):
+        feature_pyramid = self.extract_backbone_features(batch, batched = batched, upsample = upsample)
+        f_q_pyramid = feature_pyramid
+        f_s_pyramid = {
+            scale: torch.cat((f_scale.chunk(2)[1], f_scale.chunk(2)[0]), dim = 0)
+            for scale, f_scale in feature_pyramid.items()
+        }
+        corresps = self.decoder(f_q_pyramid, 
+                                f_s_pyramid, 
+                                upsample = upsample, 
+                                **(batch["corresps"] if "corresps" in batch else {}),
+                                scale_factor=scale_factor)
+        return corresps
+    
     def conf_from_fb_consistency(self, flow_forward, flow_backward, th = 2):
         # assumes that flow forward is of shape (..., H, W, 2)
         has_batch = False

@@ -162,6 +162,7 @@ class MegaDepth_all(BaseStereoViewDataset):
                 depthmap = load_depth(osp.join(self.ROOT, depth_path))
                 intrinsics = self.intrinsics[scene_name][im_id].astype(np.float32)
                 camera_pose = self.poses[scene_name][im_id].astype(np.float32)
+                camera_pose = np.linalg.inv(camera_pose)
 
             except Exception as e:
                 raise OSError(f'cannot load {img_path}, got exception {e}')

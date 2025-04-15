@@ -802,6 +802,40 @@ class PixelwiseTaskWithDPT_catwarp(PixelwiseTaskWithDPT):
         out['feat16'] = feat16
         return out
 
+class Only_Warp(nn.Module):
+    def __init__(
+            self, net
+    ):
+        super().__init__()
+        patch_size = net.patch_embed.patch_size
+        if isinstance(patch_size, tuple):
+            assert len(patch_size) == 2 and isinstance(patch_size[0], int) and isinstance(
+                patch_size[1], int), "What is your patchsize format? Expected a single int or a tuple of two ints."
+            assert patch_size[0] == patch_size[1], "Error, non square patches not managed"
+            patch_size = patch_size[0]
+        self.patch_size = patch_size
+        net.dpt = None
+
+    def forward(self, decout, cnn_feats, img_shape):
+        H, W = img_shape[-2:]
+        N_Hs1 = [H // 1, H // 2, H // 4, H // 8]
+        N_Ws1 = [W // 1, W // 2, W // 4, W // 8]
+        cnn_feats = [rearrange(cnn_feats[i], 'b (nh nw) c -> b nh nw c', nh = N_Hs1[i], nw=N_Ws1[i]) for i in range(len(N_Hs1))]
+        feat1, feat2, feat4, feat8 = cnn_feats
+
+        enc_output1, dec_output1 = decout[0], decout[-1]
+        feat16 = torch.cat([enc_output1, dec_output1], dim=-1)
+        #feat16 = decout[-1]
+        B, S, D = feat16.shape
+        feat16 = feat16.view(B, H // self.patch_size, W // self.patch_size, D)
+        out = {}
+        out['feat1'] = feat1
+        out['feat2'] = feat2
+        out['feat4'] = feat4
+        out['feat8'] = feat8
+        out['feat16'] = feat16
+        return out
+
 
 def mast3r_head_factory(head_type, output_mode, net, has_conf=False):
     """" build a prediction head for the decoder 
@@ -861,6 +895,9 @@ def mast3r_head_factory(head_type, output_mode, net, has_conf=False):
                                                depth_mode=net.depth_mode,
                                                conf_mode=net.conf_mode,
                                                head_type='regression')
+    elif head_type == 'only_warp':
+        return Only_Warp(net)
+
     elif head_type == 'warp':       
         gp_dim = 512
         feat_dim = 512

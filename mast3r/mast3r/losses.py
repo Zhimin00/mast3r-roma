@@ -621,7 +621,7 @@ class RobustLosses(nn.Module):
                 b, _, h, w = scale_certainty.shape
             T1 = view1['camera_pose']
             T2 = view2['camera_pose']
-            T_1to2 = T2 @ torch.linalg.inv(T1)
+            T_1to2 = torch.linalg.inv(T2) @ T1
             gt_warp, gt_prob = get_gt_warp(                
             view1["depthmap"],
             view2["depthmap"],
