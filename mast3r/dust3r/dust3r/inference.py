@@ -40,13 +40,15 @@ def loss_of_one_batch(batch, model, criterion, device, symmetrize_batch=False, u
     #pdb.set_trace()
     if symmetrize_batch:
         view1, view2 = make_batch_symmetric(batch)
+    import warnings
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=FutureWarning)
+        with torch.cuda.amp.autocast(enabled=bool(use_amp)):
+            pred1, pred2 = model(view1, view2)
 
-    with torch.cuda.amp.autocast(enabled=bool(use_amp)):
-        pred1, pred2 = model(view1, view2)
-
-        # loss is supposed to be symmetric
-        with torch.cuda.amp.autocast(enabled=False):
-            loss = criterion(view1, view2, pred1, pred2) if criterion is not None else None
+            # loss is supposed to be symmetric
+            with torch.cuda.amp.autocast(enabled=False):
+                loss = criterion(view1, view2, pred1, pred2) if criterion is not None else None
 
     result = dict(view1=view1, view2=view2, pred1=pred1, pred2=pred2, loss=loss)
     return result[ret] if ret else result
@@ -62,17 +64,19 @@ def loss_of_one_batch_warp(batch, model, criterion, warp_criterion, device, symm
     #pdb.set_trace()
     if symmetrize_batch:
         view1, view2 = make_batch_symmetric(batch)
+    import warnings
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=FutureWarning)
+        with torch.cuda.amp.autocast(enabled=bool(use_amp)):
+            pred1, pred2, correps = model(view1, view2)
 
-    with torch.cuda.amp.autocast(enabled=bool(use_amp)):
-        pred1, pred2, correps = model(view1, view2)
-
-        # loss is supposed to be symmetric
-        with torch.cuda.amp.autocast(enabled=False):
-            loss_value, loss_details = criterion(view1, view2, pred1, pred2) if criterion is not None else None
-            loss_warp = warp_criterion(view1, view2, correps) if warp_criterion is not None else None
-            tot_loss = float(loss_value) + loss_warp
-            loss_details['Warploss'] = loss_warp
-            loss = (tot_loss, loss_details)
+            # loss is supposed to be symmetric
+            with torch.cuda.amp.autocast(enabled=False):
+                loss_value, loss_details = criterion(view1, view2, pred1, pred2) if criterion is not None else None
+                loss_warp = warp_criterion(view1, view2, correps) if warp_criterion is not None else None
+                tot_loss = float(loss_value) + loss_warp
+                loss_details['Warploss'] = loss_warp
+                loss = (tot_loss, loss_details)
     result = dict(view1=view1, view2=view2, pred1=pred1, pred2=pred2, loss=loss, correps=correps)
     return result[ret] if ret else result
 

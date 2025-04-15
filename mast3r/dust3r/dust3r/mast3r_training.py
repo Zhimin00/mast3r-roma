@@ -798,8 +798,7 @@ def train_only_warp(args):
             break  # exit after writing last test to disk
 
         # Train
-        train_stats = train_one_epoch_only_warp(
-            model, warp_criterion, data_loader_train,
+        train_stats = train_one_epoch_warp(model, train_criterion, warp_criterion, data_loader_train,
             optimizer, device, epoch, loss_scaler,
             log_writer=log_writer,
             args=args)
