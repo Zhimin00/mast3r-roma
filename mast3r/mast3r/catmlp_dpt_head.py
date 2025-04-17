@@ -782,7 +782,6 @@ class PixelwiseTaskWithDPT_catwarp(PixelwiseTaskWithDPT):
         if self.postprocess:
             out = self.postprocess(out, self.depth_mode, self.conf_mode)
         
-        
         H, W = img_shape[-2:]
         N_Hs1 = [H // 1, H // 2, H // 4, H // 8]
         N_Ws1 = [W // 1, W // 2, W // 4, W // 8]
