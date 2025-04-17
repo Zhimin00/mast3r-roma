@@ -97,14 +97,10 @@ def loss_of_one_batch_only_warp(batch, model, warp_criterion, device, symmetrize
         warnings.filterwarnings("ignore", category=FutureWarning)
         with torch.cuda.amp.autocast(enabled=bool(use_amp)):
             pred1, pred2, correps = model(view1, view2)
-            print('forward memory: ', torch.cuda.memory_allocated() / MB)
-            print('forward cached memory: ', torch.cuda.memory_reserved() / MB)
             # loss is supposed to be symmetric
             with torch.cuda.amp.autocast(enabled=False):
                 loss_warp = warp_criterion(view1, view2, correps) if warp_criterion is not None else None
                 loss = (loss_warp, dict(Warploss = loss_warp))
-            print('loss forward memory: ', torch.cuda.memory_allocated() / MB)
-            print('loss forward cached memory: ', torch.cuda.memory_reserved() / MB)
     result = dict(view1=view1, view2=view2, pred1=pred1, pred2=pred2, loss=loss, correps=correps)
     return result[ret] if ret else result
 
