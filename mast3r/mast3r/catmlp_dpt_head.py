@@ -789,7 +789,7 @@ class PixelwiseTaskWithDPT_catwarp(PixelwiseTaskWithDPT):
             nh, nw = N_Hs1[i], N_Ws1[i]
             feat = rearrange(cnn_feats[i], 'b (nh nw) c -> b nh nw c', nh=nh, nw=nw)
             out[f'feat{s}'] = feat
-            del feat, cnn_feats[i]
+            del feat
             torch.cuda.empty_cache()
 
         feat16 = torch.cat([decout[0], decout[-1]], dim=-1)
