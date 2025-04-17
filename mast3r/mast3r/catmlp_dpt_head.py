@@ -785,20 +785,21 @@ class PixelwiseTaskWithDPT_catwarp(PixelwiseTaskWithDPT):
         H, W = img_shape[-2:]
         N_Hs1 = [H // 1, H // 2, H // 4, H // 8]
         N_Ws1 = [W // 1, W // 2, W // 4, W // 8]
-        cnn_feats = [rearrange(cnn_feats[i], 'b (nh nw) c -> b nh nw c', nh = N_Hs1[i], nw=N_Ws1[i]) for i in range(len(N_Hs1))]
+        for i, s in enumerate([1, 2, 4, 8]):
+            nh, nw = N_Hs1[i], N_Ws1[i]
+            feat = rearrange(cnn_feats[i], 'b (nh nw) c -> b nh nw c', nh=nh, nw=nw)
+            out[f'feat{s}'] = feat
+            del feat, cnn_feats[i]
+            torch.cuda.empty_cache()
 
         feat16 = torch.cat([decout[0], decout[-1]], dim=-1)
         del decout
+        torch.cuda.empty_cache()
         #feat16 = decout[-1]
         B, S, D = feat16.shape
         feat16 = feat16.view(B, H // self.patch_size, W // self.patch_size, D)
-
-        out['feat1'] = cnn_feats[0]
-        out['feat2'] = cnn_feats[1]
-        out['feat4'] = cnn_feats[2]
-        out['feat8'] = cnn_feats[3]
         out['feat16'] = feat16
-        del cnn_feats, feat16
+        
         return out
 
 class Only_Warp(nn.Module):
@@ -819,20 +820,21 @@ class Only_Warp(nn.Module):
         H, W = img_shape[-2:]
         N_Hs1 = [H // 1, H // 2, H // 4, H // 8]
         N_Ws1 = [W // 1, W // 2, W // 4, W // 8]
-        cnn_feats = [rearrange(cnn_feats[i], 'b (nh nw) c -> b nh nw c', nh = N_Hs1[i], nw=N_Ws1[i]) for i in range(len(N_Hs1))]
-
+        out = {}
+        for i, s in enumerate([1, 2, 4, 8]):
+            nh, nw = N_Hs1[i], N_Ws1[i]
+            feat = rearrange(cnn_feats[i], 'b (nh nw) c -> b nh nw c', nh=nh, nw=nw)
+            out[f'feat{s}'] = feat
+            del feat, cnn_feats[i]
+            torch.cuda.empty_cache()
         feat16 = torch.cat([decout[0], decout[-1]], dim=-1)
         del decout
+        torch.cuda.empty_cache()
         #feat16 = decout[-1]
         B, S, D = feat16.shape
         feat16 = feat16.view(B, H // self.patch_size, W // self.patch_size, D)
-        return {
-        'feat1': cnn_feats[0],
-        'feat2': cnn_feats[1],
-        'feat4': cnn_feats[2],
-        'feat8': cnn_feats[3],
-        'feat16': feat16
-        }
+        out['feat16'] = feat16
+        return out
 
 def mast3r_head_factory(head_type, output_mode, net, has_conf=False):
     """" build a prediction head for the decoder 
