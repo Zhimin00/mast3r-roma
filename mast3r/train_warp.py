@@ -33,11 +33,6 @@ dust3r.datasets.WildRGBD = WildRGBD
 from dust3r.training import get_args_parser as dust3r_get_args_parser  # noqa
 from dust3r.mast3r_training import train_warp  # noqa
 
-import os
-os.environ["NCCL_BLOCKING_WAIT"] = "1"
-os.environ["NCCL_ASYNC_ERROR_HANDLING"] = "1"
-os.environ["NCCL_TIMEOUT"] = "1800"
-
 def get_args_parser():
     parser = dust3r_get_args_parser()
     # change defaults
