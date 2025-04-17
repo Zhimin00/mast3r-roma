@@ -398,10 +398,10 @@ def get_parameter_groups(model, weight_decay, layer_decay=1.0, skip_list=(), no_
         layer_decay_values = list(layer_decay ** (num_layers + 1 - i) for i in range(num_layers + 2))
         
     for name, param in model.named_parameters():
-        if not param.requires_grad or "downstreamhead3" in name:
+        if not param.requires_grad:
             continue  # frozen weights
-        if 'downstreamhead3' in name:
-            group_name = "downstreamhead3"
+        if "downstream_head3" in name:
+            group_name = "warphead"
             this_weight_decay = 0.01
             layer_id = 0
             scale = 1.
