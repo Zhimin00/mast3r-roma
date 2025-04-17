@@ -250,15 +250,9 @@ class NativeScalerWithGradNormCount:
         self._scaler = torch.cuda.amp.GradScaler(enabled=enabled)
 
     def __call__(self, loss, optimizer, clip_grad=None, parameters=None, create_graph=False, update_grad=True):
-        torch.distributed.barrier()
-        if torch.isnan(loss) or torch.isinf(loss):
-            print(f"[Rank {dist.get_rank()}] Bad loss detected, skipping step.")
-            return None
-        try:
-            self._scaler.scale(loss).backward(create_graph=create_graph)
-        except Exception as e:
-            print(f"[Rank {dist.get_rank()}] Exception during backward: {e}")
-            raise
+
+        self._scaler.scale(loss).backward(create_graph=create_graph)
+        
         if update_grad:
             if clip_grad is not None:
                 assert parameters is not None
