@@ -159,9 +159,8 @@ class AsymmetricMASt3R_warp(AsymmetricCroCo3DStereo_cnn):
             key = f'feat{s}'
             feat1_pyramid[s] = res1[key].permute(0, 3, 1, 2).contiguous()
             feat2_pyramid[s] = res2[key].permute(0, 3, 1, 2).contiguous()
-            del res1[key]  # delete right after use
+            del res1[key]  
             del res2[key]
-            torch.cuda.empty_cache()
         correps = self.downstream_head3(feat1_pyramid, feat2_pyramid)
         return res1, res2, correps
 
@@ -211,7 +210,6 @@ class AsymmetricMASt3R_only_warp(AsymmetricCroCo3DStereo_cnn):
             feat2_pyramid[s] = res2[key].permute(0, 3, 1, 2).contiguous()
             del res1[key]  
             del res2[key]
-            torch.cuda.empty_cache()
         correps = self.downstream_head3(feat1_pyramid, feat2_pyramid)
         return res1, res2, correps
 

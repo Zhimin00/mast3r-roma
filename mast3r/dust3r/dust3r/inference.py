@@ -91,7 +91,6 @@ def loss_of_one_batch_only_warp(batch, model, warp_criterion, device, symmetrize
     #pdb.set_trace()
     if symmetrize_batch:
         view1, view2 = make_batch_symmetric(batch)
-    MB =  1024.0 * 1024.0
     import warnings
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", category=FutureWarning)

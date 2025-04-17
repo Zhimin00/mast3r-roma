@@ -790,16 +790,12 @@ class PixelwiseTaskWithDPT_catwarp(PixelwiseTaskWithDPT):
             feat = rearrange(cnn_feats[i], 'b (nh nw) c -> b nh nw c', nh=nh, nw=nw)
             out[f'feat{s}'] = feat
             del feat
-            torch.cuda.empty_cache()
-
         feat16 = torch.cat([decout[0], decout[-1]], dim=-1)
         del decout
-        torch.cuda.empty_cache()
         #feat16 = decout[-1]
         B, S, D = feat16.shape
         feat16 = feat16.view(B, H // self.patch_size, W // self.patch_size, D)
         out['feat16'] = feat16
-        
         return out
 
 class Only_Warp(nn.Module):
@@ -826,10 +822,8 @@ class Only_Warp(nn.Module):
             feat = rearrange(cnn_feats[i], 'b (nh nw) c -> b nh nw c', nh=nh, nw=nw)
             out[f'feat{s}'] = feat
             del feat
-            torch.cuda.empty_cache()
         feat16 = torch.cat([decout[0], decout[-1]], dim=-1)
         del decout
-        torch.cuda.empty_cache()
         #feat16 = decout[-1]
         B, S, D = feat16.shape
         feat16 = feat16.view(B, H // self.patch_size, W // self.patch_size, D)
