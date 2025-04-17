@@ -16,6 +16,7 @@ import numpy as np
 
 from dust3r.datasets.base.base_stereo_view_dataset import BaseStereoViewDataset, BaseStereoViewDataset2
 from dust3r.utils.image import imread_cv2
+import torch.distributed as dist
 
 class Co3d(BaseStereoViewDataset):
     def __init__(self, mask_bg=True, *args, ROOT, **kwargs):
@@ -84,13 +85,17 @@ class Co3d(BaseStereoViewDataset):
 
             if self.invalidate[obj, instance][resolution][im_idx]:
                 # search for a valid image
+                found_valid = False
                 random_direction = 2 * rng.choice(2) - 1
                 for offset in range(1, len(image_pool)):
                     tentative_im_idx = (im_idx + (random_direction * offset)) % len(image_pool)
                     if not self.invalidate[obj, instance][resolution][tentative_im_idx]:
                         im_idx = tentative_im_idx
+                        found_valid = True
                         break
-
+                if not found_valid:
+                    print(f"[Rank {dist.get_rank()}] No valid image found for obj={obj}, instance={instance}, resolution={resolution}. Skipping.")
+                    continue
             view_idx = image_pool[im_idx]
 
             impath = self._get_impath(obj, instance, view_idx)

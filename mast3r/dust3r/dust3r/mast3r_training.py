@@ -294,10 +294,11 @@ def train_warp(args):
         depth_interpolation_mode=" bilinear",
         alpha=0.5,
         c = 1e-4,
-    )
+    ).to(device)
+    
     print(f'>> Creating test criterion = {args.test_criterion or args.train_criterion}')
     test_criterion = eval(args.test_criterion or args.criterion).to(device)
-    test_warp_criterion = warp_criterion
+    test_warp_criterion = warp_criterion.to(device)
     model.to(device)
     model_without_ddp = model
     print("Model = %s" % str(model_without_ddp))
@@ -456,10 +457,10 @@ def train_cnn_warp(args):
         depth_interpolation_mode=" bilinear",
         alpha=0.5,
         c = 1e-4,
-    )
+    ).to(device)
     print(f'>> Creating test criterion = {args.test_criterion or args.train_criterion}')
     test_criterion = eval(args.test_criterion or args.criterion).to(device)
-    test_warp_criterion = warp_criterion
+    test_warp_criterion = warp_criterion.to(device)
     model.to(device)
     model_without_ddp = model
     print("Model = %s" % str(model_without_ddp))
@@ -648,8 +649,8 @@ def train_only_warp(args):
         depth_interpolation_mode=" bilinear",
         alpha=0.5,
         c = 1e-4,
-    )
-    test_warp_criterion = warp_criterion
+    ).to(device)
+    test_warp_criterion = warp_criterion.to(device)
     model.to(device)
     model_without_ddp = model
     print("Model = %s" % str(model_without_ddp))
@@ -858,7 +859,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             sys.exit(1)
 
         loss /= accum_iter
-        loss_scaler(loss, optimizer, parameters=model.parameters(),
+        loss_scaler(loss, optimizer, clip_grad=5.0, parameters=model.parameters(),
                     update_grad=(data_iter_step + 1) % accum_iter == 0)
         if (data_iter_step + 1) % accum_iter == 0:
             optimizer.zero_grad()
@@ -931,7 +932,7 @@ def train_one_epoch_warp(model: torch.nn.Module, criterion: torch.nn.Module, war
             sys.exit(1)
 
         loss /= accum_iter
-        loss_scaler(loss, optimizer, parameters=model.parameters(),
+        loss_scaler(loss, optimizer, clip_grad = 5.0, parameters=model.parameters(),
                     update_grad=(data_iter_step + 1) % accum_iter == 0)
         if (data_iter_step + 1) % accum_iter == 0:
             optimizer.zero_grad()
@@ -1004,7 +1005,7 @@ def train_one_epoch_only_warp(model: torch.nn.Module, warp_criterion: torch.nn.M
             sys.exit(1)
 
         loss /= accum_iter
-        loss_scaler(loss, optimizer, parameters=model.parameters(),
+        loss_scaler(loss, optimizer, clip_grad=5.0, parameters=model.parameters(),
                     update_grad=(data_iter_step + 1) % accum_iter == 0)
         if (data_iter_step + 1) % accum_iter == 0:
             optimizer.zero_grad()
