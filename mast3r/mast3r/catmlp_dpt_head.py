@@ -786,21 +786,19 @@ class PixelwiseTaskWithDPT_catwarp(PixelwiseTaskWithDPT):
         N_Hs1 = [H // 1, H // 2, H // 4, H // 8]
         N_Ws1 = [W // 1, W // 2, W // 4, W // 8]
         cnn_feats = [rearrange(cnn_feats[i], 'b (nh nw) c -> b nh nw c', nh = N_Hs1[i], nw=N_Ws1[i]) for i in range(len(N_Hs1))]
-        feat1, feat2, feat4, feat8 = cnn_feats
-        del cnn_feats
 
-        enc_output1, dec_output1 = decout[0], decout[-1]
-        feat16 = torch.cat([enc_output1, dec_output1], dim=-1)
-        del decout, enc_output1, dec_output1
+        feat16 = torch.cat([decout[0], decout[-1]], dim=-1)
+        del decout
         #feat16 = decout[-1]
         B, S, D = feat16.shape
         feat16 = feat16.view(B, H // self.patch_size, W // self.patch_size, D)
 
-        out['feat1'] = feat1
-        out['feat2'] = feat2
-        out['feat4'] = feat4
-        out['feat8'] = feat8
+        out['feat1'] = cnn_feats[0]
+        out['feat2'] = cnn_feats[1]
+        out['feat4'] = cnn_feats[2]
+        out['feat8'] = cnn_feats[3]
         out['feat16'] = feat16
+        del cnn_feats, feat16
         return out
 
 class Only_Warp(nn.Module):
@@ -822,20 +820,17 @@ class Only_Warp(nn.Module):
         N_Hs1 = [H // 1, H // 2, H // 4, H // 8]
         N_Ws1 = [W // 1, W // 2, W // 4, W // 8]
         cnn_feats = [rearrange(cnn_feats[i], 'b (nh nw) c -> b nh nw c', nh = N_Hs1[i], nw=N_Ws1[i]) for i in range(len(N_Hs1))]
-        feat1, feat2, feat4, feat8 = cnn_feats
-        del cnn_feats
 
-        enc_output1, dec_output1 = decout[0], decout[-1]
-        feat16 = torch.cat([enc_output1, dec_output1], dim=-1)
-        del decout, enc_output1, dec_output1
+        feat16 = torch.cat([decout[0], decout[-1]], dim=-1)
+        del decout
         #feat16 = decout[-1]
         B, S, D = feat16.shape
         feat16 = feat16.view(B, H // self.patch_size, W // self.patch_size, D)
         return {
-        'feat1': feat1,
-        'feat2': feat2,
-        'feat4': feat4,
-        'feat8': feat8,
+        'feat1': cnn_feats[0],
+        'feat2': cnn_feats[1],
+        'feat4': cnn_feats[2],
+        'feat8': cnn_feats[3],
         'feat16': feat16
         }
 

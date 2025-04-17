@@ -1086,6 +1086,7 @@ def test_one_epoch_warp(model: torch.nn.Module, criterion: torch.nn.Module, warp
 
     return results
 
+@torch.no_grad()
 def test_one_epoch_only_warp(model: torch.nn.Module, warp_criterion: torch.nn.Module,
                    data_loader: Sized, device: torch.device, epoch: int,
                    args, log_writer=None, prefix='test'):
