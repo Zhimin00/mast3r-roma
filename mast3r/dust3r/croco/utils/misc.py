@@ -385,7 +385,7 @@ def _get_num_layer_for_vit(var_name, enc_depth, dec_depth):
     else:
         raise NotImplementedError(var_name)
 
-def get_parameter_groups(model, weight_decay, layer_decay=1.0, skip_list=(), no_lr_scale_list=[]):
+def get_parameter_groups(model, lr, weight_decay, layer_decay=1.0, skip_list=(), no_lr_scale_list=[]):
     parameter_group_names = {}
     parameter_group_vars = {}
     enc_depth, dec_depth = None, None
@@ -410,11 +410,33 @@ def get_parameter_groups(model, weight_decay, layer_decay=1.0, skip_list=(), no_
                     "weight_decay": this_weight_decay,
                     "params": [],
                     "lr_scale": scale,
+                    "lr": 1e-4,
                 }
                 parameter_group_vars[group_name] = {
                     "weight_decay": this_weight_decay,
                     "params": [],
                     "lr_scale": scale,
+                    "lr": 1e-4,
+                }
+            parameter_group_vars[group_name]["params"].append(param)
+            parameter_group_names[group_name]["params"].append(name)
+        elif "cnn" in name:
+            group_name = "cnn"
+            this_weight_decay = 0.01
+            layer_id = 0
+            scale = 1.
+            if group_name not in parameter_group_names:
+                parameter_group_names[group_name] = {
+                    "weight_decay": this_weight_decay,
+                    "params": [],
+                    "lr_scale": scale,
+                    "lr": 5e-6,
+                }
+                parameter_group_vars[group_name] = {
+                    "weight_decay": this_weight_decay,
+                    "params": [],
+                    "lr_scale": scale,
+                    "lr": 5e-6,
                 }
             parameter_group_vars[group_name]["params"].append(param)
             parameter_group_names[group_name]["params"].append(name)
@@ -448,12 +470,14 @@ def get_parameter_groups(model, weight_decay, layer_decay=1.0, skip_list=(), no_
                 parameter_group_names[group_name] = {
                     "weight_decay": this_weight_decay,
                     "params": [],
-                    "lr_scale": scale
+                    "lr_scale": scale,
+                    "lr": lr,
                 }
                 parameter_group_vars[group_name] = {
                     "weight_decay": this_weight_decay,
                     "params": [],
-                    "lr_scale": scale
+                    "lr_scale": scale,
+                    "lr": lr,
                 }
             parameter_group_vars[group_name]["params"].append(param)
             parameter_group_names[group_name]["params"].append(name)
