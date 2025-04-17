@@ -93,9 +93,9 @@ class Co3d(BaseStereoViewDataset):
                         im_idx = tentative_im_idx
                         found_valid = True
                         break
-                if not found_valid:
-                    print(f"[Rank {dist.get_rank()}] No valid image found for obj={obj}, instance={instance}, resolution={resolution}. Skipping.")
-                    continue
+            if not found_valid:
+                print(f"[Rank {dist.get_rank()}] No valid image found for obj={obj}, instance={instance}, resolution={resolution}. Skipping.")
+                continue
             view_idx = image_pool[im_idx]
 
             impath = self._get_impath(obj, instance, view_idx)
