@@ -291,7 +291,7 @@ torchrun --nproc_per_node=4 train_warp.py \
 
 tmux 6 c007 running
 torchrun --nproc_per_node=4 train_onlywarp.py \
-    --train_dataset "10_000 @ Co3d(split='train',mask_bg='rand',ROOT='/home/cpeng26/scratchrchella4/data/co3d_processed',resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], aug_crop=256, aug_monocular=0.005, transform=ColorJitter, n_corres=8192, nneg=0.5)" \
+    --train_dataset "10_000 @ Co3d(split='train',mask_bg='rand',ROOT='/home/cpeng26/scratchrchella4/data/co3d_subset_processed',resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], aug_crop=256, aug_monocular=0.005, transform=ColorJitter, n_corres=8192, nneg=0.5)" \
     --test_dataset "Habitat(1_000, split='val', ROOT='/home/cpeng26/scratchrchella4/data/habitat_processed', resolution=(512,384), seed=777, n_corres=1024) + 1_000 @ BlendedMVS(split='val', ROOT='/home/cpeng26/scratchrchella4/data/blendedmvs_processed', resolution=(512,384), seed=777, n_corres=1024) + 1_000 @ MegaDepth(split='val',  ROOT='/home/cpeng26/scratchrchella4/data/megadepth_dataset_processed', resolution=(512,336), seed=777, n_corres=1024) + 1_000 @ Co3d(split='test', mask_bg='rand', ROOT='/home/cpeng26/scratchrchella4/data/co3d_subset_processed', resolution=(512,384), seed=777, n_corres=1024)" \
     --model "AsymmetricMASt3R_only_warp(pos_embed='RoPE100', patch_embed_cls='ManyAR_PatchEmbed_cnn', cnn_type='vgg', img_size=(512, 512), head_type='only_warp', output_mode='pts3d', depth_mode=('exp', -inf, inf), conf_mode=('exp', 1, inf), enc_embed_dim=1024, enc_depth=24, enc_num_heads=16, dec_embed_dim=768, dec_depth=12, dec_num_heads=12)" \
     --train_criterion "ConfLoss(Regr3D(L21, norm_mode='?avg_dis', loss_in_log=False), alpha=0.2)" \

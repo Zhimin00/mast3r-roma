@@ -12,6 +12,13 @@ from .staticthings3d import StaticThings3D, StaticThings3D2  # noqa
 from .waymo import Waymo  # noqa
 from .wildrgbd import WildRGBD, WildRGBD2  # noqa
 import pdb
+from torch.utils.data._utils.collate import default_collate
+
+def safe_collate_fn(batch):
+    batch = [b for b in batch if b is not None]
+    if len(batch) == 0:
+        return None
+    return default_collate(batch)
 
 def get_data_loader(dataset, batch_size, num_workers=8, shuffle=True, drop_last=True, pin_mem=True):
     import torch
@@ -44,6 +51,7 @@ def get_data_loader(dataset, batch_size, num_workers=8, shuffle=True, drop_last=
         num_workers=num_workers,
         pin_memory=pin_mem,
         drop_last=drop_last,
+        collate_fn=safe_collate_fn,
     )
 
     return data_loader

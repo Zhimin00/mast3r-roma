@@ -78,7 +78,11 @@ class BaseStereoViewDataset (EasyDataset):
         # over-loaded code
         resolution = self._resolutions[ar_idx]  # DO NOT CHANGE THIS (compatible with BatchedRandomSampler)
         views = self._get_views(idx, resolution, self._rng)
-        assert len(views) == self.num_views
+
+        if len(views) < self.num_views:
+            print(f"Not enough valid views found for idx={idx}, only got {len(views)}.")
+            return None
+        #assert len(views) == self.num_views
 
         # check data-types
         for v, view in enumerate(views):

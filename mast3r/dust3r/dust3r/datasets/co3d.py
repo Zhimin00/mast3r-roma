@@ -80,8 +80,12 @@ class Co3d(BaseStereoViewDataset):
         views = []
         imgs_idxs = [max(0, min(im_idx + rng.integers(-4, 5), last)) for im_idx in [im2_idx, im1_idx]]
         imgs_idxs = deque(imgs_idxs)
-        while len(imgs_idxs) > 0:  # some images (few) have zero depth
+        max_attempts = 10 * self.num_views
+        attempts = 0
+        while len(views) < self.num_views and attempts < max_attempts and len(imgs_idxs) > 0:  # some images (few) have zero depth
             im_idx = imgs_idxs.pop()
+            attempts += 1
+            found_valid = True
 
             if self.invalidate[obj, instance][resolution][im_idx]:
                 # search for a valid image
@@ -97,48 +101,52 @@ class Co3d(BaseStereoViewDataset):
                 print(f"[Rank {dist.get_rank()}] No valid image found for obj={obj}, instance={instance}, resolution={resolution}. Skipping.")
                 continue
             view_idx = image_pool[im_idx]
+            try:
+                impath = self._get_impath(obj, instance, view_idx)
+                depthpath = self._get_depthpath(obj, instance, view_idx)
 
-            impath = self._get_impath(obj, instance, view_idx)
-            depthpath = self._get_depthpath(obj, instance, view_idx)
+                # load camera params
+                metadata_path = self._get_metadatapath(obj, instance, view_idx)
+                input_metadata = np.load(metadata_path)
+                camera_pose = input_metadata['camera_pose'].astype(np.float32)
+                intrinsics = input_metadata['camera_intrinsics'].astype(np.float32)
 
-            # load camera params
-            metadata_path = self._get_metadatapath(obj, instance, view_idx)
-            input_metadata = np.load(metadata_path)
-            camera_pose = input_metadata['camera_pose'].astype(np.float32)
-            intrinsics = input_metadata['camera_intrinsics'].astype(np.float32)
+                # load image and depth
+                rgb_image = imread_cv2(impath)
+                depthmap = self._read_depthmap(depthpath, input_metadata)
 
-            # load image and depth
-            rgb_image = imread_cv2(impath)
-            depthmap = self._read_depthmap(depthpath, input_metadata)
+                if mask_bg:
+                    # load object mask
+                    maskpath = self._get_maskpath(obj, instance, view_idx)
+                    maskmap = imread_cv2(maskpath, cv2.IMREAD_UNCHANGED).astype(np.float32)
+                    maskmap = (maskmap / 255.0) > 0.1
 
-            if mask_bg:
-                # load object mask
-                maskpath = self._get_maskpath(obj, instance, view_idx)
-                maskmap = imread_cv2(maskpath, cv2.IMREAD_UNCHANGED).astype(np.float32)
-                maskmap = (maskmap / 255.0) > 0.1
+                    # update the depthmap with mask
+                    depthmap *= maskmap
 
-                # update the depthmap with mask
-                depthmap *= maskmap
+                rgb_image, depthmap, intrinsics = self._crop_resize_if_necessary(
+                    rgb_image, depthmap, intrinsics, resolution, rng=rng, info=impath)
 
-            rgb_image, depthmap, intrinsics = self._crop_resize_if_necessary(
-                rgb_image, depthmap, intrinsics, resolution, rng=rng, info=impath)
+                num_valid = (depthmap > 0.0).sum()
+                if num_valid == 0:
+                    # problem, invalidate image and retry
+                    self.invalidate[obj, instance][resolution][im_idx] = True
+                    imgs_idxs.append(im_idx)
+                    continue
 
-            num_valid = (depthmap > 0.0).sum()
-            if num_valid == 0:
-                # problem, invalidate image and retry
+                views.append(dict(
+                    img=rgb_image,
+                    depthmap=depthmap,
+                    camera_pose=camera_pose,
+                    camera_intrinsics=intrinsics,
+                    dataset=self.dataset_label,
+                    label=osp.join(obj, instance),
+                    instance=osp.split(impath)[1],
+                ))
+            except Exception as e:
+                print(f"[Rank {dist.get_rank()}] Error loading view: {e}")
                 self.invalidate[obj, instance][resolution][im_idx] = True
-                imgs_idxs.append(im_idx)
                 continue
-
-            views.append(dict(
-                img=rgb_image,
-                depthmap=depthmap,
-                camera_pose=camera_pose,
-                camera_intrinsics=intrinsics,
-                dataset=self.dataset_label,
-                label=osp.join(obj, instance),
-                instance=osp.split(impath)[1],
-            ))
         return views
 
 class Co3d2(BaseStereoViewDataset2):

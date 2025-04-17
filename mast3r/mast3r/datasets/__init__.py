@@ -15,7 +15,13 @@ from dust3r.datasets.wildrgbd import WildRGBD as DUSt3R_WildRGBD  # noqa
 from dust3r.datasets.habitat import Habitat as DUSt3R_Habitat
 from dust3r.datasets.utils.transforms import *
 from dust3r.datasets.base.batched_sampler import BatchedRandomSampler 
+from torch.utils.data._utils.collate import default_collate
 
+def safe_collate_fn(batch):
+    batch = [b for b in batch if b is not None]
+    if len(batch) == 0:
+        return None
+    return default_collate(batch)
 
 class ARKitScenes(DUSt3R_ARKitScenes, MASt3RBaseStereoViewDataset):
     def __init__(self, *args, split, ROOT, **kwargs):
@@ -104,6 +110,7 @@ def get_data_loader(dataset, batch_size, num_workers=8, shuffle=True, drop_last=
         num_workers=num_workers,
         pin_memory=pin_mem,
         drop_last=drop_last,
+        collate_fn=safe_collate_fn,
     )
 
     return data_loader
