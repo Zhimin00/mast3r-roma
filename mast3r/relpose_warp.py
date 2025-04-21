@@ -1054,6 +1054,7 @@ if __name__ == '__main__':
     else:
         weights_path = "naver/" + args.model_name
     model = AsymmetricMASt3R_only_warp.from_pretrained(weights_path).to(args.device)
+    #model = AsymmetricMASt3R.from_pretrained(weights_path).to(args.device)
     if args.use_tensorrt:
         optimize_model(model, device)
     fast_nn_params = dict(device=device, dist='dot', block_size=2**13)

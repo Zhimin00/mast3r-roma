@@ -1022,7 +1022,6 @@ if __name__ == '__main__':
                 res1['desc'].squeeze(0).detach(),
                 res2['desc'].squeeze(0).detach(),
             )
-            pdb.set_trace()
             
             start_fastnn = torch.cuda.Event(enable_timing=True)
             end_fastnn = torch.cuda.Event(enable_timing=True)
@@ -1037,7 +1036,6 @@ if __name__ == '__main__':
 
             b0, k0, c0 = kp0.shape
             b1, k1, c1 = kp1.shape
-            print(kp0.shape)
 
             matches0 = torch.arange(k0, device=device).unsqueeze(0)
             matches1 = matches0.clone()
