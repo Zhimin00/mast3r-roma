@@ -708,8 +708,11 @@ class ConfRobustLosses(nn.Module):
         conf_pos = cert[prob > 0.99]
         conf_neg = cert[prob <= 0.99]
         
-        pos_loss = conf_pos * cls_loss - self.alpha_ * torch.log(conf_pos) 
         neg_loss = self.alpha_ * torch.log(conf_neg)
+        if not torch.any(cls_loss):
+            pos_loss = (neg_loss * 0.0)  # Prevent issues where prob is 0 everywhere
+        else:
+            pos_loss = conf_pos * cls_loss - self.alpha_ * torch.log(conf_pos) 
         losses = {
             f"gm_confcls_loss_{scale}": pos_loss.mean(),
             f"gm_confcls_negloss_{scale}": neg_loss.mean(),
@@ -729,9 +732,11 @@ class ConfRobustLosses(nn.Module):
         conf_pos = cert[prob > 0.99]
         conf_neg = cert[prob <= 0.99]
         
-        pos_loss = conf_pos * cls_loss - self.alpha_ * torch.log(conf_pos) 
         neg_loss = self.alpha_ * torch.log(conf_neg)
-
+        if not torch.any(cls_loss):
+            pos_loss = (neg_loss * 0.0)  # Prevent issues where prob is 0 everywhere
+        else:
+            pos_loss = conf_pos * cls_loss - self.alpha_ * torch.log(conf_pos) 
         losses = {
             f"delta_confcls_loss_{scale}": pos_loss.mean(),
             f"delta_confcls_negloss_{scale}": neg_loss.mean(),
@@ -747,10 +752,11 @@ class ConfRobustLosses(nn.Module):
         cert = 1 + certainty[:,0].exp().clip(max=float('inf')-1, min=1e-6)
         conf_pos = cert[prob > 0.99]
         conf_neg = cert[prob <= 0.99]
-        pos_loss = conf_pos * reg_loss - self.alpha_ * torch.log(conf_pos) 
         neg_loss = self.alpha_ * torch.log(conf_neg)
-        print('pos_loss:', pos_loss)
-        print('neg_loss:', neg_loss)
+        if not torch.any(reg_loss):
+            pos_loss = (neg_loss * 0.0)  # Prevent issues where prob is 0 everywhere
+        else:
+            pos_loss = conf_pos * reg_loss - self.alpha_ * torch.log(conf_pos) 
         losses = {
             f"{mode}_confreg_loss_{scale}": pos_loss.mean(),
             f"{mode}_confreg_negloss_{scale}": neg_loss.mean(),
