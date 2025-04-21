@@ -694,6 +694,7 @@ class ConfRobustLosses(nn.Module):
         self.alpha = alpha
         self.alpha_ = alpha_
         self.c = c
+        
     def gm_cls_loss(self, x2, prob, scale_gm_cls, gm_certainty, scale):
         with torch.no_grad():
             B, C, H, W = scale_gm_cls.shape
@@ -704,14 +705,11 @@ class ConfRobustLosses(nn.Module):
             GT = (G[None,:,None,None,:]-x2[:,None]).norm(dim=-1).min(dim=1).indices ##ground coordinates in res scale [B,H,W,2]
         cls_loss = F.cross_entropy(scale_gm_cls, GT, reduction  = 'none')[prob > 0.99]
         cert = 1 + gm_certainty[:,0].exp().clip(max=float('inf')-1, min=1e-6)
-        
         conf_pos = cert[prob > 0.99]
         conf_neg = cert[prob <= 0.99]
         
         pos_loss = conf_pos * cls_loss - self.alpha_ * torch.log(conf_pos) 
         neg_loss = self.alpha_ * torch.log(conf_neg)
-        print(pos_loss.mean())
-        print(neg_loss.mean())
         losses = {
             f"gm_confcls_loss_{scale}": pos_loss.mean(),
             f"gm_confcls_negloss_{scale}": neg_loss.mean(),
@@ -736,8 +734,6 @@ class ConfRobustLosses(nn.Module):
         pos_loss = conf_pos * cls_loss - self.alpha_ * torch.log(conf_pos) 
         neg_loss = self.alpha_ * torch.log(conf_neg)
 
-        print(pos_loss.mean())
-        print(neg_loss.mean())
         losses = {
             f"delta_confcls_loss_{scale}": pos_loss.mean(),
             f"delta_confcls_negloss_{scale}": neg_loss.mean(),
@@ -755,8 +751,6 @@ class ConfRobustLosses(nn.Module):
         conf_neg = cert[prob <= 0.99]
         pos_loss = conf_pos * reg_loss - self.alpha_ * torch.log(conf_pos) 
         neg_loss = self.alpha_ * torch.log(conf_neg)
-        print(pos_loss.mean())
-        print(neg_loss.mean())
         losses = {
             f"{mode}_confreg_loss_{scale}": pos_loss.mean(),
             f"{mode}_confreg_negloss_{scale}": neg_loss.mean(),
