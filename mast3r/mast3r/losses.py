@@ -694,7 +694,7 @@ class ConfRobustLosses(nn.Module):
         self.alpha = alpha
         self.alpha_ = alpha_
         self.c = c
-        
+
     def gm_cls_loss(self, x2, prob, scale_gm_cls, gm_certainty, scale):
         with torch.no_grad():
             B, C, H, W = scale_gm_cls.shape
@@ -818,5 +818,6 @@ class ConfRobustLosses(nn.Module):
                 reg_loss = delta_regression_losses[f"delta_confreg_loss_{scale}"] + self.ce_weight * delta_regression_losses[f"delta_confreg_negloss_{scale}"]
                 tot_loss = tot_loss + scale_weights[scale] * reg_loss
             prev_epe = (flow.permute(0,2,3,1) - x2).norm(dim=-1).detach()
+        print(tot_loss)
         return tot_loss
     
