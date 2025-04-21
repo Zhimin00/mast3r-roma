@@ -503,6 +503,7 @@ torchrun --nproc_per_node=4 train_onlywarp.py \
     --train_dataset "20_000 @ MegaDepth_all(split='train', ROOT='/home/cpeng26/scratchrchella4/data/megadepth', min_overlap=0.01,  resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], aug_crop=16, aug_monocular=0.005, transform=ColorJitter, n_corres=8192, nneg=0.5) + 20_000 @ MegaDepth_all(split='train', ROOT='/home/cpeng26/scratchrchella4/data/megadepth', min_overlap=0.35, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], aug_crop=16, aug_monocular=0.005, transform=ColorJitter, n_corres=8192, nneg=0.5)" \
     --test_dataset "1000 @ MegaDepth_all(split='val',  ROOT='/home/cpeng26/scratchrchella4/data/megadepth', min_overlap=0.3, max_overlap=0.7, resolution=(512,384), seed=777, n_corres=1024)" \
     --model "AsymmetricMASt3R_only_warp(pos_embed='RoPE100', patch_embed_cls='ManyAR_PatchEmbed_cnn', cnn_type='vgg', img_size=(512, 512), head_type='only_warp', output_mode='pts3d', depth_mode=('exp', -inf, inf), conf_mode=('exp', 1, inf), enc_embed_dim=1024, enc_depth=24, enc_num_heads=16, dec_embed_dim=768, dec_depth=12, dec_num_heads=12)" \
+    --train_warp_criterion "ConfRobustLosses(alpha=0.5, alpha_ = 0.2, c = 1e-4)" \
     --pretrained "/home/cpeng26/scratchrchella4/checkpoints/DUSt3R_ViTLarge_BaseDecoder_512_dpt.pth" \
     --lr 0.0001 --min_lr 1e-06 --warmup_epochs 8 --epochs 50 --batch_size 3 --accum_iter 3 \
     --save_freq 1 --keep_freq 5 --eval_freq 1 --print_freq=10 --disable_cudnn_benchmark \
