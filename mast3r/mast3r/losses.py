@@ -668,7 +668,7 @@ class ConfRobustLosses(nn.Module):
         scale_normalize=False,
         ce_weight=0.01,
         local_loss=True,
-        local_dist=4.0,
+        local_dist={1:4, 2:4, 4:8, 8:8},
         local_largest_scale=8,
         smooth_mask = False,
         depth_interpolation_mode = "bilinear",
