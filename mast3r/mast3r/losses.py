@@ -811,11 +811,11 @@ class ConfRobustLosses(nn.Module):
             
             if delta_cls is not None:
                 delta_cls_losses = self.delta_cls_loss(x2, prob, flow_pre_delta, delta_cls, scale_certainty, scale, offset_scale)
-                delta_cls_loss =delta_cls_losses[f"delta_confcls_loss_{scale}"] + self.ce_weight * gm_cls_losses[f"delta_confcls_negloss_{scale}"]
+                delta_cls_loss =delta_cls_losses[f"delta_confcls_loss_{scale}"] + self.ce_weight * delta_cls_losses[f"delta_confcls_negloss_{scale}"]
                 tot_loss = tot_loss + scale_weights[scale] * delta_cls_loss
             else:
                 delta_regression_losses = self.regression_loss(x2, prob, flow, scale_certainty, scale)
-                reg_loss = delta_regression_losses[f"delta_confreg_loss_{scale}"] + self.ce_weight * gm_cls_losses[f"delta_confreg_negloss_{scale}"]
+                reg_loss = delta_regression_losses[f"delta_confreg_loss_{scale}"] + self.ce_weight * delta_regression_losses[f"delta_confreg_negloss_{scale}"]
                 tot_loss = tot_loss + scale_weights[scale] * reg_loss
             prev_epe = (flow.permute(0,2,3,1) - x2).norm(dim=-1).detach()
         return tot_loss * 0.3 
