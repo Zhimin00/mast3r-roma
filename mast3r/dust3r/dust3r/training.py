@@ -46,7 +46,10 @@ def get_args_parser():
     parser.add_argument('--train_criterion', default="ConfLoss(Regr3D(L21, norm_mode='avg_dis'), alpha=0.2)",
                         type=str, help="train criterion")
     parser.add_argument('--test_criterion', default=None, type=str, help="test criterion")
-
+    parser.add_argument('--train_warp_criterion', default="RobustLosses(alpha=0.5, c = 1e-4)",
+                        type=str, help="train warp criterion")
+    parser.add_argument('--test_warp_criterion', default="RobustLosses(alpha=0.5, c = 1e-4)", 
+                        type=str, help="test warp criterion")
     # dataset
     parser.add_argument('--train_dataset', required=True, type=str, help="training set")
     parser.add_argument('--test_dataset', default='[None]', type=str, help="testing set")
