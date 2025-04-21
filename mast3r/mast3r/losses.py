@@ -726,8 +726,6 @@ class ConfRobustLosses(nn.Module):
             GT = (G[None,:,None,None,:] + flow_pre_delta[:,None] - x2[:,None]).norm(dim=-1).min(dim=1).indices
         cls_loss = F.cross_entropy(delta_cls, GT, reduction  = 'none')[prob > 0.99]
         cert = 1 + certainty[:,0].exp().clip(max=float('inf')-1, min=1e-6)
-        print(cert.max())
-        print(cert.min())
         conf_pos = cert[prob > 0.99]
         conf_neg = cert[prob <= 0.99]
         
@@ -751,6 +749,8 @@ class ConfRobustLosses(nn.Module):
         conf_neg = cert[prob <= 0.99]
         pos_loss = conf_pos * reg_loss - self.alpha_ * torch.log(conf_pos) 
         neg_loss = self.alpha_ * torch.log(conf_neg)
+        print('pos_loss:', pos_loss)
+        print('neg_loss:', neg_loss)
         losses = {
             f"{mode}_confreg_loss_{scale}": pos_loss.mean(),
             f"{mode}_confreg_negloss_{scale}": neg_loss.mean(),
@@ -808,7 +808,7 @@ class ConfRobustLosses(nn.Module):
                 gm_flow_losses = self.regression_loss(x2, prob, scale_gm_flow, scale_gm_certainty, scale, mode = "gm")
                 gm_loss = gm_flow_losses[f"gm_confreg_loss_{scale}"] + self.ce_weight * gm_flow_losses[f"gm_confreg_negloss_{scale}"]
                 tot_loss = tot_loss + scale_weights[scale] * gm_loss
-            print('gm_loss:', gm_loss)
+            
             if delta_cls is not None:
                 delta_cls_losses = self.delta_cls_loss(x2, prob, flow_pre_delta, delta_cls, scale_certainty, scale, offset_scale)
                 delta_cls_loss =delta_cls_losses[f"delta_confcls_loss_{scale}"] + self.ce_weight * delta_cls_losses[f"delta_confcls_negloss_{scale}"]
