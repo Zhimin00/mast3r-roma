@@ -703,7 +703,9 @@ class ConfRobustLosses(nn.Module):
             G = torch.stack((G[1], G[0]), dim = -1).reshape(C,2)
             GT = (G[None,:,None,None,:]-x2[:,None]).norm(dim=-1).min(dim=1).indices ##ground coordinates in res scale [B,H,W,2]
         cls_loss = F.cross_entropy(scale_gm_cls, GT, reduction  = 'none')[prob > 0.99]
-        cert = 1 + gm_certainty[:,0].exp().clip(max=float('inf')-1, min=1e-8)
+        cert = 1 + gm_certainty[:,0].exp().clip(max=float('inf')-1, min=1e-6)
+        print(cert.max())
+        print(cert.min())
         conf_pos = cert[prob > 0.99]
         conf_neg = cert[prob <= 0.99]
         
@@ -725,7 +727,9 @@ class ConfRobustLosses(nn.Module):
             G = torch.stack((G[1], G[0]), dim = -1).reshape(C,2) * offset_scale
             GT = (G[None,:,None,None,:] + flow_pre_delta[:,None] - x2[:,None]).norm(dim=-1).min(dim=1).indices
         cls_loss = F.cross_entropy(delta_cls, GT, reduction  = 'none')[prob > 0.99]
-        cert = 1 + certainty[:,0].exp().clip(max=float('inf')-1, min=1e-8)
+        cert = 1 + certainty[:,0].exp().clip(max=float('inf')-1, min=1e-6)
+        print(cert.max())
+        print(cert.min())
         conf_pos = cert[prob > 0.99]
         conf_neg = cert[prob <= 0.99]
         
@@ -745,7 +749,9 @@ class ConfRobustLosses(nn.Module):
         cs = self.c * scale
         x = epe[prob > 0.99]
         reg_loss = cs**a * ((x/(cs))**2 + 1**2)**(a/2)
-        cert = 1 + certainty[:,0].exp().clip(max=float('inf')-1, min=eps)
+        cert = 1 + certainty[:,0].exp().clip(max=float('inf')-1, min=1e-6)
+        print(cert.max())
+        print(cert.min())
         conf_pos = cert[prob > 0.99]
         conf_neg = cert[prob < 0.99]
         pos_loss = conf_pos * reg_loss - self.alpha_ * torch.log(conf_pos) 
