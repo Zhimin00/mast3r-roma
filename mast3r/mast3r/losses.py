@@ -517,7 +517,7 @@ class RobustLosses(nn.Module):
         scale_normalize=False,
         ce_weight=0.01,
         local_loss=True,
-        local_dist=4.0,
+        local_dist={1:4, 2:4, 4:8, 8:8},
         local_largest_scale=8,
         smooth_mask = False,
         depth_interpolation_mode = "bilinear",
@@ -596,6 +596,7 @@ class RobustLosses(nn.Module):
         }
         return losses
 
+
     def forward(self, view1, view2, corresps):
         scales = list(corresps.keys())
         tot_loss = 0.0
@@ -655,6 +656,160 @@ class RobustLosses(nn.Module):
             else:
                 delta_regression_losses = self.regression_loss(x2, prob, flow, scale_certainty, scale)
                 reg_loss = self.ce_weight * delta_regression_losses[f"delta_certainty_loss_{scale}"] + delta_regression_losses[f"delta_regression_loss_{scale}"]
+                tot_loss = tot_loss + scale_weights[scale] * reg_loss
+            prev_epe = (flow.permute(0,2,3,1) - x2).norm(dim=-1).detach()
+        return tot_loss * 0.3 
+    
+class ConfRobustLosses(nn.Module):
+    def __init__(
+        self,
+        robust=False,
+        center_coords=False,
+        scale_normalize=False,
+        ce_weight=0.01,
+        local_loss=True,
+        local_dist=4.0,
+        local_largest_scale=8,
+        smooth_mask = False,
+        depth_interpolation_mode = "bilinear",
+        mask_depth_loss = False,
+        relative_depth_error_threshold = 0.05,
+        alpha = 1.,
+        c = 1e-3,
+        alpha_ = 10
+    ):
+        super().__init__()
+        self.robust = robust  # measured in pixels
+        self.center_coords = center_coords
+        self.scale_normalize = scale_normalize
+        self.ce_weight = ce_weight
+        self.local_loss = local_loss
+        self.local_dist = local_dist
+        self.local_largest_scale = local_largest_scale
+        self.smooth_mask = smooth_mask
+        self.depth_interpolation_mode = depth_interpolation_mode
+        self.mask_depth_loss = mask_depth_loss
+        self.relative_depth_error_threshold = relative_depth_error_threshold
+        self.avg_overlap = dict()
+        self.alpha = alpha
+        self.alpha_ = alpha_
+        self.c = c
+    def gm_cls_loss(self, x2, prob, scale_gm_cls, gm_certainty, scale):
+        with torch.no_grad():
+            B, C, H, W = scale_gm_cls.shape
+            device = x2.device
+            cls_res = round(math.sqrt(C))
+            G = torch.meshgrid(*[torch.linspace(-1+1/cls_res, 1 - 1/cls_res, steps = cls_res,device = device) for _ in range(2)], indexing='ij')
+            G = torch.stack((G[1], G[0]), dim = -1).reshape(C,2)
+            GT = (G[None,:,None,None,:]-x2[:,None]).norm(dim=-1).min(dim=1).indices ##ground coordinates in res scale [B,H,W,2]
+        cls_loss = F.cross_entropy(scale_gm_cls, GT, reduction  = 'none')[prob > 0.99]
+        cert = 1 + torch.exp(gm_certainty[:, 0])
+        conf_pos = cert[prob > 0.99]
+        conf_neg = cert[prob <= 0.99]
+        
+        loss = conf_pos * cls_loss - self.alpha_ * torch.log(conf_pos) + self.alpha_ * torch.log(conf_neg)
+
+        losses = {
+            f"gm_confcls_loss_{scale}": loss.mean(),
+        }
+        return losses
+
+    def delta_cls_loss(self, x2, prob, flow_pre_delta, delta_cls, certainty, scale, offset_scale):
+        with torch.no_grad():
+            B, C, H, W = delta_cls.shape
+            device = x2.device
+            cls_res = round(math.sqrt(C))
+            G = torch.meshgrid(*[torch.linspace(-1+1/cls_res, 1 - 1/cls_res, steps = cls_res,device = device) for _ in range(2)])
+            G = torch.stack((G[1], G[0]), dim = -1).reshape(C,2) * offset_scale
+            GT = (G[None,:,None,None,:] + flow_pre_delta[:,None] - x2[:,None]).norm(dim=-1).min(dim=1).indices
+        cls_loss = F.cross_entropy(delta_cls, GT, reduction  = 'none')[prob > 0.99]
+        cert = 1 + torch.exp(certainty[:, 0])
+        conf_pos = cert[prob > 0.99]
+        conf_neg = cert[prob <= 0.99]
+        
+        loss = conf_pos * cls_loss - self.alpha_ * torch.log(conf_pos) + self.alpha_ * torch.log(conf_neg)
+
+       
+        losses = {
+            f"delta_confcls_loss_{scale}": loss.mean(),
+        }
+        return losses
+    
+    def regression_loss(self, x2, prob, flow, certainty, scale, eps=1e-8, mode = "delta"):
+        epe = (flow.permute(0,2,3,1) - x2).norm(dim=-1)
+        a = self.alpha[scale] if isinstance(self.alpha, dict) else self.alpha
+        cs = self.c * scale
+        x = epe[prob > 0.99]
+        reg_loss = cs**a * ((x/(cs))**2 + 1**2)**(a/2)
+        cert = 1 + torch.exp(certainty[:, 0])
+        conf_pos = cert[prob > 0.99]
+        conf_neg = cert[prob < 0.99]
+        loss = conf_pos * reg_loss - self.alpha_ * torch.log(conf_pos) + self.alpha_ * torch.log(conf_neg)
+
+        losses = {
+            f"{mode}_confreg_loss_{scale}": loss.mean(),
+        }
+        return losses
+    
+    def forward(self, view1, view2, corresps):
+        scales = list(corresps.keys())
+        tot_loss = 0.0
+        # scale_weights due to differences in scale for regression gradients and classification gradients
+        scale_weights = {1:1, 2:1, 4:1, 8:1, 16:1}
+        for scale in scales:
+            scale_corresps = corresps[scale]
+            scale_certainty, flow_pre_delta, delta_cls, offset_scale, scale_gm_cls, scale_gm_certainty, flow, scale_gm_flow = (
+                scale_corresps["certainty"],
+                scale_corresps.get("flow_pre_delta"),
+                scale_corresps.get("delta_cls"),
+                scale_corresps.get("offset_scale"),
+                scale_corresps.get("gm_cls"),
+                scale_corresps.get("gm_certainty"),
+                scale_corresps["flow"],
+                scale_corresps.get("gm_flow"),
+                )
+            if flow_pre_delta is not None:
+                flow_pre_delta = rearrange(flow_pre_delta, "b d h w -> b h w d")
+                b, h, w, d = flow_pre_delta.shape
+            else:
+                # _ = 1
+                b, _, h, w = scale_certainty.shape
+            T1 = view1['camera_pose']
+            T2 = view2['camera_pose']
+            T_1to2 = torch.linalg.inv(T2) @ T1
+            gt_warp, gt_prob = get_gt_warp(                
+            view1["depthmap"],
+            view2["depthmap"],
+            T_1to2,
+            view1["camera_intrinsics"],
+            view2["camera_intrinsics"],
+            H=h,
+            W=w,
+        )
+            x2 = gt_warp.float()
+            prob = gt_prob
+            
+            if self.local_largest_scale >= scale:
+                prob = prob * (
+                        F.interpolate(prev_epe[:, None], size=(h, w), mode="nearest-exact")[:, 0]
+                        < (2 / 512) * (self.local_dist[scale] * scale))
+            
+            if scale_gm_cls is not None:
+                gm_cls_losses = self.gm_cls_loss(x2, prob, scale_gm_cls, scale_gm_certainty, scale)
+                gm_loss = gm_cls_losses[f"gm_confcls_loss_{scale}"]
+                tot_loss = tot_loss + scale_weights[scale] * gm_loss
+            elif scale_gm_flow is not None:
+                gm_flow_losses = self.regression_loss(x2, prob, scale_gm_flow, scale_gm_certainty, scale, mode = "gm")
+                gm_loss = gm_flow_losses[f"gm_confreg_loss_{scale}"]
+                tot_loss = tot_loss + scale_weights[scale] * gm_loss
+            
+            if delta_cls is not None:
+                delta_cls_losses = self.delta_cls_loss(x2, prob, flow_pre_delta, delta_cls, scale_certainty, scale, offset_scale)
+                delta_cls_loss =delta_cls_losses[f"delta_confcls_loss_{scale}"]
+                tot_loss = tot_loss + scale_weights[scale] * delta_cls_loss
+            else:
+                delta_regression_losses = self.regression_loss(x2, prob, flow, scale_certainty, scale)
+                reg_loss = delta_regression_losses[f"delta_confreg_loss_{scale}"]
                 tot_loss = tot_loss + scale_weights[scale] * reg_loss
             prev_epe = (flow.permute(0,2,3,1) - x2).norm(dim=-1).detach()
         return tot_loss * 0.3 
