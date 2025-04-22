@@ -1106,6 +1106,11 @@ if __name__ == '__main__':
     pose_results = defaultdict(lambda: defaultdict(list))
     # tot_e_t, tot_e_R, tot_e_pose = [], [], []
     # thresholds = [5, 10, 20]
+    if 'scannet' in args.dataset:
+        print('scannet')
+    else:
+        print('megadepth')
+
     with torch.no_grad():
         for batch in tqdm(data_loader_test):
 
@@ -1121,11 +1126,12 @@ if __name__ == '__main__':
                 'start_bnn': [],
                 'end_bnn': [],
             }
-            if 'scannet' in args.datasets:
+            if 'scannet' in args.dataset:
                 view1, view2 = make_batch_symmetric(batch)
                 batch = (view1, view2)
                 _, _ , corresps = inference(batch, model, device, use_amp=False, events=events)
-                dense_matches, dense_certainty = dense_match(corresps) 
+                dense_matches, dense_certainty = dense_match(corresps)
+                
             else:
                 _, _ , corresps = inference(batch, model, device, use_amp=False, events=events)
                 view1, view2 = batch
