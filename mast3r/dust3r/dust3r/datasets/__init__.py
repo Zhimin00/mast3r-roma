@@ -51,7 +51,7 @@ def get_data_loader(dataset, batch_size, num_workers=8, shuffle=True, drop_last=
         num_workers=num_workers,
         pin_memory=pin_mem,
         drop_last=drop_last,
-        collate_fn=safe_collate_fn,
+        #collate_fn=safe_collate_fn,
     )
 
     return data_loader

@@ -1042,7 +1042,6 @@ if __name__ == '__main__':
 
             mscores0 = (matches0 > -1).float()
             mscores1 = (matches1 > -1).float()
-
             pred = {
                 "keypoints0": kp0,
                 "keypoints1": kp1,

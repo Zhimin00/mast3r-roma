@@ -5,7 +5,7 @@
 # coarse to fine utilities
 # --------------------------------------------------------
 import numpy as np
-
+import pdb
 
 def crop_tag(cell):
     return f'[{cell[1]}:{cell[3]},{cell[0]}:{cell[2]}]'
@@ -197,7 +197,6 @@ def select_pairs_of_crops(img_q, img_b, pos2d_in_query, pos2d_in_ref, maxdim=512
     # Make sure crops respect constraints
     grid_q = _norm_windows(grid_q.astype(float), *img_q.shape[:2], forced_resolution=forced_resolution1)
     grid_b = _norm_windows(grid_b.astype(float), *img_b.shape[:2], forced_resolution=forced_resolution2)
-
     # score cells
     pairs_q = _score_cell(grid_q, *img_b.shape[:2], pos2d_in_query, pos2d_in_ref, forced_resolution=forced_resolution2)
     pairs_b = _score_cell(grid_b, *img_q.shape[:2], pos2d_in_ref, pos2d_in_query, forced_resolution=forced_resolution1)

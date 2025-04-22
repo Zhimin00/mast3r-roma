@@ -8,13 +8,15 @@ torch.backends.cuda.matmul.allow_tf32 = True  # for gpu >= Ampere and pytorch >=
 import mast3r.utils.path_to_dust3r  # noqa
 from dust3r.utils.geometry import opencv_to_colmap_intrinsics
 from dust3r.datasets import get_data_loader
-
+from dust3r.utils.device import collate_with_cat
+from dust3r.inference import make_batch_symmetric
 from mast3r.model import AsymmetricMASt3R, AsymmetricMASt3R_warp, AsymmetricMASt3R_only_warp
 from mast3r.fast_nn import fast_reciprocal_NNs
 from mast3r_relpose.datasets import *
 from tqdm import tqdm
 import poselib, cv2, pycolmap
 import pdb
+import torch.nn.functional as F
 
 def get_args_parser():
     parser = argparse.ArgumentParser()
@@ -596,7 +598,7 @@ def get_matches_scores(kpts0, kpts1, matches0, mscores0):
     return pts0, pts1, scores
 
 def eval_relative_pose_robust(data, pred, estimator='cv2', **kw):
-    T_gt = data["T_0to1"].squeeze(0)
+    T_gt = data["T_0to1"][0]
     kp0, kp1 = pred["keypoints0"].squeeze(0), pred["keypoints1"].squeeze(0)
     m0, scores0 = pred["matches0"].squeeze(0), pred["matching_scores0"].squeeze(0)
     pts0, pts1, scores = get_matches_scores(kp0, kp1, m0, scores0)
@@ -606,8 +608,8 @@ def eval_relative_pose_robust(data, pred, estimator='cv2', **kw):
     data_ = {
         "m_kpts0": pts0,
         "m_kpts1": pts1,
-        "camera0": Camera.from_calibration_matrix(data["view0"]["camera_intrinsics"].squeeze(0)).float(),
-        "camera1": Camera.from_calibration_matrix(data["view1"]["camera_intrinsics"].squeeze(0)).float(),
+        "camera0": Camera.from_calibration_matrix(data["view0"]["camera_intrinsics"][0]).float(),
+        "camera1": Camera.from_calibration_matrix(data["view1"]["camera_intrinsics"][0]).float(),
         "img_size0": list(data["view0"]['img'].shape[2:])[::-1],
         "img_size1": list(data["view1"]['img'].shape[2:])[::-1],
     }
@@ -662,7 +664,6 @@ def OpenCVRelativePoseEstimator(data, ransac_th=0.5, confidence=0.99999):
 
         pts0 = from_homogeneous(camera0.image2cam(kpts0)).cpu().detach().numpy()
         pts1 = from_homogeneous(camera1.image2cam(kpts1)).cpu().detach().numpy()
-
         E, mask = cv2.findEssentialMat(
             pts0,
             pts1,
@@ -963,10 +964,51 @@ def optimize_model(model, device):
     return model
 
 
-def kde(x, std = 0.1, half = True, down = None):
+def dense_match(corresps, symmetric = True):
+    im_A_to_im_B = corresps[1]["flow"]
+    im_A_to_im_B = im_A_to_im_B.permute(
+                0, 2, 3, 1
+            )
+    _, h, w, _ = im_A_to_im_B.shape
+    b = 1
+    low_res_certainty = F.interpolate(
+                    corresps[16]["certainty"], size=(h, w), align_corners=False, mode="bilinear"
+                )
+    cert_clamp = 0
+    factor = 0.5
+    low_res_certainty = factor*low_res_certainty*(low_res_certainty < cert_clamp)
+    certainty = corresps[1]["certainty"] - low_res_certainty
+    
+    im_A_coords = torch.meshgrid(
+        (
+            torch.linspace(-1 + 1 / h, 1 - 1 / h, h, device=im_A_to_im_B.device),
+            torch.linspace(-1 + 1 / w, 1 - 1 / w, w, device=im_A_to_im_B.device),
+        ),
+        indexing='ij'
+    )
+    im_A_coords = torch.stack((im_A_coords[1], im_A_coords[0]))
+    im_A_coords = im_A_coords[None].expand(b, 2, h, w)
+    certainty = certainty.sigmoid()  # logits -> probs
+    
+    im_A_coords = im_A_coords.permute(0, 2, 3, 1)
+    if (im_A_to_im_B.abs() > 1).any() and True:
+        wrong = (im_A_to_im_B.abs() > 1).sum(dim=-1) > 0
+        certainty[wrong[:, None]] = 0
+    im_A_to_im_B = torch.clamp(im_A_to_im_B, -1, 1)
+    if symmetric:
+        A_to_B, B_to_A = im_A_to_im_B.chunk(2)
+        q_warp = torch.cat((im_A_coords, A_to_B), dim=-1)
+        im_B_coords = im_A_coords
+        s_warp = torch.cat((B_to_A, im_B_coords), dim=-1)
+        warp = torch.cat((q_warp, s_warp), dim=2)
+        certainty = torch.cat(certainty.chunk(2), dim=3)
+    else:
+        warp = torch.cat((im_A_coords, im_A_to_im_B), dim=-1)
+
+    return (warp[0], certainty[0,0])
+
+def kde(x, std = 0.1, down = None):
     # use a gaussian kernel to estimate density
-    if half:
-        x = x.half() # Do it in half precision TODO: remove hardcoding
     if down is not None:
         scores = (-torch.cdist(x,x[::down])**2/(2*std**2)).exp()
     else:
@@ -974,54 +1016,42 @@ def kde(x, std = 0.1, half = True, down = None):
     density = scores.sum(dim=-1)
     return density
 
-def dense_match(corresps):
-    im_A_to_im_B = corresps[1]["flow"]
-    certainty = corresps[1]["certainty"]
-    im_A_to_im_B = im_A_to_im_B.permute(
-                0, 2, 3, 1
-            )
-    b, h, w, _ = im_A_to_im_B.shape
-    im_A_coords = torch.meshgrid(
-        (
-            torch.linspace(-1 + 1 / h, 1 - 1 / h, h, device=device),
-            torch.linspace(-1 + 1 / w, 1 - 1 / w, w, device=device),
-        ),
-        indexing='ij'
-    )
-    im_A_coords = torch.stack((im_A_coords[1], im_A_coords[0]))
-    im_A_coords = im_A_coords[None].expand(b, 2, h, w)
-    certainty = certainty.sigmoid()  # logits -> probs
-    im_A_coords = im_A_coords.permute(0, 2, 3, 1)
-    if (im_A_to_im_B.abs() > 1).any() and True:
-        wrong = (im_A_to_im_B.abs() > 1).sum(dim=-1) > 0
-        certainty[wrong[:, None]] = 0
-    im_A_to_im_B = torch.clamp(im_A_to_im_B, -1, 1)
-    warp = torch.cat((im_A_coords, im_A_to_im_B), dim=-1)
-    return (warp, certainty[:, 0])
+def sample_to_sparse(dense_matches,
+            dense_certainty,
+            num=10000,
+            sample_mode = "threshold_balanced",
+    ):
+        if "threshold" in sample_mode:
+            upper_thresh = 0.05
+            dense_certainty = dense_certainty.clone()
+            dense_certainty_ = dense_certainty.clone()
+            dense_certainty[dense_certainty > upper_thresh] = 1
+        matches, certainty = (
+            dense_matches.reshape(-1, 4),
+            dense_certainty.reshape(-1),
+        )
+        # noinspection PyUnboundLocalVariable
+        certainty_ = dense_certainty_.reshape(-1)
+        expansion_factor = 4 if "balanced" in sample_mode else 1
+        if not certainty.sum(): certainty = certainty + 1e-8
+        good_samples = torch.multinomial(certainty,
+                                         num_samples=min(expansion_factor * num, len(certainty)),
+                                         replacement=False)
+        good_matches, good_certainty = matches[good_samples], certainty[good_samples]
+        good_certainty_ = certainty_[good_samples]
+        good_certainty = good_certainty_
+        if "balanced" not in sample_mode:
+            return good_matches, good_certainty
 
-def sample(matches, certainty, num = 1_000, sample_mode = 'threshold_balanced'):
-    if "threshold" in sample_mode:
-        upper_thresh = 0.05
-        certainty = certainty.clone()
-        certainty[certainty > upper_thresh] = 1
-    matches, certainty = (
-        matches.reshape(-1, 4),
-        certainty.reshape(-1),
-    )
-    expansion_factor = 4 if "balanced" in sample_mode else 1
-    good_samples = torch.multinomial(certainty, 
-                        num_samples = min(expansion_factor*num, len(certainty)), 
-                        replacement=False)
-    good_matches, good_certainty = matches[good_samples], certainty[good_samples]
-    if "balanced" not in sample_mode:
-        return good_matches, good_certainty
-    density = kde(good_matches, std=0.1)
-    p = 1 / (density+1)
-    p[density < 10] = 1e-7 # Basically should have at least 10 perfect neighbours, or around 100 ok ones
-    balanced_samples = torch.multinomial(p, 
-                        num_samples = min(num,len(good_certainty)), 
-                        replacement=False)
-    return good_matches[balanced_samples], good_certainty[balanced_samples]
+        density = kde(good_matches, std=0.1)
+        p = 1 / (density+1)
+        p[density < 10] = 1e-7 # Basically should have at least 10 perfect neighbours, or around 100 ok ones
+        balanced_samples = torch.multinomial(p,
+                                             num_samples = min(num,len(good_certainty)),
+                                             replacement=False)
+        return good_matches[balanced_samples], good_certainty[balanced_samples]
+
+
 
 def to_pixel_coordinates(coords, H_A, W_A, H_B = None, W_B = None):
     if coords.shape[-1] == 2:
@@ -1091,15 +1121,20 @@ if __name__ == '__main__':
                 'start_bnn': [],
                 'end_bnn': [],
             }
+            if 'scannet' in args.datasets:
+                view1, view2 = make_batch_symmetric(batch)
+                batch = (view1, view2)
+                _, _ , corresps = inference(batch, model, device, use_amp=False, events=events)
+                dense_matches, dense_certainty = dense_match(corresps) 
+            else:
+                _, _ , corresps = inference(batch, model, device, use_amp=False, events=events)
+                view1, view2 = batch
+                dense_matches, dense_certainty = dense_match(corresps, symmetric = False)   
+            
+            sparse_matches, sparse_certainty = sample_to_sparse(dense_matches, dense_certainty, 5000)
 
-            res1, res2, corresps = inference(batch, model, device, use_amp=False, events=events)
-            dense_matches, dense_certainty = dense_match(corresps) 
-            sparse_matches, sparse_certainty = sample(
-                        dense_matches, dense_certainty, num = 5_000
-                    ) # [B, N, 4], [B, N]
-            view1, view2 = batch
-            h1, w1 = view1['true_shape'].squeeze(0)
-            h2, w2 = view2['true_shape'].squeeze(0)
+            h1, w1 = view1['true_shape'][0]
+            h2, w2 = view2['true_shape'][0]
             h1, w1, h2, w2 = int(h1), int(w1), int(h2), int(w2)
             kp0, kp1 = to_pixel_coordinates(sparse_matches, h1, w1, h2, w2)
             kp0, kp1 = kp0.clone(), kp1.clone()
