@@ -509,6 +509,7 @@ torchrun --nproc_per_node=4 train_onlywarp.py \
     --save_freq 1 --keep_freq 5 --eval_freq 1 --print_freq=10 --disable_cudnn_benchmark \
     --output_dir "/home/cpeng26/scratchrchella4/checkpoints/MASt3R_onlywarp_confloss_0421"
 
+tmux 7 onlywarp
 torchrun --nproc_per_node=4 train_onlywarp.py \
     --train_dataset "20_000 @ MegaDepth_all(split='train', ROOT='/home/cpeng26/scratchrchella4/data/megadepth', min_overlap=0.01,  resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], aug_crop=16, aug_monocular=0.005, transform=ColorJitter, n_corres=8192, nneg=0.5) + 20_000 @ MegaDepth_all(split='train', ROOT='/home/cpeng26/scratchrchella4/data/megadepth', min_overlap=0.35, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], aug_crop=16, aug_monocular=0.005, transform=ColorJitter, n_corres=8192, nneg=0.5)" \
     --test_dataset "1000 @ MegaDepth_all(split='val',  ROOT='/home/cpeng26/scratchrchella4/data/megadepth', min_overlap=0.3, max_overlap=0.7, resolution=(512,384), seed=777, n_corres=1024)" \

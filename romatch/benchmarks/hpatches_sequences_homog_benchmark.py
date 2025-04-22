@@ -7,7 +7,6 @@ from tqdm import tqdm
 from romatch.utils import pose_auc
 import cv2
 
-
 class HpatchesHomogBenchmark:
     """Hpatches grid goes from [0,n-1] instead of [0.5,n-0.5]"""
 
@@ -115,3 +114,4 @@ class HpatchesHomogBenchmark:
             #"hpatches_homog_mha_5": accus[4],
             #"hpatches_homog_mha_7": accus[6],
         }
+    
