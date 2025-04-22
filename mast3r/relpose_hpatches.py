@@ -191,13 +191,10 @@ class HpatchesHomogBenchmark:
                 im_B = Image.open(im_B_path)
                 im_B = transform(im_B)[None].to(device)
 
-                images = [({"img": im_A, "idx": 0, "instance": 0},
+                batch = [({"img": im_A, "idx": 0, "instance": 0},
                     {"img": im_B, "idx": 1, "instance": 1})]
-                
-                output = inference(images, model, device, batch_size=1)
-
-                _, pred1 = output['view1'], output['pred1']
-                _, pred2 = output['view2'], output['pred2']
+                view1, view2 = collate_with_cat(batch[:1])
+                pred1, pred2 = model(view1, view2)
 
                 desc1, desc2 = (
                     pred1['desc'].squeeze(0).detach(),
