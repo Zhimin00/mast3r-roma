@@ -23,6 +23,7 @@ def get_args_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument("--weights", type=str, help="path to the model weights", default=None)
     parser.add_argument("--model_name", type=str, help="model name", default='AsymmetricMASt3R')
+    parser.add_argument("--datapath", type=str, default='/home/jovyan/workspace/data', help="hpatches dir")
     parser.add_argument("--device", type=str, default='cuda', help="pytorch device")
     parser.add_argument("--output_dir", type=str, default=None, help="output path")
     parser.add_argument('--num_workers', type=int, default=10)
@@ -366,7 +367,7 @@ if __name__ == '__main__':
     device = args.device
     weights = args.weights
     model = eval(args.model_name).from_pretrained(weights).to(device)
-    hpatches_benchmark = HpatchesHomogBenchmark("/home/cpeng26/scratchrchella4/data/hpatches-sequence-release")
+    hpatches_benchmark = HpatchesHomogBenchmark(args.datapath + "/hpatches-sequence-release")
     
     if 'warp' in args.model_name:
         hpatches_results = hpatches_benchmark.benchmark_mast3r_warp(model, device)
