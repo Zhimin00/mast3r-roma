@@ -163,6 +163,7 @@ class HpatchesHomogBenchmark:
         )
         return im_A_coords, im_A_to_im_B
     
+    @torch.no_grad()
     def benchmark_mast3r(self, model, device):
         n_matches = []
         homog_dists = []
@@ -273,6 +274,7 @@ class HpatchesHomogBenchmark:
             "hpatches_homog_auc_5": auc[4],
             "hpatches_homog_auc_10": auc[9],
         }
+    @torch.no_grad()
     def benchmark_mast3r_warp(self, model, device):
         n_matches = []
         homog_dists = []
