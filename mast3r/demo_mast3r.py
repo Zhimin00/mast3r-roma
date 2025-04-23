@@ -10,11 +10,11 @@ if __name__ == '__main__':
     schedule = 'cosine'
     lr = 0.01
     niter = 300
-
-    model_name = "naver/MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric"
+    #"naver/MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric"#
+    model_name = "/cis/net/r24a/data/zshao/checkpoints/dust3r/checkpoint-aerial-mast3r.pth" #finetune_megadepth-final.pth"
     # you can put the path to a local checkpoint in model_name if needed
     model = AsymmetricMASt3R.from_pretrained(model_name).to(device)
-    images = load_images(['dust3r/croco/assets/Chateau1.png', 'dust3r/croco/assets/Chateau2.png'], size=512)
+    images = load_images(['/cis/net/r24a/data/zshao/data/wriva_processed_data/cross-view/A01/A01_s07/input/images/image_000001.jpg', '/cis/net/r24a/data/zshao/data/wriva_processed_data/cross-view/A01/A01_s07/input/images/image_000004.jpg'], size=512)
     output = inference([tuple(images)], model, device, batch_size=1, verbose=False)
 
     # at this stage, you have the raw dust3r predictions
@@ -69,3 +69,4 @@ if __name__ == '__main__':
         (x0, y0), (x1, y1) = viz_matches_im0[i].T, viz_matches_im1[i].T
         pl.plot([x0, x1 + W0], [y0, y1], '-+', color=cmap(i / (n_viz - 1)), scalex=False, scaley=False)
     pl.show(block=True)
+    pl.savefig('aerial_mast3r.png') 

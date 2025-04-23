@@ -95,7 +95,75 @@ class MegaDepth(BaseStereoViewDataset):
                 instance=img))
 
         return views
+    
+class Aerial_MegaDepth(BaseStereoViewDataset):
+    def __init__(self, *args, split, ROOT, **kwargs):
+        self.ROOT = ROOT
+        super().__init__(*args, **kwargs)
+        self.loaded_data = self._load_data(self.split)
 
+    def _load_data(self, split):
+        if split == 'train':
+            files = ['aerial_megadepth_train_part1.npz', 'aerial_megadepth_train_part2.npz']
+            paths = [osp.join(self.ROOT, f) for f in files]
+            scenes = []
+            images = []
+            pairs = []
+            for path in paths:
+                with np.load(path) as data:
+                    scenes.append(data['scenes'])
+                    images.append(data['images'])
+                    pairs.append(data['pairs'])
+            self.all_scenes = np.concatenate(scenes, axis=0)
+            self.all_images = np.concatenate(images, axis=0)
+            self.pairs = np.concatenate(pairs, axis=0)
+            
+        elif split == 'val':
+            with np.load(osp.join(self.ROOT, 'aerial_megadepth_val.npz')) as data:
+                self.all_scenes = data['scenes']
+                self.all_images = data['images']
+                self.pairs = data['pairs']
+
+    def __len__(self):
+        return len(self.pairs)
+
+    def get_stats(self):
+        return f'{len(self)} pairs from {len(self.all_scenes)} scenes'
+
+    def _get_views(self, pair_idx, resolution, rng):
+        scene_id, im1_id, im2_id, score = self.pairs[pair_idx]
+
+        scene = self.all_scenes[scene_id]
+        seq_path = osp.join(self.ROOT, scene)
+
+        views = []
+
+        for im_id in [im1_id, im2_id]:
+            img = self.all_images[im_id]
+            try:
+                image = imread_cv2(osp.join(seq_path, img + '.jpg'))
+                depthmap = imread_cv2(osp.join(seq_path, img + ".exr"))
+                camera_params = np.load(osp.join(seq_path, img + ".npz"))
+            except Exception as e:
+                raise OSError(f'cannot load {img}, got exception {e}')
+
+            intrinsics = np.float32(camera_params['intrinsics'])
+            camera_pose = np.float32(camera_params['cam2world'])
+
+            image, depthmap, intrinsics = self._crop_resize_if_necessary(
+                image, depthmap, intrinsics, resolution, rng, info=(seq_path, img))
+
+            views.append(dict(
+                img=image,
+                depthmap=depthmap,
+                camera_pose=camera_pose,  # cam2world
+                camera_intrinsics=intrinsics,
+                dataset='Aerial-MegaDepth',
+                label=osp.relpath(seq_path, self.ROOT),
+                instance=img))
+
+        return views
+    
 class MegaDepth_all(BaseStereoViewDataset):
     def __init__(self, *args, ROOT, min_overlap=0.0, max_overlap=1.0, max_num_pairs = 100_000, **kwargs):
         self.ROOT = ROOT

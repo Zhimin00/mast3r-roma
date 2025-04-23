@@ -8,6 +8,7 @@ from dust3r.datasets.blendedmvs import BlendedMVS as DUSt3R_BlendedMVS  # noqa
 from dust3r.datasets.co3d import Co3d as DUSt3R_Co3d  # noqa
 from dust3r.datasets.megadepth import MegaDepth as DUSt3R_MegaDepth  # noqa
 from dust3r.datasets.megadepth import MegaDepth_all as DUSt3R_MegaDepth_all
+from dust3r.datasets.megadepth import Aerial_MegaDepth as DUSt3R_Aerial_MegaDepth
 from dust3r.datasets.scannetpp import ScanNetpp as DUSt3R_ScanNetpp  # noqa
 from dust3r.datasets.staticthings3d import StaticThings3D as DUSt3R_StaticThings3D  # noqa
 from dust3r.datasets.waymo import Waymo as DUSt3R_Waymo  # noqa
@@ -47,6 +48,11 @@ class Habitat(DUSt3R_Habitat, MASt3RBaseStereoViewDataset):
         self.is_metric_scale = False
 
 class MegaDepth(DUSt3R_MegaDepth, MASt3RBaseStereoViewDataset):
+    def __init__(self, *args, split, ROOT, **kwargs):
+        super().__init__(*args, split=split, ROOT=ROOT, **kwargs)
+        self.is_metric_scale = False
+
+class Aerial_MegaDepth(DUSt3R_Aerial_MegaDepth, MASt3RBaseStereoViewDataset):
     def __init__(self, *args, split, ROOT, **kwargs):
         super().__init__(*args, split=split, ROOT=ROOT, **kwargs)
         self.is_metric_scale = False
