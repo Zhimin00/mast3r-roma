@@ -546,7 +546,7 @@ torchrun --nproc_per_node=4 train_onlywarp.py \
 tmux 3 c001 warpdpt confloss from mast3r
 
 
-
+io104 warpdpt confloss from mast3r
 torchrun --nproc_per_node=4 train_warp.py \
     --train_dataset "20_000 @ MegaDepth_all(split='train', ROOT='/cis/net/io104/data/zshao14/megadepth', min_overlap=0.01,  resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], aug_crop=16, aug_monocular=0.005, transform=ColorJitter, n_corres=8192, nneg=0.5) + 20_000 @ MegaDepth_all(split='train', ROOT='/cis/net/io104/data/zshao14/megadepth', min_overlap=0.35, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], aug_crop=16, aug_monocular=0.005, transform=ColorJitter, n_corres=8192, nneg=0.5)" \
     --test_dataset "1000 @ MegaDepth_all(split='val',  ROOT='/cis/net/io104/data/zshao14/megadepth', min_overlap=0.3, max_overlap=0.7, resolution=(512,384), seed=777, n_corres=1024)" \
@@ -554,10 +554,10 @@ torchrun --nproc_per_node=4 train_warp.py \
     --train_criterion "ConfLoss(Regr3D(L21, norm_mode='?avg_dis', loss_in_log=False), alpha=0.2)"  \
     --test_criterion "Regr3D(L21, norm_mode='?avg_dis', gt_scale=True, sky_loss_value=0)" \
     --train_warp_criterion "ConfRobustLosses(alpha=0.5, alpha_ = 10, c = 1e-4)" \
-    --pretrained "/home/cpeng26/scratchrchella4/checkpoints/MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric.pth" \
-    --lr 0.0001 --min_lr 1e-06 --warmup_epochs 8 --epochs 50 --batch_size 3 --accum_iter 3 \
+    --pretrained "/cis/home/zshao14/checkpoints/MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric.pth" \
+    --lr 0.0001 --min_lr 1e-06 --warmup_epochs 8 --epochs 50 --batch_size 4 --accum_iter 2 \
     --save_freq 1 --keep_freq 5 --eval_freq 1 --print_freq=10 --disable_cudnn_benchmark \
-    --output_dir "/home/cpeng26/scratchrchella4/checkpoints/MASt3R_warpdpt_0424"
+    --output_dir "/cis/net/r24a/data/zshao/checkpoints/dust3r/MASt3R_warpdpt_0424"
 
 saturn finetune aerial-mast3r on megadepth
 torchrun --nproc_per_node=4 train.py \
