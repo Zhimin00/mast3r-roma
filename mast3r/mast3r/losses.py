@@ -703,19 +703,28 @@ class ConfRobustLosses(nn.Module):
             G = torch.meshgrid(*[torch.linspace(-1+1/cls_res, 1 - 1/cls_res, steps = cls_res,device = device) for _ in range(2)], indexing='ij')
             G = torch.stack((G[1], G[0]), dim = -1).reshape(C,2)
             GT = (G[None,:,None,None,:]-x2[:,None]).norm(dim=-1).min(dim=1).indices ##ground coordinates in res scale [B,H,W,2]
-        cls_loss = F.cross_entropy(scale_gm_cls, GT, reduction  = 'none')[prob > 0.99]
-        cert = 1 + gm_certainty[:,0].exp().clip(max=float('inf')-1, min=1e-6)
+        loss = F.cross_entropy(scale_gm_cls, GT, reduction  = 'none')
+        pos_loss = loss[prob > 0.99]
+        neg_loss = loss[prob <= 0.99]
+        safe_certainty = gm_certainty[:, 0].clamp(max=88.0, min=-20.0)  # safe exp range
+        cert = 1 + safe_certainty.exp().clamp(min=1e-6)
         conf_pos = cert[prob > 0.99]
         conf_neg = cert[prob <= 0.99]
         
-        neg_loss = self.alpha_ * torch.log(conf_neg)
-        if not torch.any(cls_loss):
-            pos_loss = (neg_loss * 0.0)  # Prevent issues where prob is 0 everywhere
+        if not torch.any(pos_loss):
+            conf_pos_loss = 0.0  # Prevent issues where prob is 0 everywhere
         else:
-            pos_loss = conf_pos * cls_loss - self.alpha_ * torch.log(conf_pos) 
+            conf_pos_loss = pos_loss * conf_pos - self.alpha_ * torch.log(conf_pos) 
+            conf_pos_loss = conf_pos_loss.mean()
+        if not torch.any(neg_loss):
+            conf_neg_loss = 0.0  # Prevent issues where prob is 0 everywhere
+        else:
+            conf_neg_loss = neg_loss * conf_neg - self.alpha_ * torch.log(conf_neg) 
+            conf_neg_loss = conf_neg_loss.mean()
+
         losses = {
-            f"gm_confcls_loss_{scale}": pos_loss.mean(),
-            f"gm_confcls_negloss_{scale}": neg_loss.mean(),
+            f"gm_confcls_loss_{scale}": conf_pos_loss,
+            f"gm_confcls_negloss_{scale}": conf_neg_loss,
         }
         return losses
 
@@ -727,19 +736,27 @@ class ConfRobustLosses(nn.Module):
             G = torch.meshgrid(*[torch.linspace(-1+1/cls_res, 1 - 1/cls_res, steps = cls_res,device = device) for _ in range(2)])
             G = torch.stack((G[1], G[0]), dim = -1).reshape(C,2) * offset_scale
             GT = (G[None,:,None,None,:] + flow_pre_delta[:,None] - x2[:,None]).norm(dim=-1).min(dim=1).indices
-        cls_loss = F.cross_entropy(delta_cls, GT, reduction  = 'none')[prob > 0.99]
-        cert = 1 + certainty[:,0].exp().clip(max=float('inf')-1, min=1e-6)
+        loss = F.cross_entropy(delta_cls, GT, reduction  = 'none')
+        pos_loss = loss[prob > 0.99]
+        neg_loss = loss[prob <= 0.99]
+        safe_certainty = certainty[:, 0].clamp(max=88.0, min=-20.0)  # safe exp range
+        cert = 1 + safe_certainty.exp().clamp(min=1e-6)
         conf_pos = cert[prob > 0.99]
         conf_neg = cert[prob <= 0.99]
-        
-        neg_loss = self.alpha_ * torch.log(conf_neg)
-        if not torch.any(cls_loss):
-            pos_loss = (neg_loss * 0.0)  # Prevent issues where prob is 0 everywhere
+
+        if not torch.any(pos_loss):
+            conf_pos_loss = 0.0  # Prevent issues where prob is 0 everywhere
         else:
-            pos_loss = conf_pos * cls_loss - self.alpha_ * torch.log(conf_pos) 
+            conf_pos_loss = pos_loss * conf_pos - self.alpha_ * torch.log(conf_pos) 
+            conf_pos_loss = conf_pos_loss.mean()
+        if not torch.any(neg_loss):
+            conf_neg_loss = 0.0  # Prevent issues where prob is 0 everywhere
+        else:
+            conf_neg_loss = neg_loss * conf_neg - self.alpha_ * torch.log(conf_neg) 
+            conf_neg_loss = conf_neg_loss.mean()
         losses = {
-            f"delta_confcls_loss_{scale}": pos_loss.mean(),
-            f"delta_confcls_negloss_{scale}": neg_loss.mean(),
+            f"delta_confcls_loss_{scale}": conf_pos_loss,
+            f"delta_confcls_negloss_{scale}": conf_neg_loss,
         }
         return losses
     
@@ -748,18 +765,28 @@ class ConfRobustLosses(nn.Module):
         a = self.alpha[scale] if isinstance(self.alpha, dict) else self.alpha
         cs = self.c * scale
         x = epe[prob > 0.99]
-        reg_loss = cs**a * ((x/(cs))**2 + 1**2)**(a/2)
-        cert = 1 + certainty[:,0].exp().clip(max=float('inf')-1, min=1e-6)
+        pos_loss = cs**a * ((x/(cs))**2 + 1**2)**(a/2)
+        neg_x = epe[prob <= 0.99]
+        neg_loss = cs**a * ((neg_x/(cs))**2 + 1**2)**(a/2)
+        safe_certainty = certainty[:, 0].clamp(max=88.0, min=-20.0)  # safe exp range
+        cert = 1 + safe_certainty.exp().clamp(min=1e-6)
         conf_pos = cert[prob > 0.99]
         conf_neg = cert[prob <= 0.99]
-        neg_loss = self.alpha_ * torch.log(conf_neg)
-        if not torch.any(reg_loss):
-            pos_loss = (neg_loss * 0.0)  # Prevent issues where prob is 0 everywhere
+
+        if not torch.any(pos_loss):
+            conf_pos_loss = 0.0  # Prevent issues where prob is 0 everywhere
         else:
-            pos_loss = conf_pos * reg_loss - self.alpha_ * torch.log(conf_pos) 
+            conf_pos_loss = pos_loss * conf_pos - self.alpha_ * torch.log(conf_pos) 
+            conf_pos_loss = conf_pos_loss.mean()
+        if not torch.any(neg_loss):
+            conf_neg_loss = 0.0  # Prevent issues where prob is 0 everywhere
+        else:
+            conf_neg_loss = neg_loss * conf_neg - self.alpha_ * torch.log(conf_neg) 
+            conf_neg_loss = conf_neg_loss.mean()
+
         losses = {
-            f"{mode}_confreg_loss_{scale}": pos_loss.mean(),
-            f"{mode}_confreg_negloss_{scale}": neg_loss.mean(),
+            f"{mode}_confreg_loss_{scale}": conf_pos_loss,
+            f"{mode}_confreg_negloss_{scale}": conf_neg_loss,
         }
         return losses
     
@@ -815,20 +842,20 @@ class ConfRobustLosses(nn.Module):
             
             if scale_gm_cls is not None:
                 gm_cls_losses = self.gm_cls_loss(x2, prob, scale_gm_cls, scale_gm_certainty, scale)
-                gm_loss = gm_cls_losses[f"gm_confcls_loss_{scale}"] + self.ce_weight * gm_cls_losses[f"gm_confcls_negloss_{scale}"]
+                gm_loss = gm_cls_losses[f"gm_confcls_loss_{scale}"] + gm_cls_losses[f"gm_confcls_negloss_{scale}"]
                 tot_loss = tot_loss + scale_weights[scale] * gm_loss
             elif scale_gm_flow is not None:
                 gm_flow_losses = self.regression_loss(x2, prob, scale_gm_flow, scale_gm_certainty, scale, mode = "gm")
-                gm_loss = gm_flow_losses[f"gm_confreg_loss_{scale}"] + self.ce_weight * gm_flow_losses[f"gm_confreg_negloss_{scale}"]
+                gm_loss = gm_flow_losses[f"gm_confreg_loss_{scale}"] + gm_flow_losses[f"gm_confreg_negloss_{scale}"] #self.ce_weight * 
                 tot_loss = tot_loss + scale_weights[scale] * gm_loss
             
             if delta_cls is not None:
                 delta_cls_losses = self.delta_cls_loss(x2, prob, flow_pre_delta, delta_cls, scale_certainty, scale, offset_scale)
-                delta_cls_loss = delta_cls_losses[f"delta_confcls_loss_{scale}"] + self.ce_weight * delta_cls_losses[f"delta_confcls_negloss_{scale}"]
+                delta_cls_loss = delta_cls_losses[f"delta_confcls_loss_{scale}"] + delta_cls_losses[f"delta_confcls_negloss_{scale}"]
                 tot_loss = tot_loss + scale_weights[scale] * delta_cls_loss
             else:
                 delta_regression_losses = self.regression_loss(x2, prob, flow, scale_certainty, scale)
-                reg_loss = delta_regression_losses[f"delta_confreg_loss_{scale}"] + self.ce_weight * delta_regression_losses[f"delta_confreg_negloss_{scale}"]
+                reg_loss = delta_regression_losses[f"delta_confreg_loss_{scale}"] + delta_regression_losses[f"delta_confreg_negloss_{scale}"]
                 tot_loss = tot_loss + scale_weights[scale] * reg_loss
             prev_epe = (flow.permute(0,2,3,1) - x2).norm(dim=-1).detach()
         #print('tot_loss:',tot_loss)

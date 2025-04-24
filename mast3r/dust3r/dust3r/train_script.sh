@@ -543,8 +543,6 @@ torchrun --nproc_per_node=4 train_onlywarp.py \
     --save_freq 1 --keep_freq 5 --eval_freq 1 --print_freq=10 --disable_cudnn_benchmark \
     --output_dir "/home/cpeng26/scratchrchella4/checkpoints/MASt3R_onlywarp_confloss_0424"
 
-tmux 3 c001 warpdpt confloss from mast3r
-
 
 io104 warpdpt confloss from mast3r
 torchrun --nproc_per_node=4 train_warp.py \
