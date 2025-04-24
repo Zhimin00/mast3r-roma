@@ -859,5 +859,5 @@ class ConfRobustLosses(nn.Module):
                 tot_loss = tot_loss + scale_weights[scale] * reg_loss
             prev_epe = (flow.permute(0,2,3,1) - x2).norm(dim=-1).detach()
         #print('tot_loss:',tot_loss)
-        return tot_loss * 0.075
+        return tot_loss * 0.01
     

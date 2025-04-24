@@ -541,7 +541,7 @@ torchrun --nproc_per_node=4 train_onlywarp.py \
     --pretrained "/home/cpeng26/scratchrchella4/checkpoints/MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric.pth" \
     --lr 0.0001 --min_lr 1e-06 --warmup_epochs 8 --epochs 50 --batch_size 3 --accum_iter 3 \
     --save_freq 1 --keep_freq 5 --eval_freq 1 --print_freq=10 --disable_cudnn_benchmark \
-    --output_dir "/home/cpeng26/scratchrchella4/checkpoints/MASt3R_onlywarp_confloss_0424"
+    --output_dir "/home/cpeng26/scratchrchella4/checkpoints/MASt3R_onlywarp_confnegloss_0424"
 
 
 io104 warpdpt confloss from mast3r
@@ -555,7 +555,7 @@ torchrun --nproc_per_node=4 train_warp.py \
     --pretrained "/cis/home/zshao14/checkpoints/MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric.pth" \
     --lr 0.0001 --min_lr 1e-06 --warmup_epochs 8 --epochs 50 --batch_size 4 --accum_iter 2 \
     --save_freq 1 --keep_freq 5 --eval_freq 1 --print_freq=10 --disable_cudnn_benchmark \
-    --output_dir "/cis/net/r24a/data/zshao/checkpoints/dust3r/MASt3R_warpdpt_0424"
+    --output_dir "/cis/net/r24a/data/zshao/checkpoints/dust3r/MASt3R_warpdpt_confengloss_0424"
 
 saturn finetune aerial-mast3r on megadepth
 torchrun --nproc_per_node=4 train.py \

@@ -74,8 +74,8 @@ def loss_of_one_batch_warp(batch, model, criterion, warp_criterion, device, symm
             with torch.cuda.amp.autocast(enabled=False):
                 loss_value, loss_details = criterion(view1, view2, pred1, pred2) if criterion is not None else [None, {}]
                 loss_warp = warp_criterion(view1, view2, correps) if warp_criterion is not None else None
-                tot_loss = float(loss_value) + float(loss_warp) if loss_value else loss_warp
-                loss_details['Warploss'] = loss_warp
+                tot_loss = loss_value + loss_warp if loss_value else loss_warp
+                loss_details['Warploss'] = float(loss_warp)
                 loss = (tot_loss, loss_details)
     result = dict(view1=view1, view2=view2, pred1=pred1, pred2=pred2, loss=loss, correps=correps)
     return result[ret] if ret else result
