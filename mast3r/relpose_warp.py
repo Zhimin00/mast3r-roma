@@ -1054,6 +1054,7 @@ def sample_to_sparse(dense_matches,
 
 
 def to_pixel_coordinates(coords, H_A, W_A, H_B = None, W_B = None):
+    
     if coords.shape[-1] == 2:
         return _to_pixel_coordinates(coords, H_A, W_A) 
     
@@ -1064,7 +1065,8 @@ def to_pixel_coordinates(coords, H_A, W_A, H_B = None, W_B = None):
     return _to_pixel_coordinates(kpts_A, H_A, W_A), _to_pixel_coordinates(kpts_B, H_B, W_B)
 
 def _to_pixel_coordinates(coords, H, W):
-    kpts = torch.stack((W/2 * (coords[...,0]+1), H/2 * (coords[...,1]+1)),axis=-1)
+    offset = 0.5
+    kpts = torch.stack((W/2 * (coords[...,0]+1), H/2 * (coords[...,1]+1)),axis=-1) - offset
     return kpts
 
 if __name__ == '__main__':

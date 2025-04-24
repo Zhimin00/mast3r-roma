@@ -788,13 +788,20 @@ class ConfRobustLosses(nn.Module):
                 b, _, h, w = scale_certainty.shape
             T1 = view1['camera_pose']
             T2 = view2['camera_pose']
+            # opencv to colmap intrinsics
+            K1 = view1['camera_intrinsics']
+            K1[:, 0, 2] += 0.5
+            K1[:, 1, 2] += 0.5
+            K2 = view2['camera_intrinsics']
+            K2[:, 0, 2] += 0.5
+            K2[:, 1, 2] += 0.5
             T_1to2 = torch.linalg.inv(T2) @ T1
             gt_warp, gt_prob = get_gt_warp(                
             view1["depthmap"],
             view2["depthmap"],
             T_1to2,
-            view1["camera_intrinsics"],
-            view2["camera_intrinsics"],
+            K1,
+            K2,
             H=h,
             W=w,
         )

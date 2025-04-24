@@ -11,6 +11,7 @@ import numpy as np
 import os
 from dust3r.datasets.base.base_stereo_view_dataset import BaseStereoViewDataset, BaseStereoViewDataset2
 from dust3r.utils.image import imread_cv2, load_images, load_depth
+from dust3r.utils.geometry import opencv_to_colmap_intrinsics, colmap_to_opencv_intrinsics
 import torch
 import pdb
 
@@ -229,6 +230,7 @@ class MegaDepth_all(BaseStereoViewDataset):
                 image = imread_cv2(osp.join(self.ROOT, img_path))
                 depthmap = load_depth(osp.join(self.ROOT, depth_path))
                 intrinsics = self.intrinsics[scene_name][im_id].astype(np.float32)
+                intrinsics = colmap_to_opencv_intrinsics(intrinsics)
                 camera_pose = self.poses[scene_name][im_id].astype(np.float32)
                 camera_pose = np.linalg.inv(camera_pose)
 
