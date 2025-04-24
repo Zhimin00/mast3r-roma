@@ -291,18 +291,13 @@ def train_warp(args):
     print('Number of parameters: ', sum(p.numel() for p in model.parameters()))
     print(f'>> Creating train criterion = {args.train_criterion}')
     train_criterion = eval(args.train_criterion).to(device)
-    warp_criterion = RobustLosses(
-        ce_weight=0.01,
-        local_dist = {1:4, 2:4, 4:8, 8:8},
-        local_largest_scale=8,
-        depth_interpolation_mode=" bilinear",
-        alpha=0.5,
-        c = 1e-4,
-    ).to(device)
+    print(f'>> Creating train warp criterion = {args.train_warp_criterion}')
+    warp_criterion = eval(args.train_warp_criterion).to(device)
     
     print(f'>> Creating test criterion = {args.test_criterion or args.train_criterion}')
     test_criterion = eval(args.test_criterion or args.criterion).to(device)
-    test_warp_criterion = warp_criterion.to(device)
+    print(f'>> Creating test warp criterion = {args.test_warp_criterion}')
+    test_warp_criterion = eval(args.test_warp_criterion).to(device)
     model.to(device)
     model_without_ddp = model
     print("Model = %s" % str(model_without_ddp))
