@@ -706,11 +706,11 @@ class ConfRobustLosses(nn.Module):
         loss = F.cross_entropy(scale_gm_cls, GT, reduction  = 'none')
         pos_loss = loss[prob > 0.99]
         neg_loss = loss[prob <= 0.99]
-        safe_certainty = gm_certainty[:, 0].clamp(max=88.0, min=-20.0)  # safe exp range
-        cert = 1 + safe_certainty.exp().clamp(min=1e-6)
+        safe_certainty = gm_certainty[:, 0].clamp(max=10.0, min=-20.0)  # safe exp range
+        cert = 1 + safe_certainty.exp()
         conf_pos = cert[prob > 0.99]
         conf_neg = cert[prob <= 0.99]
-        
+
         if not torch.any(pos_loss):
             conf_pos_loss = 0.0  # Prevent issues where prob is 0 everywhere
         else:
@@ -739,8 +739,8 @@ class ConfRobustLosses(nn.Module):
         loss = F.cross_entropy(delta_cls, GT, reduction  = 'none')
         pos_loss = loss[prob > 0.99]
         neg_loss = loss[prob <= 0.99]
-        safe_certainty = certainty[:, 0].clamp(max=88.0, min=-20.0)  # safe exp range
-        cert = 1 + safe_certainty.exp().clamp(min=1e-6)
+        safe_certainty = certainty[:, 0].clamp(max=10.0, min=-20.0)  # safe exp range
+        cert = 1 + safe_certainty.exp()
         conf_pos = cert[prob > 0.99]
         conf_neg = cert[prob <= 0.99]
 
@@ -768,8 +768,8 @@ class ConfRobustLosses(nn.Module):
         pos_loss = cs**a * ((x/(cs))**2 + 1**2)**(a/2)
         neg_x = epe[prob <= 0.99]
         neg_loss = cs**a * ((neg_x/(cs))**2 + 1**2)**(a/2)
-        safe_certainty = certainty[:, 0].clamp(max=88.0, min=-20.0)  # safe exp range
-        cert = 1 + safe_certainty.exp().clamp(min=1e-6)
+        safe_certainty = certainty[:, 0].clamp(max=10.0, min=-20.0)  # safe exp range
+        cert = 1 + safe_certainty.exp()
         conf_pos = cert[prob > 0.99]
         conf_neg = cert[prob <= 0.99]
 
