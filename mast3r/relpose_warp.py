@@ -22,7 +22,6 @@ import random
 def get_args_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset", type=str, required=True, help="visloc dataset to eval")
-    parser_weights = parser.add_mutually_exclusive_group(required=True)
     parser.add_argument("--weights", type=str, help="path to the model weights", default='naver/MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric')
     parser.add_argument("--model_name", type=str, help="model name", default='AsymmetricMASt3R_only_warp')
 
