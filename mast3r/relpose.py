@@ -9,20 +9,19 @@ import mast3r.utils.path_to_dust3r  # noqa
 from dust3r.utils.geometry import opencv_to_colmap_intrinsics
 from dust3r.datasets import get_data_loader
 
-from mast3r.model import AsymmetricMASt3R
+from mast3r.model import AsymmetricMASt3R, AsymmetricMASt3R_only_warp, AsymmetricMASt3R_warp
 from mast3r.fast_nn import fast_reciprocal_NNs
 from mast3r_relpose.datasets import *
 from tqdm import tqdm
 import poselib, cv2, pycolmap
 import pdb
+import random
 
 def get_args_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset", type=str, required=True, help="visloc dataset to eval")
-    parser_weights = parser.add_mutually_exclusive_group(required=True)
-    parser_weights.add_argument("--weights", type=str, help="path to the model weights", default=None)
-    parser_weights.add_argument("--model_name", type=str, help="name of the model weights",
-                                choices=["MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric"])
+    parser.add_argument("--weights", type=str, help="path to the model weights", default='naver/MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric')
+    parser.add_argument("--model_name", type=str, help="model name", default='AsymmetricMASt3R')
 
     parser.add_argument("--confidence_threshold", type=float, default=1.001,
                         help="confidence values higher than threshold are invalid")
@@ -966,8 +965,19 @@ def optimize_model(model, device):
 if __name__ == '__main__':
     parser = get_args_parser()
     args = parser.parse_args()
+
+    seed = 42
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)  # If using CUDA
+    torch.backends.cudnn.deterministic = True  # Makes CUDA deterministic
+    torch.backends.cudnn.benchmark = False  
+
+
     conf_thr = args.confidence_threshold
     device = args.device
+    weights = args.weights
     pose_estimator = args.pose_estimator
     assert args.pixel_tol > 0
     reprojection_error = args.reprojection_error
@@ -975,11 +985,15 @@ if __name__ == '__main__':
     pnp_max_points = args.pnp_max_points
     viz_matches = args.viz_matches
 
-    if args.weights is not None:
-        weights_path = args.weights
-    else:
-        weights_path = "naver/" + args.model_name
-    model = AsymmetricMASt3R.from_pretrained(weights_path).to(args.device)
+    # if args.weights is not None:
+    #     weights_path = args.weights
+    # else:
+    #     weights_path = "naver/" + args.model_name
+    # model = AsymmetricMASt3R.from_pretrained(weights_path).to(args.device)
+
+    model = eval(args.model_name).from_pretrained(weights).to(device)
+
+
     if args.use_tensorrt:
         optimize_model(model, device)
     fast_nn_params = dict(device=device, dist='dot', block_size=2**13)

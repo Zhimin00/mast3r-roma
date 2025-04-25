@@ -225,7 +225,6 @@ class HpatchesHomogBenchmark:
                         ), 
                         axis=-1,
                     )
-                    - offset
                 )
                 pos_b = (
                     np.stack(
@@ -235,7 +234,6 @@ class HpatchesHomogBenchmark:
                         ), 
                         axis=-1,
                     )
-                    - offset
                 )
 
                 try:

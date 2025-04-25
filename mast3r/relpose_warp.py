@@ -17,14 +17,14 @@ from tqdm import tqdm
 import poselib, cv2, pycolmap
 import pdb
 import torch.nn.functional as F
+import random
 
 def get_args_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset", type=str, required=True, help="visloc dataset to eval")
     parser_weights = parser.add_mutually_exclusive_group(required=True)
-    parser_weights.add_argument("--weights", type=str, help="path to the model weights", default=None)
-    parser_weights.add_argument("--model_name", type=str, help="name of the model weights",
-                                choices=["MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric"])
+    parser.add_argument("--weights", type=str, help="path to the model weights", default='naver/MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric')
+    parser.add_argument("--model_name", type=str, help="model name", default='AsymmetricMASt3R_only_warp')
 
     parser.add_argument("--confidence_threshold", type=float, default=1.001,
                         help="confidence values higher than threshold are invalid")
@@ -58,124 +58,6 @@ def get_args_parser():
     parser.add_argument("--single_loop", action='store_true', default=False, help="Use single-loop matmul")
     parser.add_argument("--use_tensorrt", action='store_true', default=False, help="Apply tensorrt to the model")
     return parser
-
-
-# def get_args_parser():
-#     parser = argparse.ArgumentParser(description='evaluation code for relative camera pose estimation')
-
-#     # model
-#     parser.add_argument('--model', type=str, 
-#         # default='Reloc3rRelpose(img_size=224)')
-#         default='Reloc3rRelpose(img_size=512)')
-#     parser.add_argument('--ckpt', type=str, 
-#         # default='./checkpoints/Reloc3r-224.pth')
-#         default='./checkpoints/Reloc3r-512.pth')
-    
-#     # test set
-#     parser.add_argument('--test_dataset', type=str, 
-#         # default="ScanNet1500(resolution=(224,224), seed=777)")
-#         default="ScanNet1500(resolution=(512,384), seed=777)")
-#     parser.add_argument('--batch_size', type=int,
-#         default=1)
-#     parser.add_argument('--num_workers', type=int,
-#         default=10)
-#     parser.add_argument('--amp', type=int, default=1,
-#                                 choices=[0, 1], help="Use Automatic Mixed Precision for pretraining")
-
-#     # parser.add_argument('--output_dir', type=str, 
-#     #     default='./output', help='path where to save the pose errors')
-
-#     return parser
-
-
-# def setup_reloc3r_relpose_model(model, ckpt_path, device):
-#     print('Building model: {:s}'.format(model))
-#     reloc3r_relpose = eval(model)
-#     reloc3r_relpose.to(device)
-#     if not os.path.exists(ckpt_path):
-#         from huggingface_hub import hf_hub_download
-#         print('Downloading checkpoint from HF...')
-#         if '224' in ckpt_path:
-#             hf_hub_download(repo_id='siyan824/reloc3r-224', filename='Reloc3r-224.pth', local_dir='./checkpoints')
-#         elif '512' in ckpt_path:
-#             hf_hub_download(repo_id='siyan824/reloc3r-512', filename='Reloc3r-512.pth', local_dir='./checkpoints')
-#     checkpoint = torch.load(ckpt_path, map_location=device)
-#     reloc3r_relpose.load_state_dict(checkpoint, strict=False) 
-#     print('Model loaded from ', ckpt_path)
-#     del checkpoint  # in case it occupies memory.
-#     reloc3r_relpose.eval()
-#     return reloc3r_relpose
-
-
-# def build_dataset(dataset, batch_size, num_workers, test=False):
-#     split = ['Train', 'Test'][test]
-#     print('Building {} data loader for {}'.format(split, dataset))
-#     loader = get_data_loader(dataset,
-#                              batch_size=batch_size,
-#                              num_workers=num_workers,
-#                              pin_mem=True,
-#                              shuffle=not (test),
-#                              drop_last=not (test))
-#     print('Dataset length: ', len(loader))
-#     return loader
-
-
-# def test(args):
-    
-#     # if not os.path.exists(args.output_dir):
-#     #     os.makedirs(args.output_dir)
-
-#     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-#     device = torch.device(device)
-
-#     reloc3r_relpose = setup_reloc3r_relpose_model(args.model, args.ckpt, device)
-    
-#     data_loader_test = {dataset.split('(')[0]: build_dataset(dataset, args.batch_size, args.num_workers, test=True)
-#                         for dataset in args.test_dataset.split('+')}
-
-#     # start evaluation
-#     rerrs, terrs = [], []
-#     for test_name, testset in data_loader_test.items():
-#         print('Testing {:s}'.format(test_name))
-#         with torch.no_grad():
-#             for batch in tqdm(testset):
-
-#                 pose = inference_relpose(batch, reloc3r_relpose, device, use_amp=bool(args.amp))
-
-#                 view1, view2 = batch
-#                 gt_pose2to1 = torch.inverse(view1['camera_pose']) @ view2['camera_pose']
-#                 rerrs_prh = []
-#                 terrs_prh = []
-
-#                 # rotation angular err
-#                 R_prd = pose[:,0:3,0:3]
-#                 for sid in range(len(R_prd)):
-#                     rerrs_prh.append(get_rot_err(to_numpy(R_prd[sid]), to_numpy(gt_pose2to1[sid,0:3,0:3])))
-                
-#                 # translation direction angular err
-#                 t_prd = pose[:,0:3,3]
-#                 for sid in range(len(t_prd)): 
-#                     transl = to_numpy(t_prd[sid])
-#                     gt_transl = to_numpy(gt_pose2to1[sid,0:3,-1])
-#                     transl_dir = transl / np.linalg.norm(transl)
-#                     gt_transl_dir = gt_transl / np.linalg.norm(gt_transl)
-#                     terrs_prh.append(get_transl_ang_err(transl_dir, gt_transl_dir)) 
-
-#                 rerrs += rerrs_prh
-#                 terrs += terrs_prh
-
-#         rerrs = np.array(rerrs)
-#         terrs = np.array(terrs)
-#         print('In total {} pairs'.format(len(rerrs)))
-
-#         # auc
-#         print(error_auc(rerrs, terrs, thresholds=[5, 10, 20]))
-
-#         # # save err list to file
-#         # err_list = np.concatenate((rerrs[:,None], terrs[:,None]), axis=-1)
-#         # output_file = '{}/pose_error_list.txt'.format(args.output_dir)
-#         # np.savetxt(output_file, err_list)
-#         # print('Pose errors saved to {}'.format(output_file))
 
 
 class TensorWrapper:
@@ -298,65 +180,6 @@ class Pose(TensorWrapper):
         """Underlying translation vector with shape (..., 3)."""
         return self._data[..., -3:]
 
-    # def inv(self) -> "Pose":
-    #     """Invert an SE(3) pose."""
-    #     R = self.R.transpose(-1, -2)
-    #     t = -(R @ self.t.unsqueeze(-1)).squeeze(-1)
-    #     return self.__class__.from_Rt(R, t)
-
-    # def compose(self, other: "Pose") -> "Pose":
-    #     """Chain two SE(3) poses: T_B2C.compose(T_A2B) -> T_A2C."""
-    #     R = self.R @ other.R
-    #     t = self.t + (self.R @ other.t.unsqueeze(-1)).squeeze(-1)
-    #     return self.__class__.from_Rt(R, t)
-
-    # def transform(self, p3d: torch.Tensor) -> torch.Tensor:
-    #     """Transform a set of 3D points.
-    #     Args:
-    #         p3d: 3D points, numpy array or PyTorch tensor with shape (..., 3).
-    #     """
-    #     assert p3d.shape[-1] == 3
-    #     # assert p3d.shape[:-2] == self.shape  # allow broadcasting
-    #     return p3d @ self.R.transpose(-1, -2) + self.t.unsqueeze(-2)
-
-    # def __mul__(self, p3D: torch.Tensor) -> torch.Tensor:
-    #     """Transform a set of 3D points: T_A2B * p3D_A -> p3D_B."""
-    #     return self.transform(p3D)
-
-    # def __matmul__(
-    #     self, other: Union["Pose", torch.Tensor]
-    # ) -> Union["Pose", torch.Tensor]:
-    #     """Transform a set of 3D points: T_A2B * p3D_A -> p3D_B.
-    #     or chain two SE(3) poses: T_B2C @ T_A2B -> T_A2C."""
-    #     if isinstance(other, self.__class__):
-    #         return self.compose(other)
-    #     else:
-    #         return self.transform(other)
-
-    # def J_transform(self, p3d_out: torch.Tensor):
-    #     # [[1,0,0,0,-pz,py],
-    #     #  [0,1,0,pz,0,-px],
-    #     #  [0,0,1,-py,px,0]]
-    #     J_t = torch.diag_embed(torch.ones_like(p3d_out))
-    #     J_rot = -skew_symmetric(p3d_out)
-    #     J = torch.cat([J_t, J_rot], dim=-1)
-    #     return J  # N x 3 x 6
-
-    # def numpy(self) -> Tuple[np.ndarray]:
-    #     return self.R.numpy(), self.t.numpy()
-
-    # def magnitude(self) -> Tuple[torch.Tensor]:
-    #     """Magnitude of the SE(3) transformation.
-    #     Returns:
-    #         dr: rotation anngle in degrees.
-    #         dt: translation distance in meters.
-    #     """
-    #     trace = torch.diagonal(self.R, dim1=-1, dim2=-2).sum(-1)
-    #     cos = torch.clamp((trace - 1) / 2, -1, 1)
-    #     dr = torch.acos(cos).abs() / math.pi * 180
-    #     dt = torch.norm(self.t, dim=-1)
-    #     return dr, dt
-
     def __repr__(self):
         return f"Pose: {self.shape} {self.dtype} {self.device}"
 
@@ -368,57 +191,12 @@ class Camera(TensorWrapper):
         assert data.shape[-1] in {6, 8, 10}
         super().__init__(data)
 
-    # @classmethod
-    # def from_colmap(cls, camera: Union[Dict, NamedTuple]):
-    #     """Camera from a COLMAP Camera tuple or dictionary.
-    #     We use the corner-convetion from COLMAP (center of top left pixel is (0.5, 0.5))
-    #     """
-    #     if isinstance(camera, tuple):
-    #         camera = camera._asdict()
-
-    #     model = camera["model"]
-    #     params = camera["params"]
-
-    #     if model in ["OPENCV", "PINHOLE", "RADIAL"]:
-    #         (fx, fy, cx, cy), params = np.split(params, [4])
-    #     elif model in ["SIMPLE_PINHOLE", "SIMPLE_RADIAL"]:
-    #         (f, cx, cy), params = np.split(params, [3])
-    #         fx = fy = f
-    #         if model == "SIMPLE_RADIAL":
-    #             params = np.r_[params, 0.0]
-    #     else:
-    #         raise NotImplementedError(model)
-
-    #     data = np.r_[camera["width"], camera["height"], fx, fy, cx, cy, params]
-    #     return cls(data)
-
     @classmethod
     def from_calibration_matrix(cls, K: torch.Tensor):
         cx, cy = K[..., 0, 2], K[..., 1, 2]
         fx, fy = K[..., 0, 0], K[..., 1, 1]
         data = torch.stack([2 * cx, 2 * cy, fx, fy, cx, cy], -1)
         return cls(data)
-
-    # @autocast
-    # def calibration_matrix(self):
-    #     K = torch.zeros(
-    #         *self._data.shape[:-1],
-    #         3,
-    #         3,
-    #         device=self._data.device,
-    #         dtype=self._data.dtype,
-    #     )
-    #     K[..., 0, 2] = self._data[..., 4]
-    #     K[..., 1, 2] = self._data[..., 5]
-    #     K[..., 0, 0] = self._data[..., 2]
-    #     K[..., 1, 1] = self._data[..., 3]
-    #     K[..., 2, 2] = 1.0
-    #     return K
-
-    # @property
-    # def size(self) -> torch.Tensor:
-    #     """Size (width height) of the images, with shape (..., 2)."""
-    #     return self._data[..., :2]
 
     @property
     def f(self) -> torch.Tensor:
@@ -430,88 +208,10 @@ class Camera(TensorWrapper):
         """Principal points (cx, cy) with shape (..., 2)."""
         return self._data[..., 4:6]
 
-    # @property
-    # def dist(self) -> torch.Tensor:
-    #     """Distortion parameters, with shape (..., {0, 2, 4})."""
-    #     return self._data[..., 6:]
-
-    # @autocast
-    # def scale(self, scales: torch.Tensor):
-    #     """Update the camera parameters after resizing an image."""
-    #     s = scales
-    #     data = torch.cat([self.size * s, self.f * s, self.c * s, self.dist], -1)
-    #     return self.__class__(data)
-
-    # def crop(self, left_top: Tuple[float], size: Tuple[int]):
-    #     """Update the camera parameters after cropping an image."""
-    #     left_top = self._data.new_tensor(left_top)
-    #     size = self._data.new_tensor(size)
-    #     data = torch.cat([size, self.f, self.c - left_top, self.dist], -1)
-    #     return self.__class__(data)
-
-    # @autocast
-    # def in_image(self, p2d: torch.Tensor):
-    #     """Check if 2D points are within the image boundaries."""
-    #     assert p2d.shape[-1] == 2
-    #     # assert p2d.shape[:-2] == self.shape  # allow broadcasting
-    #     size = self.size.unsqueeze(-2)
-    #     valid = torch.all((p2d >= 0) & (p2d <= (size - 1)), -1)
-    #     return valid
-
-    # @autocast
-    # def project(self, p3d: torch.Tensor) -> Tuple[torch.Tensor]:
-    #     """Project 3D points into the camera plane and check for visibility."""
-    #     z = p3d[..., -1]
-    #     valid = z > self.eps
-    #     z = z.clamp(min=self.eps)
-    #     p2d = p3d[..., :-1] / z.unsqueeze(-1)
-    #     return p2d, valid
-
-    # def J_project(self, p3d: torch.Tensor):
-    #     x, y, z = p3d[..., 0], p3d[..., 1], p3d[..., 2]
-    #     zero = torch.zeros_like(z)
-    #     z = z.clamp(min=self.eps)
-    #     J = torch.stack([1 / z, zero, -x / z**2, zero, 1 / z, -y / z**2], dim=-1)
-    #     J = J.reshape(p3d.shape[:-1] + (2, 3))
-    #     return J  # N x 2 x 3
-
-    # @autocast
-    # def distort(self, pts: torch.Tensor) -> Tuple[torch.Tensor]:
-    #     """Distort normalized 2D coordinates
-    #     and check for validity of the distortion model.
-    #     """
-    #     assert pts.shape[-1] == 2
-    #     # assert pts.shape[:-2] == self.shape  # allow broadcasting
-    #     return distort_points(pts, self.dist)
-
-    # def J_distort(self, pts: torch.Tensor):
-    #     return J_distort_points(pts, self.dist)  # N x 2 x 2
-
-    # @autocast
-    # def denormalize(self, p2d: torch.Tensor) -> torch.Tensor:
-    #     """Convert normalized 2D coordinates into pixel coordinates."""
-    #     return p2d * self.f.unsqueeze(-2) + self.c.unsqueeze(-2)
-
     def normalize(self, p2d: torch.Tensor) -> torch.Tensor:
         """Convert normalized 2D coordinates into pixel coordinates."""
         return (p2d - self.c.unsqueeze(-2)) / self.f.unsqueeze(-2)
 
-    # def J_denormalize(self):
-    #     return torch.diag_embed(self.f).unsqueeze(-3)  # 1 x 2 x 2
-
-    # @autocast
-    # def cam2image(self, p3d: torch.Tensor) -> Tuple[torch.Tensor]:
-    #     """Transform 3D points into 2D pixel coordinates."""
-    #     p2d, visible = self.project(p3d)
-    #     p2d, mask = self.distort(p2d)
-    #     p2d = self.denormalize(p2d)
-    #     valid = visible & mask & self.in_image(p2d)
-    #     return p2d, valid
-
-    # def J_world2image(self, p3d: torch.Tensor):
-    #     p2d_dist, valid = self.project(p3d)
-    #     J = self.J_denormalize() @ self.J_distort(p2d_dist) @ self.J_project(p3d)
-    #     return J, valid
 
     def image2cam(self, p2d: torch.Tensor) -> torch.Tensor:
         """Convert 2D pixel corrdinates to 3D points with z=1"""
@@ -548,7 +248,7 @@ class Camera(TensorWrapper):
         return f"Camera {self.shape} {self.dtype} {self.device}"
 
 @torch.no_grad()
-def inference(batch, model, device, use_amp=False, events=None): 
+def inference(batch, model, device, use_amp=False): 
     # to device. 
     for view in batch:
         for name in 'img camera_intrinsics camera_pose'.split():  
@@ -854,116 +554,6 @@ class InferenceWrapper(torch.nn.Module):
         return output
 
 
-def optimize_model(model, device):
-    gpu_type = torch.cuda.get_device_name(0).replace(' ', '_')
-    compiled_dir = f'optimized_modules_{gpu_type}'
-    os.makedirs(compiled_dir, exist_ok=True)
-
-    inputs = {'dpt.scratch.refinenet4': (torch.rand(1, 256, 16, 12).cuda(),),
-            'dpt.scratch.refinenet3': (torch.rand(1, 256, 32, 24).cuda(), torch.rand(1, 256, 32, 24).cuda()),
-            'dpt.scratch.refinenet2': (torch.rand(1, 256, 64, 48).cuda(), torch.rand(1, 256, 64, 48).cuda()),
-            'dpt.scratch.refinenet1': (torch.rand(1, 256, 128, 96).cuda(), torch.rand(1, 256, 128, 96).cuda()),
-            'dpt.head': (torch.rand(1, 256, 256, 192).cuda(),),
-            'head_local_features': (torch.rand(1, 768, 1792).cuda(),)
-    }
-    dynamic_axes = {'dpt.scratch.refinenet4': {
-                    'input1' : {0 : 'batch_size', 2: 'width', 3: 'height'},
-                    'output' : {0 : 'batch_size', 2: 'width', 3: 'height'}},
-            'dpt.scratch.refinenet3': {
-                    'input1' : {0 : 'batch_size', 2: 'width', 3: 'height'},
-                    'input2' : {0 : 'batch_size', 2: 'width', 3: 'height'},
-                    'output' : {0 : 'batch_size', 2: 'width', 3: 'height'}},
-            'dpt.scratch.refinenet2': {
-                    'input1' : {0 : 'batch_size', 2: 'width', 3: 'height'},
-                    'input2' : {0 : 'batch_size', 2: 'width', 3: 'height'},
-                    'output' : {0 : 'batch_size', 2: 'width', 3: 'height'}},
-            'dpt.scratch.refinenet1': {
-                    'input1' : {0 : 'batch_size', 2: 'width', 3: 'height'},
-                    'input2' : {0 : 'batch_size', 2: 'width', 3: 'height'},
-                    'output' : {0 : 'batch_size', 2: 'width', 3: 'height'}},
-            'dpt.head': {
-                    'input1' : {0 : 'batch_size', 2: 'width', 3: 'height'},
-                    'output' : {0 : 'batch_size', 2: 'width', 3: 'height'}},
-            'head_local_features': {
-                    'input1' : {0 : 'batch_size', 1: 'depth'},
-                    'output' : {0 : 'batch_size', 2: 'width'}},
-    }
-    input_shapes = {'dpt.scratch.refinenet4': {
-                    'input1': {'min': (1, 256, 1, 1), 'opt': (1, 256, 16, 12), 'max': (1, 256, 16, 16)}},
-            'dpt.scratch.refinenet3': {
-                    'input1': {'min': (1, 256, 1, 1), 'opt': (1, 256, 32, 24), 'max': (1, 256, 32, 32)},
-                    'input2': {'min': (1, 256, 1, 1), 'opt': (1, 256, 32, 24), 'max': (1, 256, 32, 32)}},
-            'dpt.scratch.refinenet2': {
-                    'input1': {'min': (1, 256, 1, 1), 'opt': (1, 256, 64, 48), 'max': (1, 256, 64, 64)},
-                    'input2': {'min': (1, 256, 1, 1), 'opt': (1, 256, 64, 48), 'max': (1, 256, 64, 64)}},
-            'dpt.scratch.refinenet1': {
-                    'input1': {'min': (1, 256, 1, 1), 'opt': (1, 256, 128, 96), 'max': (1, 256, 128, 128)},
-                    'input2': {'min': (1, 256, 1, 1), 'opt': (1, 256, 128, 96), 'max': (1, 256, 128, 128)}},
-            'dpt.head': {
-                    'input1': {'min': (1, 256, 1, 1), 'opt': (1, 256, 256, 192), 'max': (1, 256, 256, 256)}},
-            'head_local_features': {
-                    'input1': {'min': (1, 576, 1792), 'opt': (1, 768, 1792), 'max': (1, 768, 1792)}},
-    }
-    
-    for key, input in inputs.items():
-        das = dynamic_axes[key]
-        onnx_file_path = f'{compiled_dir}/model.downstream_head1.{key}.onnx'
-        engine_file_path = f'{compiled_dir}/model.downstream_head2.{key}.trt'
-
-        # Save engine
-        pm = model.downstream_head1
-        for sub in key.split('.')[:-1]:
-            pm = getattr(pm, sub)
-        mod = key.split('.')[-1]
-        if not os.path.isfile(engine_file_path):
-            torch.onnx.export(getattr(pm, mod),
-                            input,
-                            onnx_file_path,
-                            export_params=True,
-                            opset_version=14,
-                            do_constant_folding=True,
-                            input_names=[f'input{i}' for i in range(1, len(input)+1)],
-                            output_names=["output"],
-                            dynamic_axes=das,
-                            )
-
-            logger = trt.Logger(trt.Logger.INFO)
-            builder = trt.Builder(logger)
-            network = builder.create_network(1 << int(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH))
-            parser = trt.OnnxParser(network, logger)
-            with open(onnx_file_path, 'rb') as f:
-                if not parser.parse(f.read()):
-                    print("ERROR: Failed to parse ONNX file.")
-                    for error in range(parser.num_errors):
-                        print(parser.get_error(error))
-
-            config = builder.create_builder_config()
-            config.set_memory_pool_limit(trt.MemoryPoolType.WORKSPACE, 1 << 30)   # 1GB workspace size
-            config.builder_optimization_level = 5
-            config.set_flag(trt.BuilderFlag.FP16)  # Enable FP16 for faster inference (if supported)
-
-            # Update
-            profile = builder.create_optimization_profile()
-            for i in range(len(input)):
-                input_tensor = network.get_input(i)
-                profile.set_shape(input_tensor.name, **input_shapes[key][input_tensor.name])
-            config.add_optimization_profile(profile)
-
-            engine_bytes = builder.build_serialized_network(network, config)
-            with open(engine_file_path, "wb") as f:
-                        f.write(engine_bytes)
-
-        # load and run the engine
-        runtime = trt.Runtime(trt.Logger(trt.Logger.WARNING))
-        with open(engine_file_path, "rb") as f:
-            engine = runtime.deserialize_cuda_engine(f.read())
-
-        setattr(pm, mod, InferenceWrapper(engine, device))
-
-
-    return model
-
-
 def dense_match(corresps, symmetric = True):
     im_A_to_im_B = corresps[1]["flow"]
     im_A_to_im_B = im_A_to_im_B.permute(
@@ -1072,8 +662,18 @@ def _to_pixel_coordinates(coords, H, W):
 if __name__ == '__main__':
     parser = get_args_parser()
     args = parser.parse_args()
+    seed = 42
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)  # If using CUDA
+    torch.backends.cudnn.deterministic = True  # Makes CUDA deterministic
+    torch.backends.cudnn.benchmark = False  
+
+
     conf_thr = args.confidence_threshold
     device = args.device
+    weights = args.weights
     pose_estimator = args.pose_estimator
     assert args.pixel_tol > 0
     reprojection_error = args.reprojection_error
@@ -1081,14 +681,8 @@ if __name__ == '__main__':
     pnp_max_points = args.pnp_max_points
     viz_matches = args.viz_matches
 
-    if args.weights is not None:
-        weights_path = args.weights
-    else:
-        weights_path = "naver/" + args.model_name
-    model = AsymmetricMASt3R_only_warp.from_pretrained(weights_path).to(args.device)
-    #model = AsymmetricMASt3R.from_pretrained(weights_path).to(args.device)
-    if args.use_tensorrt:
-        optimize_model(model, device)
+    model = eval(args.model_name).from_pretrained(weights).to(device)
+
     fast_nn_params = dict(device=device, dist='dot', block_size=2**13)
     dataset = eval(args.dataset)
     data_loader_test = get_data_loader(dataset,
@@ -1106,8 +700,6 @@ if __name__ == '__main__':
     results = defaultdict(list)
     test_thresholds = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0]
     pose_results = defaultdict(lambda: defaultdict(list))
-    # tot_e_t, tot_e_R, tot_e_pose = [], [], []
-    # thresholds = [5, 10, 20]
     if 'scannet' in args.dataset:
         print('scannet')
     else:
@@ -1116,29 +708,16 @@ if __name__ == '__main__':
     with torch.no_grad():
         for batch in tqdm(data_loader_test):
 
-            events = {
-                'start_encode': [],
-                'end_encode': [],
-                'start_decode': [],
-                'end_decode': [],
-                'start_downstream_head': [],
-                'end_downstream_head': [],
-                'start_fastnn': [],
-                'end_fastnn': [],
-                'start_bnn': [],
-                'end_bnn': [],
-            }
             if 'scannet' in args.dataset:
                 view1, view2 = make_batch_symmetric(batch)
                 batch = (view1, view2)
-                _, _ , corresps = inference(batch, model, device, use_amp=False, events=events)
+                _, _ , corresps = inference(batch, model, device, use_amp=False)
                 dense_matches, dense_certainty = dense_match(corresps)
-                
             else:
-                _, _ , corresps = inference(batch, model, device, use_amp=False, events=events)
+                _, _ , corresps = inference(batch, model, device, use_amp=False)
                 view1, view2 = batch
                 dense_matches, dense_certainty = dense_match(corresps, symmetric = False)   
-            
+
             sparse_matches, sparse_certainty = sample_to_sparse(dense_matches, dense_certainty, 5000)
 
             h1, w1 = view1['true_shape'][0]
@@ -1167,61 +746,6 @@ if __name__ == '__main__':
 
             correct_intrinsic(view1)
             correct_intrinsic(view2)
-    #         K1 = view1['camera_intrinsics'][0].cpu().numpy().copy()
-    #         T1 = view1['camera_pose'][0].cpu().numpy().copy()
-    #         R1, t1 = T1[:3, :3], T1[:3, 3]
-    #         K2 = view2['camera_intrinsics'][0].cpu().numpy().copy()
-    #         T2 = view2['camera_pose'][0].cpu().numpy().copy()
-    #         R2, t2 = T2[:3, :3], T2[:3, 3]
-            
-    #         R, t = compute_relative_pose(R1, t1, R2, t2)
-    #         T1_to_2 = np.concatenate((R,t[:,None]), axis=-1)
-    #         kpts1, kpts2 = kp0[0].cpu().numpy() , kp1[0].cpu().numpy()
-    #         print(len(kpts1))
-    #         for _ in range(5):
-    #             shuffling = np.random.permutation(np.arange(len(kpts1)))
-    #             kpts1 = kpts1[shuffling]
-    #             kpts2 = kpts2[shuffling]
-    #             try:
-    #                 threshold = 0.5 
-    #                 norm_threshold = threshold / (np.mean(np.abs(K1[:2, :2])) + np.mean(np.abs(K2[:2, :2])))
-    #                 R_est, t_est, mask = estimate_pose(
-    #                     kpts1,
-    #                     kpts2,
-    #                     K1,
-    #                     K2,
-    #                     norm_threshold,
-    #                     conf=0.99999,
-    #                 )
-    #                 T1_to_2_est = np.concatenate((R_est, t_est), axis=-1)  #
-    #                 e_t, e_R = compute_pose_error(T1_to_2_est, R, t)
-    #                 e_pose = max(e_t, e_R)
-    #             except Exception as e:
-    #                         print(repr(e))
-    #                         e_t, e_R = 90, 90
-    #                         e_pose = max(e_t, e_R)
-    #             tot_e_t.append(e_t)
-    #             tot_e_R.append(e_R)
-    #             tot_e_pose.append(e_pose)
-    # tot_e_pose = np.array(tot_e_pose)
-    # auc = pose_auc(tot_e_pose, thresholds)
-    # acc_5 = (tot_e_pose < 5).mean()
-    # acc_10 = (tot_e_pose < 10).mean()
-    # acc_15 = (tot_e_pose < 15).mean()
-    # acc_20 = (tot_e_pose < 20).mean()
-    # map_5 = acc_5
-    # map_10 = np.mean([acc_5, acc_10])
-    # map_20 = np.mean([acc_5, acc_10, acc_15, acc_20])
-
-    # results = {
-    #     "auc_5": auc[0],
-    #     "auc_10": auc[1],
-    #     "auc_20": auc[2],
-    #     "map_5": map_5,
-    #     "map_10": map_10,
-    #     "map_20": map_20,
-    # }
-    # print(results)
             data = {
                 # "T_0to1": view1['camera_pose'] @ torch.inverse(view2['camera_pose']),
                 "T_0to1": torch.inverse(view2['camera_pose']) @ view1['camera_pose'],
@@ -1249,15 +773,7 @@ if __name__ == '__main__':
             for k, v in results_i.items():
                 results[k].append(v)
             
-            
             torch.cuda.synchronize()
-            arr_encode = [start_event.elapsed_time(end_event) for start_event, end_event in zip(events['start_encode'], events['end_encode'])]
-            arr_decode = [start_event.elapsed_time(end_event) for start_event, end_event in zip(events['start_decode'], events['end_decode'])]
-            arr_downstream_head = [start_event.elapsed_time(end_event) for start_event, end_event in zip(events['start_downstream_head'], events['end_downstream_head'])]
-            arr_fastnn = [start_event.elapsed_time(end_event) for start_event, end_event in zip(events['start_fastnn'], events['end_fastnn'])]
-            arr_bnn = [start_event.elapsed_time(end_event) for start_event, end_event in zip(events['start_bnn'], events['end_bnn'])]
-            print(f'encode({len(arr_encode)}): {sum(arr_encode)}, decode({len(arr_decode)}): {sum(arr_decode)}, downstream_head({len(arr_downstream_head)}): {sum(arr_downstream_head)}, fastnn({len(arr_fastnn)}): {sum(arr_fastnn)}, bnn({len(arr_bnn)}): {sum(arr_bnn)}, mem: {torch.cuda.memory_reserved() / 1024**2:.2f} MB, max_mem: {torch.cuda.max_memory_reserved() / 1024**2:.2f} MB')
-
         summaries = {}
         for k, v in results.items():
             arr = np.array(v)
@@ -1275,30 +791,3 @@ if __name__ == '__main__':
         }
 
         print(summaries)
-
-            # rerrs_prh = []
-            # terrs_prh = []
-
-            # # rotation angular err
-            # R_prd = pose[:,0:3,0:3]
-            # for sid in range(len(R_prd)):
-            #     rerrs_prh.append(get_rot_err(to_numpy(R_prd[sid]), to_numpy(gt_pose2to1[sid,0:3,0:3])))
-            
-            # # translation direction angular err
-            # t_prd = pose[:,0:3,3]
-            # for sid in range(len(t_prd)): 
-            #     transl = to_numpy(t_prd[sid])
-            #     gt_transl = to_numpy(gt_pose2to1[sid,0:3,-1])
-            #     transl_dir = transl / np.linalg.norm(transl)
-            #     gt_transl_dir = gt_transl / np.linalg.norm(gt_transl)
-            #     terrs_prh.append(get_transl_ang_err(transl_dir, gt_transl_dir)) 
-
-            # rerrs += rerrs_prh
-            # terrs += terrs_prh
-
-    # rerrs = np.array(rerrs)
-    # terrs = np.array(terrs)
-    # print('In total {} pairs'.format(len(rerrs)))
-
-    # # auc
-    # print(error_auc(rerrs, terrs, thresholds=[5, 10, 20]))
