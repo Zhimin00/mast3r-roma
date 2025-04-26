@@ -580,7 +580,7 @@ torchrun --nproc_per_node=4 train_onlywarp.py \
     --save_freq 1 --keep_freq 5 --eval_freq 1 --print_freq=10 --disable_cudnn_benchmark \
     --output_dir "/home/cpeng26/scratchrchella4/checkpoints/Aerial_MASt3R_onlywarp_megadepth_0423"
 
-torchrun --nproc_per_node=4 train_onlywarp.py \
+torchrun --nproc_per_node=4 train_warp.py \
     --train_dataset "20_000 @ MegaDepth_all(split='train', ROOT='/home/jovyan/workspace/data/megadepth', min_overlap=0.01,  resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], aug_crop=16, aug_monocular=0.005, transform=ColorJitter, n_corres=8192, nneg=0.5) + 20_000 @ MegaDepth_all(split='train', ROOT='/home/jovyan/workspace/data/megadepth', min_overlap=0.35, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], aug_crop=16, aug_monocular=0.005, transform=ColorJitter, n_corres=8192, nneg=0.5)" \
     --test_dataset "1000 @ MegaDepth_all(split='val',  ROOT='/home/jovyan/workspace/data/megadepth', resolution=(512,384), seed=777, n_corres=1024)" \
     --model "AsymmetricMASt3R_only_warp(pos_embed='RoPE100', patch_embed_cls='ManyAR_PatchEmbed_cnn', cnn_type='vgg', img_size=(512, 512), head_type='only_warp', output_mode='pts3d', depth_mode=('exp', -inf, inf), conf_mode=('exp', 1, inf), enc_embed_dim=1024, enc_depth=24, enc_num_heads=16, dec_embed_dim=768, dec_depth=12, dec_num_heads=12)" \
@@ -592,8 +592,33 @@ torchrun --nproc_per_node=4 train_onlywarp.py \
     --train_dataset "20_000 @ Aerial_MegaDepth(split='train', ROOT='/home/cpeng26/scratchrchella4/data/megadepth_aerial_processed', resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], aug_crop=16, aug_monocular=0.005, transform=ColorJitter, n_corres=8192, nneg=0.5)" \
     --test_dataset "1_000 @ Aerial_MegaDepth(split='val', ROOT='/home/cpeng26/scratchrchella4/data/megadepth_aerial_processed', resolution=(512, 384), seed=777, n_corres=1024)" \
 
-    
 
+20250425
+io104 train on all megadepth, freeze backbone
+torchrun --nproc_per_node=4 train_warp.py \
+    --train_dataset "120_000 @ MegaDepth_all(split='train', ROOT='/cis/net/io104/data/zshao14/megadepth', min_overlap=0.01,  resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], aug_crop=16, aug_monocular=0.005, transform=ColorJitter, n_corres=8192, nneg=0.5) + 80_000 @ MegaDepth_all(split='train', ROOT='/cis/net/io104/data/zshao14/megadepth', min_overlap=0.35, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], aug_crop=16, aug_monocular=0.005, transform=ColorJitter, n_corres=8192, nneg=0.5) + 50_000 @ Aerial_MegaDepth(split='train1', ROOT='/cis/net/io99a/data/zshao/megadepth_aerial_data/megadepth_aerial_processed', resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], aug_crop=16, aug_monocular=0.005, transform=ColorJitter, n_corres=8192, nneg=0.5) + 50_000 @ Aerial_MegaDepth(split='train2', ROOT='/cis/net/io99a/data/zshao/megadepth_aerial_data/megadepth_aerial_processed', resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], aug_crop=16, aug_monocular=0.005, transform=ColorJitter, n_corres=8192, nneg=0.5)" \
+    --test_dataset "1000 @ MegaDepth_all(split='val',  ROOT='/cis/net/io104/data/zshao14/megadepth', min_overlap=0.3, max_overlap=0.7, resolution=(512,384), seed=777, n_corres=1024) + 1000 @ Aerial_MegaDepth(split='val', ROOT='/cis/net/io99a/data/zshao/megadepth_aerial_data/megadepth_aerial_processed', resolution=(512, 384), seed=777, n_corres=1024)" \
+    --model "AsymmetricMASt3R_warp(freeze='backbone', pos_embed='RoPE100', patch_embed_cls='ManyAR_PatchEmbed_cnn', cnn_type='vgg', img_size=(512, 512), head_type='warp+dpt', output_mode='pts3d', depth_mode=('exp', -inf, inf), conf_mode=('exp', 1, inf), enc_embed_dim=1024, enc_depth=24, enc_num_heads=16, dec_embed_dim=768, dec_depth=12, dec_num_heads=12)" \
+    --train_criterion "ConfLoss(Regr3D(L21, norm_mode='?avg_dis', loss_in_log=False), alpha=0.2)"  \
+    --test_criterion "Regr3D(L21, norm_mode='?avg_dis', gt_scale=True, sky_loss_value=0)" \
+     --pretrained "/cis/net/r24a/data/zshao/checkpoints/dust3r/checkpoint-aerial-mast3r.pth" \
+    --lr 0.0001 --min_lr 1e-06 --warmup_epochs 4 --epochs 20 --batch_size 8 --accum_iter 1 \
+    --save_freq 1 --keep_freq 5 --eval_freq 1 --print_freq=10 --disable_cudnn_benchmark \
+    --output_dir "/cis/net/r24a/data/zshao/checkpoints/dust3r/MASt3R_freeze_trainwarp"
+    
+torchrun --nproc_per_node=4 train_warp.py \
+    --train_dataset "120_000 @ MegaDepth_all(split='train', ROOT='/home/cpeng26/scratchrchella4/data/megadepth', min_overlap=0.01,  resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], aug_crop=16, aug_monocular=0.005, transform=ColorJitter, n_corres=8192, nneg=0.5) + 80_000 @ MegaDepth_all(split='train', ROOT='/home/cpeng26/scratchrchella/data/megadepth', min_overlap=0.35, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], aug_crop=16, aug_monocular=0.005, transform=ColorJitter, n_corres=8192, nneg=0.5) + 50_000 @ Aerial_MegaDepth(split='train1', ROOT='/home/cpeng26/scratchrchella4/data/megadepth_aerial_processed', resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], aug_crop=16, aug_monocular=0.005, transform=ColorJitter, n_corres=8192, nneg=0.5) + 50_000 @ Aerial_MegaDepth(split='train2', ROOT='/home/cpeng26/scratchrchella4/data/megadepth_aerial_processed', resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], aug_crop=16, aug_monocular=0.005, transform=ColorJitter, n_corres=8192, nneg=0.5)" \
+    --test_dataset "1000 @ MegaDepth_all(split='val', ROOT='/home/cpeng26/scratchrchella4/data/megadepth', min_overlap=0.3, max_overlap=0.7, resolution=(512,384), seed=777, n_corres=1024) + 1000 @ Aerial_MegaDepth(split='val', ROOT='/home/cpeng26/scratchrchella4/data/megadepth_aerial_processed', resolution=(512, 384), seed=777, n_corres=1024)" \
+    --model "AsymmetricMASt3R_warp(freeze='backbone', pos_embed='RoPE100', patch_embed_cls='ManyAR_PatchEmbed_cnn', cnn_type='vgg', img_size=(512, 512), head_type='warp+dpt', output_mode='pts3d', depth_mode=('exp', -inf, inf), conf_mode=('exp', 1, inf), enc_embed_dim=1024, enc_depth=24, enc_num_heads=16, dec_embed_dim=768, dec_depth=12, dec_num_heads=12)" \
+    --train_criterion "ConfLoss(Regr3D(L21, norm_mode='?avg_dis', loss_in_log=False), alpha=0.2)"  \
+    --test_criterion "Regr3D(L21, norm_mode='?avg_dis', gt_scale=True, sky_loss_value=0)" \
+    --pretrained "/home/cpeng26/scratchrchella4/checkpoints/checkpoint-aerial-mast3r.pth" \
+    --lr 0.0001 --min_lr 1e-06 --warmup_epochs 4 --epochs 20 --batch_size 8 --accum_iter 1 \
+    --save_freq 1 --keep_freq 5 --eval_freq 1 --print_freq=10 --disable_cudnn_benchmark \
+    --output_dir "/cis/net/r24a/data/zshao/checkpoints/dust3r/MASt3R_freeze_trainwarp"
+
+     + MegaDepth_all(split='train', ROOT='/home/cpeng26/scratchrchella4/data/megadepth', min_overlap=0.35, resolution=[(512, 384), (512, 336), (512, 288), (512, 256), (512, 160)], aug_crop=16, aug_monocular=0.005, transform=ColorJitter, n_corres=8192, nneg=0.5)" \
+   
 
 torchrun --nproc_per_node=4 --master_port=48798 main_finetune.py \
     --model RETFound_mae \

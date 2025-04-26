@@ -98,29 +98,26 @@ class MegaDepth(BaseStereoViewDataset):
         return views
     
 class Aerial_MegaDepth(BaseStereoViewDataset):
-    def __init__(self, *args, split, ROOT, **kwargs):
+    def __init__(self, *args, ROOT, **kwargs):
         self.ROOT = ROOT
         super().__init__(*args, **kwargs)
+        print(self.split)
         self.loaded_data = self._load_data(self.split)
 
     def _load_data(self, split):
-        if split == 'train':
-            files = ['aerial_megadepth_train_part1.npz', 'aerial_megadepth_train_part2.npz']
-            paths = [osp.join(self.ROOT, f) for f in files]
-            scenes = []
-            images = []
-            pairs = []
-            for path in paths:
-                with np.load(path) as data:
-                    scenes.append(data['scenes'])
-                    images.append(data['images'])
-                    pairs.append(data['pairs'])
-            self.all_scenes = np.concatenate(scenes, axis=0)
-            self.all_images = np.concatenate(images, axis=0)
-            self.pairs = np.concatenate(pairs, axis=0)
-            
+        if split == 'train1':
+            with np.load(osp.join(self.ROOT, 'aerial_megadepth_train_part1.npz'), allow_pickle=True) as data:
+                self.all_scenes = data['scenes']
+                self.all_images = data['images']
+                self.pairs = data['pairs']
+        elif split == 'train2':
+            with np.load(osp.join(self.ROOT, 'aerial_megadepth_train_part2.npz'), allow_pickle=True) as data:
+                self.all_scenes = data['scenes']
+                self.all_images = data['images']
+                self.pairs = data['pairs']
+
         elif split == 'val':
-            with np.load(osp.join(self.ROOT, 'aerial_megadepth_val.npz')) as data:
+            with np.load(osp.join(self.ROOT, 'aerial_megadepth_val.npz'), allow_pickle=True) as data:
                 self.all_scenes = data['scenes']
                 self.all_images = data['images']
                 self.pairs = data['pairs']
