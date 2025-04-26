@@ -21,7 +21,7 @@ import random
 
 def get_args_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--weights", type=str, help="path to the model weights", default=None)
+    parser.add_argument("--weights", type=str, help="path to the model weights", default='naver/MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric')
     parser.add_argument("--model_name", type=str, help="model name", default='AsymmetricMASt3R')
     parser.add_argument("--datapath", type=str, default='/home/jovyan/workspace/data', help="hpatches dir")
     parser.add_argument("--device", type=str, default='cuda', help="pytorch device")
