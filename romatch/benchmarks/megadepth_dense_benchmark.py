@@ -7,7 +7,6 @@ from torch.utils.data import ConcatDataset
 import romatch
 import pdb
 
-from dust3r.utils.geometry import inv, geotrf, normalize_pointcloud
 
 class MegadepthDenseBenchmark:
     def __init__(self, data_root="data/megadepth", h = 384, w = 512, num_samples = 2000) -> None:
