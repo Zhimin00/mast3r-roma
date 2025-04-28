@@ -148,10 +148,12 @@ class AsymmetricMASt3R_warp(AsymmetricCroCo3DStereo_cnn):
 
         # combine all ref images into object-centric representation
         dec1, dec2 = self._decoder(feat1, pos1, feat2, pos2)
-
-        with torch.cuda.amp.autocast(enabled=False):
-            res1 = self._downstream_head(1, [tok.float() for tok in dec1], cnn_feats1, shape1)
-            res2 = self._downstream_head(2, [tok.float() for tok in dec2], cnn_feats2, shape2)
+        import warnings
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=FutureWarning)
+            with torch.cuda.amp.autocast(enabled=False):
+                res1 = self._downstream_head(1, [tok.float() for tok in dec1], cnn_feats1, shape1)
+                res2 = self._downstream_head(2, [tok.float() for tok in dec2], cnn_feats2, shape2)
         res2['pts3d_in_other_view'] = res2.pop('pts3d')  # predict view2's pts3d in view1's frame
         feat1_pyramid = {}
         feat2_pyramid = {}

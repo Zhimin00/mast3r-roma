@@ -1304,7 +1304,7 @@ class CNNandMast3r(nn.Module):
                 alpha = 0.5):
         super().__init__()
         from mast3r.model import AsymmetricMASt3R
-        mast3r_model_name = "naver/MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric"
+        mast3r_model_name = "/home/jovyan/workspace/checkpoints/checkpoint-aerial-mast3r.pth"
                 # you can put the path to a local checkpoint in model_name if needed
         model = AsymmetricMASt3R.from_pretrained(mast3r_model_name)
         #self.backbone = model
