@@ -572,10 +572,11 @@ class WarpHead(nn.Module):
         super().__init__()
         self.decoder = decoder
 
-    def forward(self, f_q_pyramid, f_s_pyramid, upsample = False, scale_factor = 1):
+    def forward(self, f_q_pyramid, f_s_pyramid, upsample = False, scale_factor = 1, corresps=None):
         corresps = self.decoder(f_q_pyramid, 
                                 f_s_pyramid, 
                                 upsample = upsample, 
+                                **(corresps if corresps else {}),
                                 scale_factor=scale_factor)
         return corresps
     

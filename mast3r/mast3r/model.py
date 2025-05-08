@@ -165,6 +165,31 @@ class AsymmetricMASt3R_warp(AsymmetricCroCo3DStereo_cnn):
             del res2[key]
         correps = self.downstream_head3(feat1_pyramid, feat2_pyramid)
         return res1, res2, correps
+    
+    def match(self, view1, view2, upsample=False, corresps = None):
+        # encode the two images --> B,S,D
+        (shape1, shape2), (feat1, feat2), (pos1, pos2), (cnn_feats1, cnn_feats2) = self._encode_symmetrized(view1, view2)
+
+        # combine all ref images into object-centric representation
+        dec1, dec2 = self._decoder(feat1, pos1, feat2, pos2)
+        import warnings
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=FutureWarning)
+            with torch.cuda.amp.autocast(enabled=False):
+                res1 = self._downstream_head(1, [tok.float() for tok in dec1], cnn_feats1, shape1)
+                res2 = self._downstream_head(2, [tok.float() for tok in dec2], cnn_feats2, shape2)
+        res2['pts3d_in_other_view'] = res2.pop('pts3d')  # predict view2's pts3d in view1's frame
+        feat1_pyramid = {}
+        feat2_pyramid = {}
+        for s in [1, 2, 4, 8, 16]:
+            key = f'feat{s}'
+            feat1_pyramid[s] = res1[key].permute(0, 3, 1, 2).contiguous()
+            feat2_pyramid[s] = res2[key].permute(0, 3, 1, 2).contiguous()
+            del res1[key]  
+            del res2[key]
+        correps = self.downstream_head3(feat1_pyramid, feat2_pyramid, upsample = upsample, corresps = corresps)
+        
+        return res1, res2, correps
 
 class AsymmetricMASt3R_only_warp(AsymmetricCroCo3DStereo_cnn):
     def __init__(self, **kwargs):

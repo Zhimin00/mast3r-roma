@@ -1,0 +1,32 @@
+Testing on 1_000 @ BlendedMVS...
+Test Epoch: [0]  [ 0/16]  eta: 0:01:03  loss: 140.9287 (140.9287)  Regr3D_pts3d_1: 69.4415 (69.4415)  Regr3D_pts3d_2: 71.4873 (71.4873)  time: 3.9451  data: 2.5163  max mem: 14697
+Test Epoch: [0]  [15/16]  eta: 0:00:00  loss: 131.7008 (133.7868)  Regr3D_pts3d_1: 64.7446 (65.8411)  Regr3D_pts3d_2: 66.9561 (67.9457)  time: 0.6481  data: 0.1574  max mem: 14697
+Test Epoch: [0] Total time: 0:00:10 (0.6569 s / it)
+Averaged stats: loss: 131.7008 (133.7868)  Regr3D_pts3d_1: 64.7446 (65.8411)  Regr3D_pts3d_2: 66.9561 (67.9457)
+1_000 @ BlendedMVS stats: {'loss_avg': 133.78681468963623, 'loss_med': 131.7007598876953, 'Regr3D_pts3d_1_avg': 65.84114956855774, 'Regr3D_pts3d_1_med': 64.74461364746094, 'Regr3D_pts3d_2_avg': 67.94566607475281, 'Regr3D_pts3d_2_med': 66.95614624023438}
+
+Testing on  1_000 @ MegaDepth...
+Test Epoch: [0]  [ 0/16]  eta: 0:04:42  loss: 14.0607 (14.0607)  Regr3D_pts3d_1: 6.8421 (6.8421)  Regr3D_pts3d_2: 7.2186 (7.2186)  time: 17.6522  data: 17.2133  max mem: 14697
+Test Epoch: [0]  [15/16]  eta: 0:00:02  loss: 20.5016 (24.3811)  Regr3D_pts3d_1: 10.1942 (12.0672)  Regr3D_pts3d_2: 10.3074 (12.3139)  time: 2.3780  data: 1.9546  max mem: 14697
+Test Epoch: [0] Total time: 0:00:38 (2.3860 s / it)
+Averaged stats: loss: 20.5016 (24.3811)  Regr3D_pts3d_1: 10.1942 (12.0672)  Regr3D_pts3d_2: 10.3074 (12.3139)
+ 1_000 @ MegaDepth stats: {'loss_avg': 24.38105869293213, 'loss_med': 20.50160026550293, 'Regr3D_pts3d_1_avg': 12.067169606685638, 'Regr3D_pts3d_1_med': 10.194172859191895, 'Regr3D_pts3d_2_avg': 12.313889116048813, 'Regr3D_pts3d_2_med': 10.307427406311035}
+
+Testing on  1_000 @ Co3d...
+Not enough valid views found for idx=1192463, only got 1.
+Not enough valid views found for idx=465457, only got 0.
+Not enough valid views found for idx=953085, only got 0.
+Not enough valid views found for idx=804733, only got 1.
+Not enough valid views found for idx=931320, only got 1.
+Not enough valid views found for idx=958642, only got 0.
+Not enough valid views found for idx=958750, only got 0.
+Test Epoch: [0]  [ 0/16]  eta: 0:08:01  loss: 24.5999 (24.5999)  Regr3D_pts3d_1: 12.2883 (12.2883)  Regr3D_pts3d_2: 12.3116 (12.3116)  time: 30.0946  data: 29.6589  max mem: 14697
+Not enough valid views found for idx=953284, only got 0.
+Not enough valid views found for idx=427339, only got 0.
+Not enough valid views found for idx=1162944, only got 1.
+Not enough valid views found for idx=579249, only got 1.
+Not enough valid views found for idx=831026, only got 0.
+Test Epoch: [0]  [15/16]  eta: 0:00:04  loss: 26.0849 (29.0144)  Regr3D_pts3d_1: 13.0940 (14.5613)  Regr3D_pts3d_2: 12.9909 (14.4531)  time: 4.1101  data: 3.6921  max mem: 14697
+Test Epoch: [0] Total time: 0:01:05 (4.1192 s / it)
+Averaged stats: loss: 26.0849 (29.0144)  Regr3D_pts3d_1: 13.0940 (14.5613)  Regr3D_pts3d_2: 12.9909 (14.4531)
+ 1_000 @ Co3d stats: {'loss_avg': 29.014367699623108, 'loss_med': 26.08492088317871, 'Regr3D_pts3d_1_avg': 14.561283528804779, 'Regr3D_pts3d_1_med': 13.094012260437012, 'Regr3D_pts3d_2_avg': 14.453084409236908, 'Regr3D_pts3d_2_med': 12.9909086227417}

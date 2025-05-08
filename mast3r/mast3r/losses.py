@@ -18,7 +18,7 @@ from dust3r.utils.geometry import get_joint_pointcloud_depth, get_joint_pointclo
 import torch.nn.functional as F
 from romatch.utils.utils import get_gt_warp
 from einops.einops import rearrange
-
+import pdb
 def apply_log_to_norm(xyz):
     d = xyz.norm(dim=-1, keepdim=True)
     xyz = xyz / d.clip(min=1e-8)
@@ -105,7 +105,6 @@ class Regr3D (Regr3D_dust3r):
     def compute_loss(self, gt1, gt2, pred1, pred2, **kw):
         gt_pts1, gt_pts2, pred_pts1, pred_pts2, mask1, mask2, sky1, sky2, monitoring = \
             self.get_all_pts3d(gt1, gt2, pred1, pred2, **kw)
-
         if self.sky_loss_value > 0:
             assert self.criterion.reduction == 'none', 'sky_loss_value should be 0 if no conf loss'
             # add the sky pixel as "valid" pixels...

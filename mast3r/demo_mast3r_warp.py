@@ -246,7 +246,8 @@ if __name__ == '__main__':
     _, mask = cv2.findFundamentalMat(
         kpts1.cpu().numpy(), kpts2.cpu().numpy(), ransacReprojThreshold=0.2, method=cv2.USAC_MAGSAC, confidence=0.999999, maxIters=10000
     )
-        
+    
+    
     canvas = np.zeros((max(H1, H2), W1 + W2, 3), dtype=np.uint8)
     im1 = x1 * 0.5 + 0.5
     im2 = x2 * 0.5 + 0.5

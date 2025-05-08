@@ -1,0 +1,60 @@
+Loading model: AsymmetricMASt3R
+Building test dataset 1_000 @ BlendedMVS(split='val', ROOT='/cis/home/cpeng/dust3r/data/blendedmvs_processed', resolution=224, seed=777, n_corres=1024) + 1_000 @ MegaDepth(split='val', ROOT='/cis/home/cpeng/dust3r/data/megadepth_dataset_processed', resolution=224, seed=777, n_corres=1024) + 1_000 @ Co3d(split='test', ROOT='/cis/home/cpeng/dust3r/data/co3d_processed', mask_bg='rand', resolution=224, seed=777, n_corres=1024)
+Building Test Data loader for dataset:  1_000 @ BlendedMVS(split='val', ROOT='/cis/home/cpeng/dust3r/data/blendedmvs_processed', resolution=224, seed=777, n_corres=1024) 
+Test dataset length:  125
+Building Test Data loader for dataset:   1_000 @ MegaDepth(split='val', ROOT='/cis/home/cpeng/dust3r/data/megadepth_dataset_processed', resolution=224, seed=777, n_corres=1024) 
+Test dataset length:  125
+Building Test Data loader for dataset:   1_000 @ Co3d(split='test', ROOT='/cis/home/cpeng/dust3r/data/co3d_processed', mask_bg='rand', resolution=224, seed=777, n_corres=1024)
+Test dataset length:  125
+>> Creating test criterion = Regr3D_ScaleShiftInv(L21, norm_mode='?avg_dis', gt_scale=True, sky_loss_value=0)
+
+Testing on 1_000 @ BlendedMVS...
+Test Epoch: [0]  [  0/125]  eta: 0:06:21  loss: 7.5879 (7.5879)  Regr3D_ScaleShiftInv_pts3d_1: 3.7609 (3.7609)  Regr3D_ScaleShiftInv_pts3d_2: 3.8270 (3.8270)  time: 3.0485  data: 0.7327  max mem: 3586
+Test Epoch: [0]  [ 20/125]  eta: 0:00:30  loss: 10.4117 (10.2785)  Regr3D_ScaleShiftInv_pts3d_1: 4.9054 (5.0576)  Regr3D_ScaleShiftInv_pts3d_2: 5.6614 (5.2209)  time: 0.1553  data: 0.0002  max mem: 3587
+Test Epoch: [0]  [ 40/125]  eta: 0:00:19  loss: 10.4117 (10.2997)  Regr3D_ScaleShiftInv_pts3d_1: 4.9941 (5.1110)  Regr3D_ScaleShiftInv_pts3d_2: 5.6614 (5.1887)  time: 0.1558  data: 0.0002  max mem: 3587
+Test Epoch: [0]  [ 60/125]  eta: 0:00:13  loss: 10.5668 (11.0514)  Regr3D_ScaleShiftInv_pts3d_1: 5.3925 (5.3758)  Regr3D_ScaleShiftInv_pts3d_2: 5.2023 (5.6756)  time: 0.1561  data: 0.0002  max mem: 3587
+Test Epoch: [0]  [ 80/125]  eta: 0:00:08  loss: 10.2590 (10.6828)  Regr3D_ScaleShiftInv_pts3d_1: 5.0083 (5.1986)  Regr3D_ScaleShiftInv_pts3d_2: 5.1425 (5.4842)  time: 0.1561  data: 0.0002  max mem: 3587
+Test Epoch: [0]  [100/125]  eta: 0:00:04  loss: 10.0350 (10.5576)  Regr3D_ScaleShiftInv_pts3d_1: 4.9941 (5.1364)  Regr3D_ScaleShiftInv_pts3d_2: 5.1789 (5.4213)  time: 0.1555  data: 0.0002  max mem: 3587
+Test Epoch: [0]  [120/125]  eta: 0:00:00  loss: 10.2590 (10.7282)  Regr3D_ScaleShiftInv_pts3d_1: 5.0083 (5.1832)  Regr3D_ScaleShiftInv_pts3d_2: 5.1931 (5.5450)  time: 0.1551  data: 0.0001  max mem: 3587
+Test Epoch: [0]  [124/125]  eta: 0:00:00  loss: 10.3610 (10.8551)  Regr3D_ScaleShiftInv_pts3d_1: 5.0659 (5.2462)  Regr3D_ScaleShiftInv_pts3d_2: 5.2023 (5.6089)  time: 0.1551  data: 0.0001  max mem: 3587
+Test Epoch: [0] Total time: 0:00:22 (0.1799 s / it)
+Averaged stats: loss: 10.3610 (10.8551)  Regr3D_ScaleShiftInv_pts3d_1: 5.0659 (5.2462)  Regr3D_ScaleShiftInv_pts3d_2: 5.2023 (5.6089)
+1_000 @ BlendedMVS stats: {'loss_avg': 10.85511266708374, 'loss_med': 10.360994338989258, 'Regr3D_ScaleShiftInv_pts3d_1_avg': 5.2462262449264525, 'Regr3D_ScaleShiftInv_pts3d_1_med': 5.06588888168335, 'Regr3D_ScaleShiftInv_pts3d_2_avg': 5.608886395454407, 'Regr3D_ScaleShiftInv_pts3d_2_med': 5.2023138999938965}
+
+Testing on  1_000 @ MegaDepth...
+Test Epoch: [0]  [  0/125]  eta: 0:02:09  loss: 0.5165 (0.5165)  Regr3D_ScaleShiftInv_pts3d_1: 0.2602 (0.2602)  Regr3D_ScaleShiftInv_pts3d_2: 0.2563 (0.2563)  time: 1.0338  data: 0.8768  max mem: 3587
+Test Epoch: [0]  [ 20/125]  eta: 0:00:20  loss: 1.0623 (1.9207)  Regr3D_ScaleShiftInv_pts3d_1: 0.4633 (0.7247)  Regr3D_ScaleShiftInv_pts3d_2: 0.5990 (1.1960)  time: 0.1554  data: 0.0001  max mem: 3587
+Test Epoch: [0]  [ 40/125]  eta: 0:00:15  loss: 1.1493 (1.6090)  Regr3D_ScaleShiftInv_pts3d_1: 0.4633 (0.6697)  Regr3D_ScaleShiftInv_pts3d_2: 0.6131 (0.9392)  time: 0.1563  data: 0.0002  max mem: 3587
+Test Epoch: [0]  [ 60/125]  eta: 0:00:11  loss: 1.1493 (1.6743)  Regr3D_ScaleShiftInv_pts3d_1: 0.4633 (0.7131)  Regr3D_ScaleShiftInv_pts3d_2: 0.6131 (0.9612)  time: 0.1559  data: 0.0001  max mem: 3587
+Test Epoch: [0]  [ 80/125]  eta: 0:00:07  loss: 1.2000 (1.7719)  Regr3D_ScaleShiftInv_pts3d_1: 0.5142 (0.7736)  Regr3D_ScaleShiftInv_pts3d_2: 0.6516 (0.9983)  time: 0.1561  data: 0.0002  max mem: 3587
+Test Epoch: [0]  [100/125]  eta: 0:00:04  loss: 0.9363 (1.5867)  Regr3D_ScaleShiftInv_pts3d_1: 0.4151 (0.6946)  Regr3D_ScaleShiftInv_pts3d_2: 0.4880 (0.8922)  time: 0.1566  data: 0.0002  max mem: 3587
+Test Epoch: [0]  [120/125]  eta: 0:00:00  loss: 0.9814 (1.6708)  Regr3D_ScaleShiftInv_pts3d_1: 0.4267 (0.7410)  Regr3D_ScaleShiftInv_pts3d_2: 0.4880 (0.9298)  time: 0.1561  data: 0.0001  max mem: 3587
+Test Epoch: [0]  [124/125]  eta: 0:00:00  loss: 0.9872 (1.6613)  Regr3D_ScaleShiftInv_pts3d_1: 0.4267 (0.7345)  Regr3D_ScaleShiftInv_pts3d_2: 0.5384 (0.9268)  time: 0.1560  data: 0.0001  max mem: 3587
+Test Epoch: [0] Total time: 0:00:20 (0.1642 s / it)
+Averaged stats: loss: 0.9872 (1.6613)  Regr3D_ScaleShiftInv_pts3d_1: 0.4267 (0.7345)  Regr3D_ScaleShiftInv_pts3d_2: 0.5384 (0.9268)
+ 1_000 @ MegaDepth stats: {'loss_avg': 1.661300351858139, 'loss_med': 0.9872349500656128, 'Regr3D_ScaleShiftInv_pts3d_1_avg': 0.7345379315018654, 'Regr3D_ScaleShiftInv_pts3d_1_med': 0.4267005920410156, 'Regr3D_ScaleShiftInv_pts3d_2_avg': 0.9267624142765999, 'Regr3D_ScaleShiftInv_pts3d_2_med': 0.5384088158607483}
+
+Testing on  1_000 @ Co3d...
+Not enough valid views found for idx=427339, only got 0.
+Not enough valid views found for idx=953085, only got 0.
+Not enough valid views found for idx=958642, only got 0.
+Not enough valid views found for idx=1162944, only got 1.
+Not enough valid views found for idx=958750, only got 0.
+Not enough valid views found for idx=579249, only got 1.
+Not enough valid views found for idx=831026, only got 0.
+Not enough valid views found for idx=465457, only got 0.
+Not enough valid views found for idx=1192463, only got 1.
+Not enough valid views found for idx=931320, only got 1.
+Not enough valid views found for idx=804733, only got 1.
+Not enough valid views found for idx=953284, only got 0.
+Test Epoch: [0]  [  0/125]  eta: 0:02:05  loss: 1.4789 (1.4789)  Regr3D_ScaleShiftInv_pts3d_1: 0.8702 (0.8702)  Regr3D_ScaleShiftInv_pts3d_2: 0.6087 (0.6087)  time: 1.0036  data: 0.8468  max mem: 3587
+Test Epoch: [0]  [ 20/125]  eta: 0:00:20  loss: 1.8760 (2.6157)  Regr3D_ScaleShiftInv_pts3d_1: 0.8494 (1.3450)  Regr3D_ScaleShiftInv_pts3d_2: 1.0133 (1.2707)  time: 0.1548  data: 0.0002  max mem: 3587
+Test Epoch: [0]  [ 40/125]  eta: 0:00:14  loss: 1.8760 (5.1707)  Regr3D_ScaleShiftInv_pts3d_1: 0.8494 (2.7050)  Regr3D_ScaleShiftInv_pts3d_2: 1.0133 (2.4657)  time: 0.1560  data: 0.0002  max mem: 3587
+Test Epoch: [0]  [ 60/125]  eta: 0:00:10  loss: 1.5871 (4.3224)  Regr3D_ScaleShiftInv_pts3d_1: 0.7841 (2.1916)  Regr3D_ScaleShiftInv_pts3d_2: 0.8945 (2.1308)  time: 0.1531  data: 0.0002  max mem: 3587
+Test Epoch: [0]  [ 80/125]  eta: 0:00:07  loss: 1.6313 (3.7508)  Regr3D_ScaleShiftInv_pts3d_1: 0.7777 (1.8767)  Regr3D_ScaleShiftInv_pts3d_2: 0.9063 (1.8741)  time: 0.1544  data: 0.0001  max mem: 3587
+Test Epoch: [0]  [100/125]  eta: 0:00:04  loss: 1.5996 (3.5352)  Regr3D_ScaleShiftInv_pts3d_1: 0.7484 (1.7948)  Regr3D_ScaleShiftInv_pts3d_2: 0.9063 (1.7404)  time: 0.1545  data: 0.0002  max mem: 3587
+Test Epoch: [0]  [120/125]  eta: 0:00:00  loss: 1.6313 (3.6934)  Regr3D_ScaleShiftInv_pts3d_1: 0.7432 (1.8263)  Regr3D_ScaleShiftInv_pts3d_2: 0.8945 (1.8671)  time: 0.1559  data: 0.0001  max mem: 3587
+Test Epoch: [0]  [124/125]  eta: 0:00:00  loss: 1.6373 (3.7039)  Regr3D_ScaleShiftInv_pts3d_1: 0.7484 (1.8298)  Regr3D_ScaleShiftInv_pts3d_2: 0.9063 (1.8741)  time: 0.1558  data: 0.0001  max mem: 3587
+Test Epoch: [0] Total time: 0:00:20 (0.1628 s / it)
+Averaged stats: loss: 1.6373 (3.7039)  Regr3D_ScaleShiftInv_pts3d_1: 0.7484 (1.8298)  Regr3D_ScaleShiftInv_pts3d_2: 0.9063 (1.8741)
+ 1_000 @ Co3d stats: {'loss_avg': 3.7039437971115112, 'loss_med': 1.637316346168518, 'Regr3D_ScaleShiftInv_pts3d_1_avg': 1.8297956206798554, 'Regr3D_ScaleShiftInv_pts3d_1_med': 0.7484188079833984, 'Regr3D_ScaleShiftInv_pts3d_2_avg': 1.8741481519937515, 'Regr3D_ScaleShiftInv_pts3d_2_med': 0.9062903523445129}

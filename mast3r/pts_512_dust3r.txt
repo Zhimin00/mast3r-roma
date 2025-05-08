@@ -1,0 +1,78 @@
+Loading model: AsymmetricCroCo3DStereo
+Building test dataset 1_000 @ BlendedMVS(split='val', ROOT='/cis/home/cpeng/dust3r/data/blendedmvs_processed', resolution=512, seed=777, n_corres=1024) + 1_000 @ MegaDepth(split='val', ROOT='/cis/home/cpeng/dust3r/data/megadepth_dataset_processed', resolution=512, seed=777, n_corres=1024) + 1_000 @ Co3d(split='test', ROOT='/cis/home/cpeng/dust3r/data/co3d_processed', mask_bg='rand', resolution=512, seed=777, n_corres=1024)
+Building Test Data loader for dataset:  1_000 @ BlendedMVS(split='val', ROOT='/cis/home/cpeng/dust3r/data/blendedmvs_processed', resolution=512, seed=777, n_corres=1024) 
+Test dataset length:  250
+Building Test Data loader for dataset:   1_000 @ MegaDepth(split='val', ROOT='/cis/home/cpeng/dust3r/data/megadepth_dataset_processed', resolution=512, seed=777, n_corres=1024) 
+Test dataset length:  250
+Building Test Data loader for dataset:   1_000 @ Co3d(split='test', ROOT='/cis/home/cpeng/dust3r/data/co3d_processed', mask_bg='rand', resolution=512, seed=777, n_corres=1024)
+Test dataset length:  250
+>> Creating test criterion = Regr3D(L21, norm_mode='?avg_dis', gt_scale=True, sky_loss_value=0)
+
+Testing on 1_000 @ BlendedMVS...
+Test Epoch: [0]  [  0/250]  eta: 0:16:02  loss: 200.1894 (200.1894)  Regr3D_pts3d_1: 93.6300 (93.6300)  Regr3D_pts3d_2: 106.5595 (106.5595)  time: 3.8503  data: 0.9765  max mem: 4543
+Test Epoch: [0]  [ 20/250]  eta: 0:02:44  loss: 128.3174 (136.1588)  Regr3D_pts3d_1: 62.9204 (66.4008)  Regr3D_pts3d_2: 65.3068 (69.7580)  time: 0.5565  data: 0.0001  max mem: 4543
+Test Epoch: [0]  [ 40/250]  eta: 0:02:13  loss: 112.7695 (124.9257)  Regr3D_pts3d_1: 55.1114 (61.0750)  Regr3D_pts3d_2: 59.0029 (63.8507)  time: 0.5564  data: 0.0001  max mem: 4543
+Test Epoch: [0]  [ 60/250]  eta: 0:01:56  loss: 127.2829 (126.9464)  Regr3D_pts3d_1: 60.4622 (62.0499)  Regr3D_pts3d_2: 63.0231 (64.8965)  time: 0.5572  data: 0.0002  max mem: 4543
+Test Epoch: [0]  [ 80/250]  eta: 0:01:41  loss: 127.3581 (127.5947)  Regr3D_pts3d_1: 62.9012 (62.4056)  Regr3D_pts3d_2: 63.8141 (65.1891)  time: 0.5579  data: 0.0002  max mem: 4543
+Test Epoch: [0]  [100/250]  eta: 0:01:28  loss: 127.3581 (129.0179)  Regr3D_pts3d_1: 62.9012 (63.0445)  Regr3D_pts3d_2: 63.8141 (65.9734)  time: 0.5577  data: 0.0002  max mem: 4543
+Test Epoch: [0]  [120/250]  eta: 0:01:15  loss: 128.3174 (132.0282)  Regr3D_pts3d_1: 63.2897 (64.4142)  Regr3D_pts3d_2: 64.2573 (67.6141)  time: 0.5579  data: 0.0002  max mem: 4543
+Test Epoch: [0]  [140/250]  eta: 0:01:03  loss: 128.3174 (130.6145)  Regr3D_pts3d_1: 62.9204 (63.7075)  Regr3D_pts3d_2: 64.9906 (66.9070)  time: 0.5591  data: 0.0002  max mem: 4543
+Test Epoch: [0]  [160/250]  eta: 0:00:52  loss: 128.3174 (130.8204)  Regr3D_pts3d_1: 62.9012 (63.8980)  Regr3D_pts3d_2: 64.9906 (66.9224)  time: 0.5594  data: 0.0002  max mem: 4543
+Test Epoch: [0]  [180/250]  eta: 0:00:40  loss: 128.7453 (130.8557)  Regr3D_pts3d_1: 62.9012 (63.8071)  Regr3D_pts3d_2: 64.9906 (67.0485)  time: 0.5594  data: 0.0002  max mem: 4543
+Test Epoch: [0]  [200/250]  eta: 0:00:28  loss: 129.1279 (132.2382)  Regr3D_pts3d_1: 62.9204 (64.5362)  Regr3D_pts3d_2: 65.3007 (67.7021)  time: 0.5586  data: 0.0002  max mem: 4543
+Test Epoch: [0]  [220/250]  eta: 0:00:17  loss: 129.8497 (131.7882)  Regr3D_pts3d_1: 63.2897 (64.2859)  Regr3D_pts3d_2: 65.3675 (67.5023)  time: 0.5602  data: 0.0003  max mem: 4543
+Test Epoch: [0]  [240/250]  eta: 0:00:05  loss: 129.7683 (132.0119)  Regr3D_pts3d_1: 63.2897 (64.2486)  Regr3D_pts3d_2: 65.3068 (67.7633)  time: 0.5605  data: 0.0001  max mem: 4543
+Test Epoch: [0]  [249/250]  eta: 0:00:00  loss: 129.8497 (133.2891)  Regr3D_pts3d_1: 63.2897 (64.8133)  Regr3D_pts3d_2: 65.3675 (68.4758)  time: 0.5603  data: 0.0001  max mem: 4543
+Test Epoch: [0] Total time: 0:02:23 (0.5721 s / it)
+Averaged stats: loss: 129.8497 (133.2891)  Regr3D_pts3d_1: 63.2897 (64.8133)  Regr3D_pts3d_2: 65.3675 (68.4758)
+1_000 @ BlendedMVS stats: {'loss_avg': 133.2890729675293, 'loss_med': 129.8497314453125, 'Regr3D_pts3d_1_avg': 64.81331238555909, 'Regr3D_pts3d_1_med': 63.28968048095703, 'Regr3D_pts3d_2_avg': 68.47576027679443, 'Regr3D_pts3d_2_med': 65.3675308227539}
+
+Testing on  1_000 @ MegaDepth...
+Test Epoch: [0]  [  0/250]  eta: 0:08:00  loss: 10.0911 (10.0911)  Regr3D_pts3d_1: 5.2001 (5.2001)  Regr3D_pts3d_2: 4.8910 (4.8910)  time: 1.9205  data: 1.3642  max mem: 4543
+Test Epoch: [0]  [ 20/250]  eta: 0:02:23  loss: 14.2650 (23.9545)  Regr3D_pts3d_1: 6.6170 (11.7267)  Regr3D_pts3d_2: 7.0819 (12.2278)  time: 0.5592  data: 0.0002  max mem: 4543
+Test Epoch: [0]  [ 40/250]  eta: 0:02:04  loss: 13.0115 (25.5043)  Regr3D_pts3d_1: 6.2475 (12.9384)  Regr3D_pts3d_2: 6.3678 (12.5659)  time: 0.5601  data: 0.0002  max mem: 4543
+Test Epoch: [0]  [ 60/250]  eta: 0:01:50  loss: 14.1607 (26.6754)  Regr3D_pts3d_1: 6.6437 (13.5341)  Regr3D_pts3d_2: 6.8173 (13.1413)  time: 0.5601  data: 0.0002  max mem: 4543
+Test Epoch: [0]  [ 80/250]  eta: 0:01:38  loss: 13.2649 (23.8571)  Regr3D_pts3d_1: 6.6437 (11.9759)  Regr3D_pts3d_2: 6.7021 (11.8812)  time: 0.5603  data: 0.0002  max mem: 4543
+Test Epoch: [0]  [100/250]  eta: 0:01:26  loss: 13.2649 (23.8151)  Regr3D_pts3d_1: 6.5429 (11.7692)  Regr3D_pts3d_2: 6.7021 (12.0459)  time: 0.5603  data: 0.0002  max mem: 4543
+Test Epoch: [0]  [120/250]  eta: 0:01:14  loss: 13.2649 (25.4053)  Regr3D_pts3d_1: 6.4464 (12.4192)  Regr3D_pts3d_2: 6.8173 (12.9861)  time: 0.5597  data: 0.0002  max mem: 4543
+Test Epoch: [0]  [140/250]  eta: 0:01:02  loss: 13.6113 (27.1713)  Regr3D_pts3d_1: 6.6170 (13.3617)  Regr3D_pts3d_2: 7.0819 (13.8096)  time: 0.5606  data: 0.0002  max mem: 4543
+Test Epoch: [0]  [160/250]  eta: 0:00:51  loss: 13.6113 (28.5627)  Regr3D_pts3d_1: 6.6437 (14.2522)  Regr3D_pts3d_2: 7.0819 (14.3105)  time: 0.5600  data: 0.0001  max mem: 4543
+Test Epoch: [0]  [180/250]  eta: 0:00:39  loss: 13.4871 (26.7708)  Regr3D_pts3d_1: 6.6170 (13.3537)  Regr3D_pts3d_2: 6.8173 (13.4171)  time: 0.5608  data: 0.0002  max mem: 4543
+Test Epoch: [0]  [200/250]  eta: 0:00:28  loss: 13.1438 (25.6120)  Regr3D_pts3d_1: 6.2475 (12.7859)  Regr3D_pts3d_2: 6.5506 (12.8261)  time: 0.5603  data: 0.0002  max mem: 4543
+Test Epoch: [0]  [220/250]  eta: 0:00:16  loss: 13.0115 (25.9301)  Regr3D_pts3d_1: 6.2475 (12.9250)  Regr3D_pts3d_2: 6.5322 (13.0052)  time: 0.5600  data: 0.0002  max mem: 4543
+Test Epoch: [0]  [240/250]  eta: 0:00:05  loss: 12.9998 (25.7552)  Regr3D_pts3d_1: 6.2455 (12.8339)  Regr3D_pts3d_2: 6.4179 (12.9213)  time: 0.5601  data: 0.0001  max mem: 4543
+Test Epoch: [0]  [249/250]  eta: 0:00:00  loss: 12.9998 (25.4130)  Regr3D_pts3d_1: 6.2455 (12.6484)  Regr3D_pts3d_2: 6.4179 (12.7646)  time: 0.5606  data: 0.0002  max mem: 4543
+Test Epoch: [0] Total time: 0:02:21 (0.5662 s / it)
+Averaged stats: loss: 12.9998 (25.4130)  Regr3D_pts3d_1: 6.2455 (12.6484)  Regr3D_pts3d_2: 6.4179 (12.7646)
+ 1_000 @ MegaDepth stats: {'loss_avg': 25.41301506996155, 'loss_med': 12.999812126159668, 'Regr3D_pts3d_1_avg': 12.648415311336517, 'Regr3D_pts3d_1_med': 6.245520114898682, 'Regr3D_pts3d_2_avg': 12.764599803924561, 'Regr3D_pts3d_2_med': 6.417922496795654}
+
+Testing on  1_000 @ Co3d...
+Not enough valid views found for idx=958750, only got 0.
+Not enough valid views found for idx=831026, only got 0.
+Not enough valid views found for idx=804733, only got 1.
+Not enough valid views found for idx=953284, only got 0.
+Not enough valid views found for idx=465457, only got 0.
+Not enough valid views found for idx=931320, only got 1.
+Not enough valid views found for idx=427339, only got 0.
+Not enough valid views found for idx=579249, only got 1.
+Not enough valid views found for idx=1192463, only got 1.
+Not enough valid views found for idx=953085, only got 0.
+Not enough valid views found for idx=958642, only got 0.
+Not enough valid views found for idx=1162944, only got 1.
+Test Epoch: [0]  [  0/250]  eta: 0:07:09  loss: 31.0902 (31.0902)  Regr3D_pts3d_1: 15.7951 (15.7951)  Regr3D_pts3d_2: 15.2951 (15.2951)  time: 1.7173  data: 1.1599  max mem: 4543
+Test Epoch: [0]  [ 20/250]  eta: 0:02:20  loss: 22.7281 (25.9558)  Regr3D_pts3d_1: 11.5299 (13.1634)  Regr3D_pts3d_2: 11.3203 (12.7924)  time: 0.5574  data: 0.0002  max mem: 4543
+Test Epoch: [0]  [ 40/250]  eta: 0:02:01  loss: 23.2102 (27.5578)  Regr3D_pts3d_1: 11.9063 (13.9165)  Regr3D_pts3d_2: 11.5996 (13.6413)  time: 0.5438  data: 0.0002  max mem: 4543
+Test Epoch: [0]  [ 60/250]  eta: 0:01:48  loss: 23.6751 (32.1144)  Regr3D_pts3d_1: 11.9755 (16.0220)  Regr3D_pts3d_2: 11.8807 (16.0923)  time: 0.5574  data: 0.0002  max mem: 4543
+Test Epoch: [0]  [ 80/250]  eta: 0:01:36  loss: 23.0970 (32.0583)  Regr3D_pts3d_1: 11.5299 (16.2928)  Regr3D_pts3d_2: 11.5592 (15.7655)  time: 0.5572  data: 0.0002  max mem: 4543
+Test Epoch: [0]  [100/250]  eta: 0:01:24  loss: 22.9806 (31.0846)  Regr3D_pts3d_1: 11.3586 (15.6832)  Regr3D_pts3d_2: 11.5592 (15.4014)  time: 0.5378  data: 0.0002  max mem: 4543
+Test Epoch: [0]  [120/250]  eta: 0:01:12  loss: 22.7281 (29.7260)  Regr3D_pts3d_1: 11.3460 (14.9452)  Regr3D_pts3d_2: 11.4718 (14.7808)  time: 0.5513  data: 0.0002  max mem: 4543
+Test Epoch: [0]  [140/250]  eta: 0:01:01  loss: 22.6534 (28.9353)  Regr3D_pts3d_1: 11.2410 (14.5507)  Regr3D_pts3d_2: 11.4490 (14.3846)  time: 0.5370  data: 0.0002  max mem: 4543
+Test Epoch: [0]  [160/250]  eta: 0:00:50  loss: 22.5874 (28.5105)  Regr3D_pts3d_1: 11.0077 (14.3129)  Regr3D_pts3d_2: 11.2822 (14.1977)  time: 0.5520  data: 0.0003  max mem: 4543
+Test Epoch: [0]  [180/250]  eta: 0:00:38  loss: 22.3084 (28.5459)  Regr3D_pts3d_1: 10.9443 (14.3537)  Regr3D_pts3d_2: 11.1725 (14.1922)  time: 0.5455  data: 0.0002  max mem: 4543
+Test Epoch: [0]  [200/250]  eta: 0:00:27  loss: 22.2899 (27.9867)  Regr3D_pts3d_1: 10.8938 (14.0546)  Regr3D_pts3d_2: 10.9937 (13.9320)  time: 0.5588  data: 0.0001  max mem: 4543
+Test Epoch: [0]  [220/250]  eta: 0:00:16  loss: 22.3084 (28.0013)  Regr3D_pts3d_1: 10.9443 (14.0314)  Regr3D_pts3d_2: 11.1766 (13.9700)  time: 0.5584  data: 0.0001  max mem: 4543
+Test Epoch: [0]  [240/250]  eta: 0:00:05  loss: 22.5874 (28.1315)  Regr3D_pts3d_1: 11.0077 (14.1059)  Regr3D_pts3d_2: 11.2856 (14.0255)  time: 0.5597  data: 0.0001  max mem: 4543
+Test Epoch: [0]  [249/250]  eta: 0:00:00  loss: 22.6534 (28.3167)  Regr3D_pts3d_1: 11.1708 (14.2025)  Regr3D_pts3d_2: 11.2856 (14.1142)  time: 0.5602  data: 0.0001  max mem: 4543
+Test Epoch: [0] Total time: 0:02:19 (0.5572 s / it)
+Averaged stats: loss: 22.6534 (28.3167)  Regr3D_pts3d_1: 11.1708 (14.2025)  Regr3D_pts3d_2: 11.2856 (14.1142)
+ 1_000 @ Co3d stats: {'loss_avg': 28.316697780609132, 'loss_med': 22.653404235839844, 'Regr3D_pts3d_1_avg': 14.202540364265442, 'Regr3D_pts3d_1_med': 11.170763969421387, 'Regr3D_pts3d_2_avg': 14.114157426834106, 'Regr3D_pts3d_2_med': 11.285554885864258}

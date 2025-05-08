@@ -13,7 +13,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from einops import rearrange, repeat
 from typing import Union, Tuple, Iterable, List, Optional, Dict
-
+import pdb
 def pair(t):
     return t if isinstance(t, tuple) else (t, t)
 
@@ -610,11 +610,9 @@ class DPTOutputAdapter(nn.Module):
 
         # Reshape tokens to spatial representation
         layers = [rearrange(l, 'b (nh nw) c -> b c nh nw', nh=N_H, nw=N_W) for l in layers]
-
         layers = [self.act_postprocess[idx](l) for idx, l in enumerate(layers)]
         # Project layers to chosen feature dim
         layers = [self.scratch.layer_rn[idx](l) for idx, l in enumerate(layers)]
-
         # Fuse layers using refinement stages
         path_4 = self.scratch.refinenet4(layers[3])
         path_3 = self.scratch.refinenet3(path_4, layers[2])

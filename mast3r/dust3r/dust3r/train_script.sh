@@ -13,6 +13,7 @@ torchrun --nproc_per_node=2 train.py \
 # MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric - train mast3r with metric regression and matching loss
 # we used cosxl to generate variations of DL3DV: "foggy", "night", "rainy", "snow", "sunny" but we were not convinced by it.
 
+
 io104
 torchrun --nproc_per_node 4 train.py \
     --train_dataset " + 100_000 @ Habitat(800_000, split='train', ROOT='/cis/net/r24a/data/zshao/data/dust3r/data/habitat_processed', aug_crop=16, resolution=224, transform=ColorJitter) + 
@@ -607,6 +608,10 @@ torchrun --nproc_per_node=4 train_warp.py \
     --output_dir "/cis/net/r24a/data/zshao/checkpoints/dust3r/MASt3R_freeze_trainwarp"
 
 
+python eval_depthmap.py \
+    --test_dataset "1_000 @ BlendedMVS(split='val', ROOT='/cis/home/cpeng/dust3r/data/blendedmvs_processed', resolution=224, seed=777) + 1_000 @ MegaDepth(split='val', ROOT='/cis/home/cpeng/dust3r/data/megadepth_dataset_processed', resolution=224, seed=777) + 1_000 @ Co3d(split='test', ROOT='/cis/home/cpeng/dust3r/data/co3d_subset_processed', mask_bg='rand', resolution=224, seed=777)"
+   
+
 torchrun --nproc_per_node=4 train_warp.py \
     --train_dataset "120_000 @ MegaDepth_all(split='train', ROOT='/cis/net/io104/data/zshao14/megadepth', min_overlap=0.01,  resolution=512, aug_crop=16, aug_monocular=0.005, transform=ColorJitter, n_corres=8192, nneg=0.5) + 80_000 @ MegaDepth_all(split='train', ROOT='/cis/net/io104/data/zshao14/megadepth', min_overlap=0.35, resolution=512, aug_crop=16, aug_monocular=0.005, transform=ColorJitter, n_corres=8192, nneg=0.5)" \
     --test_dataset "1000 @ MegaDepth_all(split='val',  ROOT='/cis/net/io104/data/zshao14/megadepth', min_overlap=0.3, max_overlap=0.7, resolution=512, seed=777, n_corres=1024)" \
@@ -634,12 +639,12 @@ torchrun --nproc_per_node=4 train_warp.py \
 20250430
 torchrun --nproc_per_node=4 train_warp.py \
     --train_dataset "120_000 @ MegaDepth_all(split='train', ROOT='/home/cpeng26/scratchrchella4/data/megadepth', min_overlap=0.01,  resolution=512, aug_crop=16, aug_monocular=0.005, transform=ColorJitter, n_corres=8192, nneg=0.5) + 80_000 @ MegaDepth_all(split='train', ROOT='/home/cpeng26/scratchrchella4/data/megadepth', min_overlap=0.35, resolution=512, aug_crop=16, aug_monocular=0.005, transform=ColorJitter, n_corres=8192, nneg=0.5)" \
-    --test_dataset "1000 @ MegaDepth_all(split='val',  ROOT='/cis/net/io104/data/zshao14/megadepth', min_overlap=0.3, max_overlap=0.7, resolution=512, seed=777, n_corres=1024)" \
+    --test_dataset "1000 @ MegaDepth_all(split='val',  ROOT='/home/cpeng26/scratchrchella4/data/megadepth', min_overlap=0.3, max_overlap=0.7, resolution=512, seed=777, n_corres=1024)" \
     --model "AsymmetricMASt3R_warp(freeze='backbone', pos_embed='RoPE100', patch_embed_cls='PatchEmbedDust3R_cnn', cnn_type='vgg', img_size=(512, 512), head_type='warp+dpt', output_mode='pts3d', depth_mode=('exp', -inf, inf), conf_mode=('exp', 1, inf), enc_embed_dim=1024, enc_depth=24, enc_num_heads=16, dec_embed_dim=768, dec_depth=12, dec_num_heads=12)" \
     --train_criterion "ConfLoss(Regr3D(L21, norm_mode='?avg_dis', loss_in_log=False), alpha=0.2)"  \
     --test_criterion "Regr3D(L21, norm_mode='?avg_dis', gt_scale=True, sky_loss_value=0)" \
     --pretrained "/home/cpeng26/scratchrchella4/checkpoints/MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric.pth" \
-    --lr 0.0001 --min_lr 1e-06 --warmup_epochs 4 --epochs 20 --batch_size 8 --accum_iter 1 \
+    --lr 0.0001 --min_lr 1e-06 --warmup_epochs 4 --epochs 20 --batch_size 4 --accum_iter 2 \
     --save_freq 1 --keep_freq 5 --eval_freq 1 --print_freq=10 --disable_cudnn_benchmark \
     --output_dir "/home/cpeng26/scratchrchella4/checkpoints/MASt3R_freeze_trainwarp_onlymega512"
 
