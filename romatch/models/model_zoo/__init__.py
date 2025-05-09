@@ -178,7 +178,7 @@ def roma_indoor(device, weights=None, dinov2_weights=None, coarse_res: Union[int
     print(f"Using coarse resolution {coarse_res}, and upsample res {model.upsample_res}")
     return model
 
-def Mast3r_Roma_outdoor(device, weights=None, coarse_res: Union[int,tuple[int,int]] = 560, upsample_res: Union[int,tuple[int,int]] = 864, amp_dtype: torch.dtype = torch.float16):
+def Mast3r_Roma_outdoor(device, mast3r_model_name=None, weights=None, coarse_res: Union[int,tuple[int,int]] = 560, upsample_res: Union[int,tuple[int,int]] = 864, amp_dtype: torch.dtype = torch.float16):
     if isinstance(coarse_res, int):
         coarse_res = (coarse_res, coarse_res)
     if isinstance(upsample_res, int):    
@@ -193,7 +193,7 @@ def Mast3r_Roma_outdoor(device, weights=None, coarse_res: Union[int,tuple[int,in
     if weights is None:
         raise ValueError('No weights provided')
     
-    model = Mast3r_Roma_model(resolution=coarse_res, upsample_preds=False,
+    model = Mast3r_Roma_model(resolution=coarse_res, upsample_preds=True, mast3r_model_name=mast3r_model_name,
                weights=weights,device=device, amp_dtype=amp_dtype)
     model.upsample_res = upsample_res
     print(f"Using coarse resolution {coarse_res}, and upsample res {model.upsample_res}")

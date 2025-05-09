@@ -1090,7 +1090,7 @@ def romaDinoSD_model(resolution, upsample_preds, device = None, weights=None, di
     matcher.load_state_dict(weights)
     return matcher
 
-def Mast3r_Roma_model(resolution, upsample_preds, device = None, weights=None, dinov2_weights=None, amp_dtype: torch.dtype=torch.float16, **kwargs):
+def Mast3r_Roma_model(resolution, upsample_preds, device = None, mast3r_model_name = None, weights=None, dinov2_weights=None, amp_dtype: torch.dtype=torch.float16, **kwargs):
     # romatch weights and dinov2 weights are loaded seperately, as dinov2 weights are not parameters
     #torch.backends.cuda.matmul.allow_tf32 = True # allow tf32 on matmul TODO: these probably ruin stuff, should be careful
     #torch.backends.cudnn.allow_tf32 = True # allow tf32 on cudnn
@@ -1222,7 +1222,7 @@ def Mast3r_Roma_model(resolution, upsample_preds, device = None, weights=None, d
                       proj, 
                       conv_refiner, 
                       detach=True, 
-                      scales=["16", "8"],#, "4", "2", "1"], 
+                      scales=["16", "8", "4", "2", "1"], 
                       displacement_dropout_p = displacement_dropout_p,
                       gm_warp_dropout_p = gm_warp_dropout_p)
     
@@ -1232,12 +1232,12 @@ def Mast3r_Roma_model(resolution, upsample_preds, device = None, weights=None, d
             amp = True),
         amp = True,
         use_vgg = True,
-        dinov2_weights = dinov2_weights,
+        mast3r_model_name=mast3r_model_name,
         amp_dtype=amp_dtype,
     )
     h,w = resolution
     symmetric = True
-    attenuate_cert = False
+    attenuate_cert = True
     sample_mode = "threshold_balanced"
     matcher = RegressionMatcher_mast3r(encoder, decoder, h=h, w=w, upsample_preds=upsample_preds, 
                                 symmetric = symmetric, attenuate_cert = attenuate_cert, sample_mode = sample_mode, **kwargs).to(device)

@@ -1294,17 +1294,11 @@ class CNNandDinov2_SD(nn.Module): #concatenate dinov2 and SD at scale 16
             feature_pyramid[16] = torch.cat([self.alpha * Dino_features_norm, self.alpha * SD_features_norm], dim=1)
         return feature_pyramid
 
-class CNNandMast3r(nn.Module):
-    def __init__(self, cnn_kwargs = None, amp = False, use_vgg = False, 
-                dinov2_weights = None, 
-                sd_id = 'stabilityai/stable-diffusion-2-1', 
-                amp_dtype = torch.float16, t=0,
-                up_ft_index=1,
-                ensemble_size=1,
-                alpha = 0.5):
+class CNNandMast3r(nn.Module): #concatenate dinov2 and SD at scale 16
+    def __init__(self, cnn_kwargs = None, amp = False, use_vgg = False, mast3r_model_name="naver/MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric",
+                amp_dtype = torch.float16):
         super().__init__()
         from mast3r.model import AsymmetricMASt3R
-        mast3r_model_name = "/home/jovyan/workspace/checkpoints/checkpoint-aerial-mast3r.pth"
                 # you can put the path to a local checkpoint in model_name if needed
         model = AsymmetricMASt3R.from_pretrained(mast3r_model_name)
         #self.backbone = model

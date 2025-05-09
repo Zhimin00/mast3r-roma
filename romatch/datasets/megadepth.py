@@ -10,6 +10,22 @@ import romatch
 from romatch.utils import *
 import math
 import pdb
+os.environ["OPENCV_IO_ENABLE_OPENEXR"] = "1"
+import cv2
+
+
+def imread_cv2(path, options=cv2.IMREAD_COLOR):
+    """ Open an image or a depthmap with opencv-python.
+    """
+    if path.endswith(('.exr', 'EXR')):
+        options = cv2.IMREAD_ANYDEPTH
+    img = cv2.imread(path, options)
+    if img is None:
+        raise IOError(f'Could not load image={path} with {options=}')
+    if img.ndim == 3:
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    return img
+
 
 class MegadepthScene:
     def __init__(
@@ -180,11 +196,208 @@ class MegadepthScene:
             "im_A_path": im_A_ref,
             "im_B_path": im_B_ref,
             "im_A_depth_path": depth_A_ref,
-            "im_B_depth_path": depth_B_ref,            
+            "im_B_depth_path": depth_B_ref,  
+            "domainid": 0,          
         }
         return data_dict
 
 
+class Aerial_MegaDepth:
+    def __init__(
+        self,
+        data_root,
+        split,
+        ht=384,
+        wt=512,
+        shake_t=0,
+        rot_prob=0.0,
+        normalize=True,
+        use_horizontal_flip_aug = False,
+        use_single_horizontal_flip_aug = False,
+        colorjiggle_params = None,
+        random_eraser = None,
+        use_randaug = False,
+        randaug_params = None,
+        randomize_size = False
+    ) -> None:
+        self.split = split
+        self.data_root = data_root
+        self.loaded_data = self._load_data(self.split)
+        
+
+        if randomize_size:
+            area = ht * wt
+            s = int(16 * (math.sqrt(area)//16))
+            sizes = ((ht,wt), (s,s), (wt,ht))
+            choice = romatch.RANK % 3
+            ht, wt = sizes[choice] 
+        # counts, bins = np.histogram(self.overlaps,20)
+        # print(counts)
+        self.im_transform_ops = get_tuple_transform_ops(
+            resize=(ht, wt), normalize=normalize, colorjiggle_params = colorjiggle_params,
+        )
+        self.depth_transform_ops = get_depth_tuple_transform_ops(
+                resize=(ht, wt)
+            )
+        self.wt, self.ht = wt, ht
+        self.shake_t = shake_t
+        self.random_eraser = random_eraser
+        if use_horizontal_flip_aug and use_single_horizontal_flip_aug:
+            raise ValueError("Can't both flip both images and only flip one")
+        self.use_horizontal_flip_aug = use_horizontal_flip_aug
+        self.use_single_horizontal_flip_aug = use_single_horizontal_flip_aug
+        self.use_randaug = use_randaug
+
+
+    def _load_data(self, split):
+        if split == 'train1':
+            with np.load(os.path.join(self.data_root, 'aerial_megadepth_train_part1.npz'), allow_pickle=True) as data:
+                self.all_scenes = data['scenes']
+                self.all_images = data['images']
+                self.pairs = data['pairs']
+        elif split == 'train2':
+            with np.load(os.path.join(self.data_root, 'aerial_megadepth_train_part2.npz'), allow_pickle=True) as data:
+                self.all_scenes = data['scenes']
+                self.all_images = data['images']
+                self.pairs = data['pairs']
+        elif split == 'val':
+            with np.load(os.path.join(self.data_root, 'aerial_megadepth_val.npz'), allow_pickle=True) as data:
+                self.all_scenes = data['scenes']
+                self.all_images = data['images']
+                self.pairs = data['pairs']
+        elif split == 'test':
+            with np.load(os.path.join(self.data_root, 'aerial_megadepth_test_scenes0015_0022.npz'), allow_pickle=True) as data:
+                self.all_scenes = data['scenes']
+                self.all_images = data['images']
+                self.pairs = data['pairs']
+
+    def __len__(self):
+        return len(self.pairs)
+
+    def get_stats(self):
+        return f'{len(self)} pairs from {len(self.all_scenes)} scenes'
+    
+    def load_image(self, image_path):
+        image_np = imread_cv2(image_path)
+        return Image.fromarray(image_np)
+
+    def load_depth(self, depth_path):
+        depth_np = imread_cv2(depth_path, options=cv2.IMREAD_ANYDEPTH)
+        return torch.from_numpy(depth_np.astype(np.float32))
+
+    def load_intrinsics_and_pose(self, npz_path):
+        camera_params = np.load(npz_path)
+        K = camera_params["intrinsics"].astype(np.float32)
+        T = camera_params["cam2world"].astype(np.float32)
+        T_inv = np.linalg.inv(T)  
+        return torch.from_numpy(K), torch.from_numpy(T_inv)
+    
+    def scale_intrinsic(self, K, wi, hi):
+        sx, sy = self.wt / wi, self.ht / hi
+        sK = torch.tensor([[sx, 0, 0], [0, sy, 0], [0, 0, 1]])
+        return sK @ K
+    
+    def horizontal_flip(self, im_A, im_B, depth_A, depth_B,  K_A, K_B):
+        im_A = im_A.flip(-1)
+        im_B = im_B.flip(-1)
+        depth_A, depth_B = depth_A.flip(-1), depth_B.flip(-1) 
+        flip_mat = torch.tensor([[-1, 0, self.wt],[0,1,0],[0,0,1.]]).to(K_A.device)
+        K_A = flip_mat@K_A  
+        K_B = flip_mat@K_B  
+        
+        return im_A, im_B, depth_A, depth_B, K_A, K_B
+    
+    def rand_shake(self, *things):
+        t = np.random.choice(range(-self.shake_t, self.shake_t + 1), size=2)
+        return [
+            tvf.affine(thing, angle=0.0, translate=list(t), scale=1.0, shear=[0.0, 0.0])
+            for thing in things
+        ], t
+    
+    
+    def __getitem__(self, pair_idx):
+        # read intrinsics of original size
+        scene_id, idx1, idx2, score = self.pairs[pair_idx]
+
+        scene = self.all_scenes[scene_id]
+        seq_path = os.path.join(self.data_root, scene)
+
+
+        im_A_name, im_B_name = self.all_images[idx1], self.all_images[idx2]
+        
+        ## load camera parameters
+        K1, T1 = self.load_intrinsics_and_pose(os.path.join(seq_path, im_A_name + ".npz"))
+        K2, T2 = self.load_intrinsics_and_pose(os.path.join(seq_path, im_B_name + ".npz"))
+        K1 = K1.reshape(3, 3)
+        K2 = K2.reshape(3, 3)
+        
+        T_1to2 = torch.matmul(T2, torch.linalg.inv(T1)).to(dtype=torch.float32)[:4, :4]
+
+
+        im_A_ref = os.path.join(seq_path, im_A_name + '.jpg')
+        im_B_ref = os.path.join(seq_path, im_B_name + '.jpg')
+        depth_A_ref = os.path.join(seq_path, im_A_name + ".exr")
+        depth_B_ref = os.path.join(seq_path, im_A_name + ".exr")
+
+        im_A = self.load_image(im_A_ref)
+        im_B = self.load_image(im_B_ref)
+
+        K1 = self.scale_intrinsic(K1, im_A.width, im_A.height)
+        K2 = self.scale_intrinsic(K2, im_B.width, im_B.height)
+        
+        if self.use_randaug:
+            im_A, im_B = self.rand_augment(im_A, im_B)
+
+        depth_A = self.load_depth(depth_A_ref)
+        depth_B = self.load_depth(depth_B_ref)
+        # Process images
+        im_A, im_B = self.im_transform_ops((im_A, im_B))
+        depth_A, depth_B = self.depth_transform_ops(
+            (depth_A[None, None], depth_B[None, None])
+        )
+        
+        [im_A, im_B, depth_A, depth_B], t = self.rand_shake(im_A, im_B, depth_A, depth_B)
+        K1[:2, 2] += t
+        K2[:2, 2] += t
+        
+        im_A, im_B = im_A[None], im_B[None]
+        if self.random_eraser is not None:
+            im_A, depth_A = self.random_eraser(im_A, depth_A)
+            im_B, depth_B = self.random_eraser(im_B, depth_B)
+                
+        if self.use_horizontal_flip_aug:
+            if np.random.rand() > 0.5:
+                im_A, im_B, depth_A, depth_B, K1, K2 = self.horizontal_flip(im_A, im_B, depth_A, depth_B, K1, K2)
+        if self.use_single_horizontal_flip_aug:
+            if np.random.rand() > 0.5:
+                im_B, depth_B, K2 = self.single_horizontal_flip(im_B, depth_B, K2)
+        
+        if romatch.DEBUG_MODE:
+            tensor_to_pil(im_A[0], unnormalize=True).save(
+                            f"vis/im_A.jpg")
+            tensor_to_pil(im_B[0], unnormalize=True).save(
+                            f"vis/im_B.jpg")
+            
+        data_dict = {
+            "im_A": im_A[0],
+            "im_A_identifier": im_A_name,
+            "im_B": im_B[0],
+            "im_B_identifier": im_B_name,
+            "im_A_depth": depth_A[0, 0],
+            "im_B_depth": depth_B[0, 0],
+            "K1": K1,
+            "K2": K2,
+            "T1": T1,
+            "T2": T2,
+            "T_1to2": T_1to2,
+            "im_A_path": im_A_ref,
+            "im_B_path": im_B_ref,
+            "im_A_depth_path": depth_A_ref,
+            "im_B_depth_path": depth_B_ref,    
+            "domainid": 1,        
+        }
+        return data_dict
+    
 class MegadepthBuilder:
     def __init__(self, data_root="data/megadepth", loftr_ignore=True, imc21_ignore = True) -> None:
         self.data_root = data_root
