@@ -207,10 +207,6 @@ class ScanNetPP:
 
     def _load_data(self):
         with np.load(os.path.join(self.data_root, 'all_metadata.npz'), allow_pickle=True) as data:
-            self.all_scenes = data['scenes']
-            self.all_images = data['images']
-            self.pairs = data['pairs']
-
             self.scenes = data['scenes']
             self.sceneids = data['sceneids']
             self.images = data['images']
@@ -234,13 +230,6 @@ class ScanNetPP:
         depth_np = depth_np.astype(np.float32) / 1000  ## from millimeters to meters
         depth_np[~np.isfinite(depth_np)] = 0 ## invalid
         return torch.from_numpy(depth_np)
-
-    def load_intrinsics_and_pose(self, npz_path):
-        camera_params = np.load(npz_path)
-        K = camera_params["intrinsics"].astype(np.float32)
-        T = camera_params["cam2world"].astype(np.float32)
-        T_inv = np.linalg.inv(T)  
-        return torch.from_numpy(K), torch.from_numpy(T_inv)
     
     def scale_intrinsic(self, K, wi, hi):
         sx, sy = self.wt / wi, self.ht / hi
@@ -270,8 +259,10 @@ class ScanNetPP:
         cam2world1, cam2world2 = self.trajectories[idx1], self.trajectories[idx2]
         T1 = np.linalg.inv(cam2world1)
         T2 = np.linalg.inv(cam2world2)
-        T_1to2 = torch.tensor(np.matmul(T2, np.linalg.inv(T1)), dtype=torch.float)[:4, :4]  # (4, 4)
-
+        T1 = torch.from_numpy(T1)
+        T2 = torch.from_numpy(T2)
+        T_1to2 = torch.matmul(T2, torch.linalg.inv(T1)).to(dtype=torch.float32)[:4, :4]
+    
         im_A_ref = os.path.join(self.data_root, self.scenes[scene_id1], 'images', f'{im_A_name}.jpg')
         im_B_ref = os.path.join(self.data_root, self.scenes[scene_id2], 'images', f'{im_B_name}.jpg')
         depth_A_ref = os.path.join(self.data_root, self.scenes[scene_id1], 'depth', f'{im_A_name}.png')
