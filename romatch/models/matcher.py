@@ -1717,7 +1717,7 @@ class RegressionMatcher_adapter(nn.Module):
             }
         else:
             f_q_pyramid, f_s_pyramid = feature_pyramid
-        f_q_pyramid = self.adpater(f_q_pyramid, batch['domainid'])
+        f_q_pyramid = self.adapter(f_q_pyramid, batch['domainid'])
         f_s_pyramid = self.adapter(f_s_pyramid, batch['domainid'])
         corresps = self.decoder(f_q_pyramid, 
                                 f_s_pyramid, 
@@ -1734,7 +1734,7 @@ class RegressionMatcher_adapter(nn.Module):
             scale: torch.cat((f_scale.chunk(2)[1], f_scale.chunk(2)[0]), dim = 0)
             for scale, f_scale in feature_pyramid.items()
         }
-        f_q_pyramid = self.adpater(f_q_pyramid, batch['domainid'])
+        f_q_pyramid = self.adapter(f_q_pyramid, batch['domainid'])
         f_s_pyramid = self.adapter(f_s_pyramid, batch['domainid'])
         corresps = self.decoder(f_q_pyramid, 
                                 f_s_pyramid, 
