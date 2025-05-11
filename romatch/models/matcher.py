@@ -1631,6 +1631,385 @@ class RegressionMatcher(nn.Module):
             tensor_to_pil(vis_im, unnormalize=unnormalize).save(save_path)
         return vis_im
 
+class RegressionMatcher_adapter(nn.Module):
+    def __init__(
+        self,
+        encoder,
+        adapter,
+        decoder,
+        h=448,
+        w=448,
+        sample_mode = "threshold_balanced",
+        upsample_preds = False,
+        symmetric = False,
+        name = None,
+        attenuate_cert = None,
+    ):
+        super().__init__()
+        self.attenuate_cert = attenuate_cert
+        self.encoder = encoder
+        self.adapter = adapter
+        self.decoder = decoder
+        self.name = name
+        self.w_resized = w
+        self.h_resized = h
+        self.og_transforms = get_tuple_transform_ops(resize=None, normalize=True)
+        self.sample_mode = sample_mode
+        self.upsample_preds = upsample_preds
+        self.upsample_res = (14*16*6, 14*16*6)
+        self.symmetric = symmetric
+        self.sample_thresh = 0.05
+            
+    def get_output_resolution(self):
+        if not self.upsample_preds:
+            return self.h_resized, self.w_resized
+        else:
+            return self.upsample_res
+    
+    def extract_backbone_features(self, batch, batched = True, upsample = False):
+        x_q = batch["im_A"]
+        x_s = batch["im_B"]
+        if batched:
+            X = torch.cat((x_q, x_s), dim = 0)
+            feature_pyramid = self.encoder(X, upsample = upsample)
+        else:
+            feature_pyramid = self.encoder(x_q, upsample = upsample), self.encoder(x_s, upsample = upsample)
+        return feature_pyramid
+
+
+    def sample(
+        self,
+        matches,
+        certainty,
+        num=10000,
+    ):
+        if "threshold" in self.sample_mode:
+            upper_thresh = self.sample_thresh
+            certainty = certainty.clone()
+            certainty[certainty > upper_thresh] = 1
+        matches, certainty = (
+            matches.reshape(-1, 4),
+            certainty.reshape(-1),
+        )
+        expansion_factor = 4 if "balanced" in self.sample_mode else 1
+        good_samples = torch.multinomial(certainty, 
+                          num_samples = min(expansion_factor*num, len(certainty)), 
+                          replacement=False)
+        good_matches, good_certainty = matches[good_samples], certainty[good_samples]
+        if "balanced" not in self.sample_mode:
+            return good_matches, good_certainty
+        density = kde(good_matches, std=0.1)
+        p = 1 / (density+1)
+        p[density < 10] = 1e-7 # Basically should have at least 10 perfect neighbours, or around 100 ok ones
+        balanced_samples = torch.multinomial(p, 
+                          num_samples = min(num,len(good_certainty)), 
+                          replacement=False)
+        return good_matches[balanced_samples], good_certainty[balanced_samples]
+
+    def forward(self, batch, end2end=False, batched = True, upsample = False, scale_factor = 1):
+        feature_pyramid = self.extract_backbone_features(batch, batched=batched, upsample = upsample)
+        if batched:
+            f_q_pyramid = {
+                scale: f_scale.chunk(2)[0] for scale, f_scale in feature_pyramid.items()
+            }
+            f_s_pyramid = {
+                scale: f_scale.chunk(2)[1] for scale, f_scale in feature_pyramid.items()
+            }
+        else:
+            f_q_pyramid, f_s_pyramid = feature_pyramid
+        f_q_pyramid = self.adpater(f_q_pyramid, batch['domainid'])
+        f_s_pyramid = self.adapter(f_s_pyramid, batch['domainid'])
+        corresps = self.decoder(f_q_pyramid, 
+                                f_s_pyramid, 
+                                upsample = upsample, 
+                                **(batch["corresps"] if "corresps" in batch else {}),
+                                scale_factor=scale_factor)
+        
+        return corresps
+
+    def forward_symmetric(self, batch, batched = True, upsample = False, scale_factor = 1):
+        feature_pyramid = self.extract_backbone_features(batch, batched = batched, upsample = upsample)
+        f_q_pyramid = feature_pyramid
+        f_s_pyramid = {
+            scale: torch.cat((f_scale.chunk(2)[1], f_scale.chunk(2)[0]), dim = 0)
+            for scale, f_scale in feature_pyramid.items()
+        }
+        f_q_pyramid = self.adpater(f_q_pyramid, batch['domainid'])
+        f_s_pyramid = self.adapter(f_s_pyramid, batch['domainid'])
+        corresps = self.decoder(f_q_pyramid, 
+                                f_s_pyramid, 
+                                upsample = upsample, 
+                                **(batch["corresps"] if "corresps" in batch else {}),
+                                scale_factor=scale_factor)
+        return corresps
+    
+    def conf_from_fb_consistency(self, flow_forward, flow_backward, th = 2):
+        # assumes that flow forward is of shape (..., H, W, 2)
+        has_batch = False
+        if len(flow_forward.shape) == 3:
+            flow_forward, flow_backward = flow_forward[None], flow_backward[None]
+        else:
+            has_batch = True
+        H,W = flow_forward.shape[-3:-1]
+        th_n = 2 * th / max(H,W)
+        coords = torch.stack(torch.meshgrid(
+            torch.linspace(-1 + 1 / W, 1 - 1 / W, W), 
+            torch.linspace(-1 + 1 / H, 1 - 1 / H, H), indexing = "xy"),
+                             dim = -1).to(flow_forward.device)
+        coords_fb = F.grid_sample(
+            flow_backward.permute(0, 3, 1, 2), 
+            flow_forward, 
+            align_corners=False, mode="bilinear").permute(0, 2, 3, 1)
+        diff = (coords - coords_fb).norm(dim=-1)
+        in_th = (diff < th_n).float()
+        if not has_batch:
+            in_th = in_th[0]
+        return in_th
+         
+    def to_pixel_coordinates(self, coords, H_A, W_A, H_B = None, W_B = None):
+        if coords.shape[-1] == 2:
+            return self._to_pixel_coordinates(coords, H_A, W_A) 
+        
+        if isinstance(coords, (list, tuple)):
+            kpts_A, kpts_B = coords[0], coords[1]
+        else:
+            kpts_A, kpts_B = coords[...,:2], coords[...,2:]
+        return self._to_pixel_coordinates(kpts_A, H_A, W_A), self._to_pixel_coordinates(kpts_B, H_B, W_B)
+
+    def _to_pixel_coordinates(self, coords, H, W):
+        kpts = torch.stack((W/2 * (coords[...,0]+1), H/2 * (coords[...,1]+1)),axis=-1)
+        return kpts
+ 
+    def to_normalized_coordinates(self, coords, H_A, W_A, H_B, W_B):
+        if isinstance(coords, (list, tuple)):
+            kpts_A, kpts_B = coords[0], coords[1]
+        else:
+            kpts_A, kpts_B = coords[...,:2], coords[...,2:]
+        kpts_A = torch.stack((2/W_A * kpts_A[...,0] - 1, 2/H_A * kpts_A[...,1] - 1),axis=-1)
+        kpts_B = torch.stack((2/W_B * kpts_B[...,0] - 1, 2/H_B * kpts_B[...,1] - 1),axis=-1)
+        return kpts_A, kpts_B
+
+    def match_keypoints(self, x_A, x_B, warp, certainty, return_tuple = True, return_inds = False):
+        x_A_to_B = F.grid_sample(warp[...,-2:].permute(2,0,1)[None], x_A[None,None], align_corners = False, mode = "bilinear")[0,:,0].mT
+        cert_A_to_B = F.grid_sample(certainty[None,None,...], x_A[None,None], align_corners = False, mode = "bilinear")[0,0,0]
+        D = torch.cdist(x_A_to_B, x_B)
+        inds_A, inds_B = torch.nonzero((D == D.min(dim=-1, keepdim = True).values) * (D == D.min(dim=-2, keepdim = True).values) * (cert_A_to_B[:,None] > self.sample_thresh), as_tuple = True)
+        
+        if return_tuple:
+            if return_inds:
+                return inds_A, inds_B
+            else:
+                return x_A[inds_A], x_B[inds_B]
+        else:
+            if return_inds:
+                return torch.cat((inds_A, inds_B),dim=-1)
+            else:
+                return torch.cat((x_A[inds_A], x_B[inds_B]),dim=-1)
+    def match_keypoints2(self, x_A, x_B, warp, certainty):
+        assert len(warp.shape) == 3 and int(warp.shape[2]) == 4, str(warp.shape)
+        H,W2,_ = warp.shape
+        print(H, W2)
+        W = W2//2
+        # warp B keypoints into image A
+        #x_A_from_B = F.grid_sample(warp[:, :, :2].permute(2,0,1)[None], x_B[None,None], align_corners = False, mode = "bilinear")[0,:,0].mT
+        #cert_A_from_B = F.grid_sample(certainty[None, None, :, :], x_B[None,None], align_corners = False, mode = "bilinear")[0,0,0]
+        
+        x_A_from_B = F.grid_sample(warp[:, W:, :2].permute(2,0,1)[None], x_B[None,None], align_corners = False, mode = "bilinear")[0,:,0].mT
+        cert_A_from_B = F.grid_sample(certainty[None, None, :, W:], x_B[None,None], align_corners = False, mode = "bilinear")[0,0,0]
+        # match in the coordinate system of A
+        D = torch.cdist(x_A, x_A_from_B)
+        inds_A, inds_B = torch.nonzero((D == D.min(dim=-1, keepdim = True).values) * (D == D.min(dim=-2, keepdim = True).values) * (cert_A_from_B[None,:] > 0.01), as_tuple = True)
+        return inds_A, inds_B, cert_A_from_B[inds_B]
+        
+    @torch.inference_mode()
+    def match(
+        self,
+        im_A_input,
+        im_B_input,
+        domainid,
+        *args,
+        batched=False,
+        device=None,
+    ):
+        if device is None:
+            device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+        # Check if inputs are file paths or already loaded images
+        if isinstance(im_A_input, (str, os.PathLike)):
+            im_A = Image.open(im_A_input).convert("RGB")
+        else:
+            im_A = im_A_input
+
+        if isinstance(im_B_input, (str, os.PathLike)):
+            im_B = Image.open(im_B_input).convert("RGB")
+        else:
+            im_B = im_B_input
+
+        symmetric = self.symmetric
+        self.train(False)
+        with torch.no_grad():
+            if not batched:
+                b = 1
+                w, h = im_A.size
+                w2, h2 = im_B.size
+                # Get images in good format
+                ws = self.w_resized
+                hs = self.h_resized
+
+                test_transform = get_tuple_transform_ops(
+                    resize=(hs, ws), normalize=True, clahe=False
+                )
+                im_A, im_B = test_transform((im_A, im_B))
+                batch = {"im_A": im_A[None].to(device), "im_B": im_B[None].to(device), "domainid": torch.tensor(domainid).to(device)}
+            else:
+                b, c, h, w = im_A.shape
+                b, c, h2, w2 = im_B.shape
+                assert w == w2 and h == h2, "For batched images we assume same size"
+                batch = {"im_A": im_A.to(device), "im_B": im_B.to(device), "domainid": domainid.to(device)}
+                if h != self.h_resized or self.w_resized != w:
+                    warn("Model resolution and batch resolution differ, may produce unexpected results")
+                hs, ws = h, w
+            finest_scale = 1
+            # Run matcher
+            if symmetric:
+                corresps = self.forward_symmetric(batch)
+            else:
+                corresps = self.forward(batch, batched=True)
+
+            if self.upsample_preds:
+                hs, ws = self.upsample_res
+
+            if self.attenuate_cert:
+                low_res_certainty = F.interpolate(
+                    corresps[16]["certainty"], size=(hs, ws), align_corners=False, mode="bilinear"
+                )
+                cert_clamp = 0
+                factor = 0.5
+                low_res_certainty = factor * low_res_certainty * (low_res_certainty < cert_clamp)
+
+            if self.upsample_preds:
+                finest_corresps = corresps[finest_scale]
+                torch.cuda.empty_cache()
+                test_transform = get_tuple_transform_ops(
+                    resize=(hs, ws), normalize=True
+                )
+                if isinstance(im_A_input, (str, os.PathLike)):
+                    im_A, im_B = test_transform(
+                        (Image.open(im_A_input).convert('RGB'), Image.open(im_B_input).convert('RGB')))
+                else:
+                    im_A, im_B = test_transform((im_A_input, im_B_input))
+
+                im_A, im_B = im_A[None].to(device), im_B[None].to(device)
+                scale_factor = math.sqrt(self.upsample_res[0] * self.upsample_res[1] / (self.w_resized * self.h_resized))
+                batch = {"im_A": im_A, "im_B": im_B, "domainid": torch.tensor(domainid).to(device), "corresps": finest_corresps}
+                if symmetric:
+                    corresps = self.forward_symmetric(batch, upsample=True, batched=True, scale_factor=scale_factor)
+                else:
+                    corresps = self.forward(batch, batched=True, upsample=True, scale_factor=scale_factor)
+
+            im_A_to_im_B = corresps[finest_scale]["flow"]
+            certainty = corresps[finest_scale]["certainty"] - (low_res_certainty if self.attenuate_cert else 0)
+            if finest_scale != 1:
+                im_A_to_im_B = F.interpolate(
+                    im_A_to_im_B, size=(hs, ws), align_corners=False, mode="bilinear"
+                )
+                certainty = F.interpolate(
+                    certainty, size=(hs, ws), align_corners=False, mode="bilinear"
+                )
+            im_A_to_im_B = im_A_to_im_B.permute(
+                0, 2, 3, 1
+            )
+            # Create im_A meshgrid
+            im_A_coords = torch.meshgrid(
+                (
+                    torch.linspace(-1 + 1 / hs, 1 - 1 / hs, hs, device=device),
+                    torch.linspace(-1 + 1 / ws, 1 - 1 / ws, ws, device=device),
+                ),
+                indexing='ij'
+            )
+            im_A_coords = torch.stack((im_A_coords[1], im_A_coords[0]))
+            im_A_coords = im_A_coords[None].expand(b, 2, hs, ws)
+            certainty = certainty.sigmoid()  # logits -> probs
+            im_A_coords = im_A_coords.permute(0, 2, 3, 1)
+            if (im_A_to_im_B.abs() > 1).any() and True:
+                wrong = (im_A_to_im_B.abs() > 1).sum(dim=-1) > 0
+                certainty[wrong[:, None]] = 0
+            im_A_to_im_B = torch.clamp(im_A_to_im_B, -1, 1)
+            if symmetric:
+                A_to_B, B_to_A = im_A_to_im_B.chunk(2)
+                q_warp = torch.cat((im_A_coords, A_to_B), dim=-1)
+                im_B_coords = im_A_coords
+                s_warp = torch.cat((B_to_A, im_B_coords), dim=-1)
+                warp = torch.cat((q_warp, s_warp), dim=2)
+                certainty = torch.cat(certainty.chunk(2), dim=3)
+            else:
+                warp = torch.cat((im_A_coords, im_A_to_im_B), dim=-1)
+            if batched:
+                return (
+                    warp,
+                    certainty[:, 0]
+                )
+            else:
+                return (
+                    warp[0],
+                    certainty[0, 0],
+                )
+    
+class DomainAdapter(nn.Module):
+    def __init__(self, num_domains, feat_dim, scale=0.1):
+        super().__init__()
+        self.domain_emb = nn.Embedding(num_domains, feat_dim)
+        self.adapter_mlp = nn.Sequential(
+            nn.Linear(feat_dim, feat_dim),
+            nn.ReLU(),
+            nn.Linear(feat_dim, feat_dim)
+        )
+        self.gate_mlp = nn.Sequential(
+            nn.Linear(feat_dim, feat_dim),
+            nn.Sigmoid()  # gate ∈ [0,1]
+        )
+        self.scale = scale
+
+    def forward(self, x, domain_id):
+        B, C, H, W = x.shape
+        dtype = x.dtype
+
+        # domain_id can be scalar or tensor [B]
+        if isinstance(domain_id, int):
+            domain_id = torch.LongTensor([domain_id]).to(x.device).expand(B)
+        elif isinstance(domain_id, torch.Tensor) and domain_id.ndim == 0:
+            domain_id = domain_id.expand(B)
+
+        domain_feat = self.domain_emb(domain_id)  # [B, C]
+
+        # Compute small adjustment and gate
+        delta = self.adapter_mlp(domain_feat).view(B, C, 1, 1) * self.scale
+        gate = self.gate_mlp(domain_feat).view(B, C, 1, 1)
+
+        # Apply residual with gate
+        x_out = x + gate * delta
+        return x_out.to(dtype)
+
+class PyramidDomainAdapter(nn.Module):
+    def __init__(self, num_domains, feat_dims):
+        """
+        feat_dims: dict, e.g., {16: 1024+768, 8: 512, 4: 256, 2: 128, 1: 64}
+        """
+        super().__init__()
+        self.adapters = nn.ModuleDict()
+        for scale, dim in feat_dims.items():
+            self.adapters[str(scale)] = DomainAdapter(num_domains, dim)
+
+    def forward(self, feats, domain_id):
+        """
+        feats: dict of {scale: [B, C, H, W]}
+        domain_id: int or [B]
+        """
+        out = {}
+        for scale, feat in feats.items():
+            adapter = self.adapters[str(scale)]
+            out[scale] = adapter(feat, domain_id)
+        return out
 
 class knn_matcher(nn.Module):
     def __init__(
@@ -2247,6 +2626,366 @@ class RegressionMatcher_mast3r(nn.Module):
                 im_A, im_B = im_A[None].to(device), im_B[None].to(device)
                 scale_factor = math.sqrt(self.upsample_res[0] * self.upsample_res[1] / (self.w_resized * self.h_resized))
                 batch = {"im_A": im_A, "im_B": im_B, "corresps": finest_corresps}
+                if symmetric:
+                    corresps = self.forward_symmetric(batch, upsample=True, batched=True, scale_factor=scale_factor)
+                else:
+                    corresps = self.forward(batch, batched=True, upsample=True, scale_factor=scale_factor)
+
+            im_A_to_im_B = corresps[finest_scale]["flow"]
+            certainty = corresps[finest_scale]["certainty"] - (low_res_certainty if self.attenuate_cert else 0)
+            if finest_scale != 1:
+                im_A_to_im_B = F.interpolate(
+                    im_A_to_im_B, size=(hs, ws), align_corners=False, mode="bilinear"
+                )
+                certainty = F.interpolate(
+                    certainty, size=(hs, ws), align_corners=False, mode="bilinear"
+                )
+            im_A_to_im_B = im_A_to_im_B.permute(
+                0, 2, 3, 1
+            )
+            # Create im_A meshgrid
+            im_A_coords = torch.meshgrid(
+                (
+                    torch.linspace(-1 + 1 / hs, 1 - 1 / hs, hs, device=device),
+                    torch.linspace(-1 + 1 / ws, 1 - 1 / ws, ws, device=device),
+                ),
+                indexing='ij'
+            )
+            im_A_coords = torch.stack((im_A_coords[1], im_A_coords[0]))
+            im_A_coords = im_A_coords[None].expand(b, 2, hs, ws)
+            certainty = certainty.sigmoid()  # logits -> probs
+            im_A_coords = im_A_coords.permute(0, 2, 3, 1)
+            if (im_A_to_im_B.abs() > 1).any() and True:
+                wrong = (im_A_to_im_B.abs() > 1).sum(dim=-1) > 0
+                certainty[wrong[:, None]] = 0
+            im_A_to_im_B = torch.clamp(im_A_to_im_B, -1, 1)
+            if symmetric:
+                A_to_B, B_to_A = im_A_to_im_B.chunk(2)
+                q_warp = torch.cat((im_A_coords, A_to_B), dim=-1)
+                im_B_coords = im_A_coords
+                s_warp = torch.cat((B_to_A, im_B_coords), dim=-1)
+                warp = torch.cat((q_warp, s_warp), dim=2)
+                certainty = torch.cat(certainty.chunk(2), dim=3)
+            else:
+                warp = torch.cat((im_A_coords, im_A_to_im_B), dim=-1)
+            if batched:
+                return (
+                    warp,
+                    certainty[:, 0]
+                )
+            else:
+                return (
+                    warp[0],
+                    certainty[0, 0],
+                )
+
+    def visualize_warp(self, warp, certainty, im_A = None, im_B = None, 
+                       im_A_path = None, im_B_path = None, device = "cuda", symmetric = True, save_path = None, unnormalize = False):
+        #assert symmetric == True, "Currently assuming bidirectional warp, might update this if someone complains ;)"
+        H,W2,_ = warp.shape
+        W = W2//2 if symmetric else W2
+        if im_A is None:
+            from PIL import Image
+            im_A, im_B = Image.open(im_A_path).convert("RGB"), Image.open(im_B_path).convert("RGB")
+        if not isinstance(im_A, torch.Tensor):
+            im_A = im_A.resize((W,H))
+            im_B = im_B.resize((W,H))    
+            x_B = (torch.tensor(np.array(im_B)) / 255).to(device).permute(2, 0, 1)
+            if symmetric:
+                x_A = (torch.tensor(np.array(im_A)) / 255).to(device).permute(2, 0, 1)
+        else:
+            if symmetric:
+                x_A = im_A
+            x_B = im_B
+        im_A_transfer_rgb = F.grid_sample(
+        x_B[None], warp[:,:W, 2:][None], mode="bilinear", align_corners=False
+        )[0]
+        if symmetric:
+            im_B_transfer_rgb = F.grid_sample(
+            x_A[None], warp[:, W:, :2][None], mode="bilinear", align_corners=False
+            )[0]
+            warp_im = torch.cat((im_A_transfer_rgb,im_B_transfer_rgb),dim=2)
+            white_im = torch.ones((H,2*W),device=device)
+        else:
+            warp_im = im_A_transfer_rgb
+            white_im = torch.ones((H, W), device = device)
+        vis_im = certainty * warp_im + (1 - certainty) * white_im
+        if save_path is not None:
+            from romatch.utils import tensor_to_pil
+            tensor_to_pil(vis_im, unnormalize=unnormalize).save(save_path)
+        return vis_im
+
+
+class RegressionMatcher_mast3r_adapter(nn.Module):
+    def __init__(
+        self,
+        encoder,
+        adapter,
+        decoder,
+        h=448,
+        w=448,
+        sample_mode = "threshold_balanced",
+        upsample_preds = False,
+        upsample_res = (14*16*6, 14*16*6),
+        symmetric = False,
+        name = None,
+        attenuate_cert = None,
+    ):
+        super().__init__()
+        self.attenuate_cert = attenuate_cert
+        self.encoder = encoder
+        self.adapter = adapter
+        self.decoder = decoder
+        self.name = name
+        self.w_resized = w
+        self.h_resized = h
+        self.og_transforms = get_tuple_transform_ops(resize=None, normalize=True)
+        self.sample_mode = sample_mode
+        self.upsample_preds = upsample_preds
+        self.upsample_res = upsample_res
+        self.symmetric = symmetric
+        self.sample_thresh = 0.05
+            
+    def get_output_resolution(self):
+        if not self.upsample_preds:
+            return self.h_resized, self.w_resized
+        else:
+            return self.upsample_res
+
+
+    def extract_backbone_features(self, batch, batched = True, upsample = False):
+        x_q = batch["im_A"]
+        x_s = batch["im_B"]
+        feature_pyramid = self.encoder((x_q, x_s), upsample = upsample)
+        return feature_pyramid
+
+
+    def sample(
+        self,
+        matches,
+        certainty,
+        num=10000,
+    ):
+        if "threshold" in self.sample_mode:
+            upper_thresh = self.sample_thresh
+            certainty = certainty.clone()
+            certainty[certainty > upper_thresh] = 1
+        matches, certainty = (
+            matches.reshape(-1, 4),
+            certainty.reshape(-1),
+        )
+        expansion_factor = 4 if "balanced" in self.sample_mode else 1
+        good_samples = torch.multinomial(certainty, 
+                          num_samples = min(expansion_factor*num, len(certainty)), 
+                          replacement=False)
+        good_matches, good_certainty = matches[good_samples], certainty[good_samples]
+        if "balanced" not in self.sample_mode:
+            return good_matches, good_certainty
+        density = kde(good_matches, std=0.1)
+        p = 1 / (density+1)
+        p[density < 10] = 1e-7 # Basically should have at least 10 perfect neighbours, or around 100 ok ones
+        balanced_samples = torch.multinomial(p, 
+                          num_samples = min(num,len(good_certainty)), 
+                          replacement=False)
+        return good_matches[balanced_samples], good_certainty[balanced_samples]
+
+    def forward(self, batch, end2end=False, batched = True, upsample = False, scale_factor = 1, mode = 'default'):
+        feature_pyramid = self.extract_backbone_features(batch, batched=batched, upsample = upsample)
+        f_q_pyramid, f_s_pyramid = feature_pyramid
+        f_q_pyramid = self.adapter(f_q_pyramid, batch['domainid'])
+        f_s_pyramid = self.adapter(f_q_pyramid, batch['domainid'])
+        corresps = self.decoder(f_q_pyramid, 
+                                f_s_pyramid, 
+                                upsample = upsample, 
+                                **(batch["corresps"] if "corresps" in batch else {}),
+                                scale_factor=scale_factor)
+        
+        return corresps
+
+    def forward_symmetric(self, batch, batched = True, upsample = False, scale_factor = 1):
+        x_q = batch["im_A"]
+        x_s = batch["im_B"]
+        feature_pyramid_q = self.encoder((x_q, x_s), upsample = upsample)
+        feature_pyramid_s = self.encoder((x_s, x_q), upsample = upsample)
+        f_q_pyramid = {key: torch.cat([feature_pyramid_q[0][key], feature_pyramid_s[0][key]], dim=0) 
+                   for key in feature_pyramid_q[0]}
+        f_s_pyramid = {key: torch.cat([feature_pyramid_q[1][key], feature_pyramid_s[1][key]], dim=0) 
+                   for key in feature_pyramid_s[0]}
+        f_q_pyramid = self.adapter(f_q_pyramid, batch['domainid'])
+        f_s_pyramid = self.adapter(f_s_pyramid, batch['domainid'])
+        corresps = self.decoder(f_q_pyramid, 
+                                f_s_pyramid, 
+                                upsample = upsample, 
+                                **(batch["corresps"] if "corresps" in batch else {}),
+                                scale_factor=scale_factor)
+        return corresps
+    
+    def conf_from_fb_consistency(self, flow_forward, flow_backward, th = 2):
+        # assumes that flow forward is of shape (..., H, W, 2)
+        has_batch = False
+        if len(flow_forward.shape) == 3:
+            flow_forward, flow_backward = flow_forward[None], flow_backward[None]
+        else:
+            has_batch = True
+        H,W = flow_forward.shape[-3:-1]
+        th_n = 2 * th / max(H,W)
+        coords = torch.stack(torch.meshgrid(
+            torch.linspace(-1 + 1 / W, 1 - 1 / W, W), 
+            torch.linspace(-1 + 1 / H, 1 - 1 / H, H), indexing = "xy"),
+                             dim = -1).to(flow_forward.device)
+        coords_fb = F.grid_sample(
+            flow_backward.permute(0, 3, 1, 2), 
+            flow_forward, 
+            align_corners=False, mode="bilinear").permute(0, 2, 3, 1)
+        diff = (coords - coords_fb).norm(dim=-1)
+        in_th = (diff < th_n).float()
+        if not has_batch:
+            in_th = in_th[0]
+        return in_th
+         
+    def to_pixel_coordinates(self, coords, H_A, W_A, H_B = None, W_B = None):
+        if coords.shape[-1] == 2:
+            return self._to_pixel_coordinates(coords, H_A, W_A) 
+        
+        if isinstance(coords, (list, tuple)):
+            kpts_A, kpts_B = coords[0], coords[1]
+        else:
+            kpts_A, kpts_B = coords[...,:2], coords[...,2:]
+        return self._to_pixel_coordinates(kpts_A, H_A, W_A), self._to_pixel_coordinates(kpts_B, H_B, W_B)
+
+    def _to_pixel_coordinates(self, coords, H, W):
+        kpts = torch.stack((W/2 * (coords[...,0]+1), H/2 * (coords[...,1]+1)),axis=-1)
+        return kpts
+ 
+    def to_normalized_coordinates(self, coords, H_A, W_A, H_B, W_B):
+        if isinstance(coords, (list, tuple)):
+            kpts_A, kpts_B = coords[0], coords[1]
+        else:
+            kpts_A, kpts_B = coords[...,:2], coords[...,2:]
+        kpts_A = torch.stack((2/W_A * kpts_A[...,0] - 1, 2/H_A * kpts_A[...,1] - 1),axis=-1)
+        kpts_B = torch.stack((2/W_B * kpts_B[...,0] - 1, 2/H_B * kpts_B[...,1] - 1),axis=-1)
+        return kpts_A, kpts_B
+
+    def match_keypoints(self, x_A, x_B, warp, certainty, return_tuple = True, return_inds = False):
+        x_A_to_B = F.grid_sample(warp[...,-2:].permute(2,0,1)[None], x_A[None,None], align_corners = False, mode = "bilinear")[0,:,0].mT
+        cert_A_to_B = F.grid_sample(certainty[None,None,...], x_A[None,None], align_corners = False, mode = "bilinear")[0,0,0]
+        D = torch.cdist(x_A_to_B, x_B)
+        inds_A, inds_B = torch.nonzero((D == D.min(dim=-1, keepdim = True).values) * (D == D.min(dim=-2, keepdim = True).values) * (cert_A_to_B[:,None] > self.sample_thresh), as_tuple = True)
+        
+        if return_tuple:
+            if return_inds:
+                return inds_A, inds_B
+            else:
+                return x_A[inds_A], x_B[inds_B]
+        else:
+            if return_inds:
+                return torch.cat((inds_A, inds_B),dim=-1)
+            else:
+                return torch.cat((x_A[inds_A], x_B[inds_B]),dim=-1)
+
+    def match_keypoints2(self, x_A, x_B, warp, certainty): 
+        assert len(warp.shape) == 3 and int(warp.shape[2]) == 4, str(warp.shape)
+        H,W2,_ = warp.shape
+        print(H, W2)
+        W = W2//2
+        # warp B keypoints into image A
+        #x_A_from_B = F.grid_sample(warp[:, :, :2].permute(2,0,1)[None], x_B[None,None], align_corners = False, mode = "bilinear")[0,:,0].mT
+        #cert_A_from_B = F.grid_sample(certainty[None, None, :, :], x_B[None,None], align_corners = False, mode = "bilinear")[0,0,0]
+        
+        x_A_from_B = F.grid_sample(warp[:, W:, :2].permute(2,0,1)[None], x_B[None,None], align_corners = False, mode = "bilinear")[0,:,0].mT
+        cert_A_from_B = F.grid_sample(certainty[None, None, :, W:], x_B[None,None], align_corners = False, mode = "bilinear")[0,0,0]
+        # match in the coordinate system of A
+        D = torch.cdist(x_A, x_A_from_B)
+        inds_A, inds_B = torch.nonzero((D == D.min(dim=-1, keepdim = True).values) * (D == D.min(dim=-2, keepdim = True).values) * (cert_A_from_B[None,:] > 0.01), as_tuple = True)
+        return inds_A, inds_B, cert_A_from_B[inds_B]
+        '''
+        x_A_to_B = F.grid_sample(warp[...,-2:].permute(2,0,1)[None], x_A[None,None], align_corners = False, mode = "bilinear")[0,:,0].mT
+        cert_A_to_B = F.grid_sample(certainty[None,None,...], x_A[None,None], align_corners = False, mode = "bilinear")[0,0,0]
+        D = torch.cdist(x_A_to_B, x_B)
+        inds_A, inds_B = torch.nonzero((D == D.min(dim=-1, keepdim = True).values) * (D == D.min(dim=-2, keepdim = True).values) * (cert_A_to_B[:,None] > self.sample_thresh), as_tuple = True)
+        return inds_A, inds_B, cert_A_to_B[inds_A]
+        '''
+    @torch.inference_mode()
+    def match(
+        self,
+        im_A_input,
+        im_B_input,
+        domainid,
+        *args,
+        batched=False,
+        device=None,
+    ):
+        if device is None:
+            device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+        # Check if inputs are file paths or already loaded images
+        if isinstance(im_A_input, (str, os.PathLike)):
+            im_A = Image.open(im_A_input).convert("RGB")
+        else:
+            im_A = im_A_input
+
+        if isinstance(im_B_input, (str, os.PathLike)):
+            im_B = Image.open(im_B_input).convert("RGB")
+        else:
+            im_B = im_B_input
+
+        symmetric = self.symmetric
+        self.train(False)
+        with torch.no_grad():
+            if not batched:
+                b = 1
+                w, h = im_A.size
+                w2, h2 = im_B.size
+                # Get images in good format
+                ws = self.w_resized
+                hs = self.h_resized
+
+                test_transform = get_tuple_transform_ops(
+                    resize=(hs, ws), normalize=True, clahe=False
+                )
+                im_A, im_B = test_transform((im_A, im_B))
+                batch = {"im_A": im_A[None].to(device), "im_B": im_B[None].to(device), 'domainid': domainid.to(device)}
+            else:
+                b, c, h, w = im_A.shape
+                b, c, h2, w2 = im_B.shape
+                assert w == w2 and h == h2, "For batched images we assume same size"
+                batch = {"im_A": im_A.to(device), "im_B": im_B.to(device), 'domainid': domainid.to(device)}
+                if h != self.h_resized or self.w_resized != w:
+                    warn("Model resolution and batch resolution differ, may produce unexpected results")
+                hs, ws = h, w
+            finest_scale = 1
+            # Run matcher
+            if symmetric:
+                corresps = self.forward_symmetric(batch)
+            else:
+                corresps = self.forward(batch, batched=True)
+
+            if self.upsample_preds:
+                hs, ws = self.upsample_res
+
+            if self.attenuate_cert:
+                low_res_certainty = F.interpolate(
+                    corresps[16]["certainty"], size=(hs, ws), align_corners=False, mode="bilinear"
+                )
+                cert_clamp = 0
+                factor = 0.5
+                low_res_certainty = factor * low_res_certainty * (low_res_certainty < cert_clamp)
+
+            if self.upsample_preds:
+                finest_corresps = corresps[finest_scale]
+                torch.cuda.empty_cache()
+                test_transform = get_tuple_transform_ops(
+                    resize=(hs, ws), normalize=True
+                )
+                if isinstance(im_A_input, (str, os.PathLike)):
+                    im_A, im_B = test_transform(
+                        (Image.open(im_A_input).convert('RGB'), Image.open(im_B_input).convert('RGB')))
+                else:
+                    im_A, im_B = test_transform((im_A_input, im_B_input))
+
+                im_A, im_B = im_A[None].to(device), im_B[None].to(device)
+                scale_factor = math.sqrt(self.upsample_res[0] * self.upsample_res[1] / (self.w_resized * self.h_resized))
+                batch = {"im_A": im_A, "im_B": im_B, "domainid": domainid.to(device), "corresps": finest_corresps}
                 if symmetric:
                     corresps = self.forward_symmetric(batch, upsample=True, batched=True, scale_factor=scale_factor)
                 else:
