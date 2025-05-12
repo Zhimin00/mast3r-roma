@@ -141,6 +141,7 @@ class AsymmetricCroCo3DStereo (
             'none': [],
             'mask': [self.mask_token],
             'encoder': [self.mask_token, self.patch_embed, self.enc_blocks],
+            'backbone': [self.mask_token, self.enc_norm, self.decoder_embed, self.dec_norm, self.patch_embed.norm, self.patch_embed.proj, self.enc_blocks, self.dec_blocks],
         }
         freeze_all_params(to_be_frozen[freeze])
 
